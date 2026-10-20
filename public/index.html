@@ -57,6 +57,15 @@ button{cursor:pointer;border:0;background:none}
 .time{font-family:var(--display);font-size:26px;color:var(--ink);font-variant-numeric:tabular-nums}
 .greet{color:var(--muted);font-size:15px}
 .top .tools{margin-left:auto;display:flex;gap:8px;align-items:center}
+.calmenu{position:fixed;z-index:60;min-width:240px;max-width:calc(100vw - 24px);padding:8px;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:0 12px 40px rgba(31,42,51,.18)}
+.cmrow{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;border-radius:14px;text-align:left;font-weight:500;font-size:16px}
+.cmrow:active{background:var(--chip)}
+.cmrow .dot{width:14px;height:14px;border-radius:50%;background:var(--strong);flex:none}
+.cmrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmrow .tick{width:26px;height:26px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.cmrow .tick svg{width:16px;height:16px;stroke:#fff;stroke-width:3;fill:none;opacity:0}
+.cmrow[aria-checked=true] .tick{background:var(--strong);border-color:var(--strong)}
+.cmrow[aria-checked=true] .tick svg{opacity:1}
 .pill{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 18px;border-radius:999px;background:var(--chip);font-weight:500;font-size:15px}
 .pill.icon{padding:0;width:44px;justify-content:center}
 .pill svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -443,7 +452,7 @@ async function pull(){
 }
 async function pullCalendar(){
   if(!FEAT.calendar) return;
-  try{ const j=await api("/api/calendar"); S.ext=j.events||[]; S.calErr=(j.errors||[]).join(", "); renderHome(); renderCal(); }
+  try{ const j=await api("/api/calendar"); S.ext=j.events||[]; S.calNames=j.names||[]; S.calErr=(j.errors||[]).join(", "); renderHome(); renderCal(); renderTools(); }
   catch(e){ S.calErr=e.message||"calendar"; }
 }
 // Everything the frame and screensaver rotate through: shared album + photos added here, newest first.
@@ -476,9 +485,33 @@ $("#loginForm").addEventListener("submit",async e=>{
 });
 
 /* external calendar + budget helpers */
+/* which calendars are shown: remembered per screen (the wall screen and a phone can differ) */
+const LOCAL_CAL="On the dashboard";
+let HIDDEN_CALS=[]; try{ HIDDEN_CALS=JSON.parse(localStorage.getItem("hd_hidecal")||"[]")||[]; }catch(e){}
+const calShown=n=>!HIDDEN_CALS.includes(n);
+function calNames(){ return [...new Set([...(S.calNames||[]),...S.ext.map(e=>e.cal)])]; }
+function setCalHidden(n,hide){
+  HIDDEN_CALS=HIDDEN_CALS.filter(x=>x!==n); if(hide) HIDDEN_CALS.push(n);
+  try{ localStorage.setItem("hd_hidecal",JSON.stringify(HIDDEN_CALS)); }catch(e){}
+  renderHome(); renderCal(); renderTools();
+}
+function calMenu(btn){
+  const old=document.getElementById("calMenu"); if(old){ old.remove(); return; }
+  const names=[...calNames(),LOCAL_CAL];
+  const m=h("div",{id:"calMenu",class:"calmenu",role:"menu"},names.map(n=>{
+    const col=n===LOCAL_CAL?"none":(members().some(x=>x.name===n)?colorOf(n):"teal");
+    const row=h("button",{class:"cmrow c-"+col,role:"menuitemcheckbox","aria-checked":calShown(n)?"true":"false",onclick:e=>{ e.stopPropagation(); setCalHidden(n,calShown(n)); row.setAttribute("aria-checked",calShown(n)?"true":"false"); }},
+      h("span",{class:"dot"}),h("span",{class:"nm"},n),h("span",{class:"tick"},svg(IC.check)));
+    return row;
+  }));
+  document.body.append(m);
+  const r=btn.getBoundingClientRect();
+  m.style.top=(r.bottom+8)+"px"; m.style.right=Math.max(12,innerWidth-r.right)+"px";
+  setTimeout(()=>document.addEventListener("click",function f(e){ if(m.contains(e.target)) return; m.remove(); document.removeEventListener("click",f); }),0);
+}
 function eventsOn(k){
-  const mine=S.events.filter(e=>e.date===k);
-  const ext=S.ext.filter(e=>e.date===k).map(e=>({...e,ext:true}));
+  const mine=calShown(LOCAL_CAL)?S.events.filter(e=>e.date===k):[];
+  const ext=S.ext.filter(e=>e.date===k&&calShown(e.cal)).map(e=>({...e,ext:true}));
   return [...mine,...ext].sort((a,b)=>(a.time||"").localeCompare(b.time||""));
 }
 const money=n=>{ try{ return new Intl.NumberFormat(undefined,{style:"currency",currency:(S.budget&&S.budget.currency)||"USD",maximumFractionDigits:Math.abs(n)>=1000?0:2}).format(n); }catch(e){ return "$"+n.toFixed(2); } };
@@ -528,6 +561,10 @@ function setView(v){
 }
 function renderTools(){
   const t=$("#tools"); t.replaceChildren();
+  if((S.view==="calendar"||S.view==="home")&&FEAT.calendar){
+    const hid=HIDDEN_CALS.filter(n=>calNames().includes(n)||n===LOCAL_CAL).length;
+    t.append(h("button",{class:"pill",id:"calBtn","aria-haspopup":"true",onclick:e=>{ e.stopPropagation(); calMenu(e.currentTarget); }},hid?`Calendars (${calNames().length+1-hid})`:"Calendars",svg('<path d="M6 9l6 6 6-6"/>')));
+  }
   if(S.view==="calendar"){
     const start=addDays(new Date(),S.weekOffset*7), end=addDays(start,6);
     t.append(
@@ -550,7 +587,7 @@ function renderHome(){
   const box=$("#homeToday"); box.replaceChildren();
   if(!evs.length) box.append(h("div",{class:"empty-day"},S.loaded.events||!live?"Nothing on the calendar today. Tap + to add something.":"Loading…"));
   evs.forEach(e=>box.append(evCard(e)));
-  const up=[...S.events,...S.ext.map(e=>({...e,ext:true}))].filter(e=>e.date>k).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||""))).slice(0,4);
+  const up=[...(calShown(LOCAL_CAL)?S.events:[]),...S.ext.filter(e=>calShown(e.cal)).map(e=>({...e,ext:true}))].filter(e=>e.date>k).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||""))).slice(0,4);
   if(up.length){ box.append(h("div",{class:"sec"},"Coming up")); up.forEach(e=>{ const d=parseKey(e.date); const days=Math.round((d-parseKey(k))/864e5); box.append(evCard(e,`${days===1?"Tomorrow":WD[d.getDay()].slice(0,3)+" "+d.getDate()}`)); }); }
 
   const dn=$("#homeDinner"); dn.replaceChildren();

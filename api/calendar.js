@@ -37,7 +37,7 @@ export async function GET(request) {
     }
   }));
   events.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
-  const body = { events, errors, fetchedAt: new Date().toISOString() };
+  const body = { events, errors, names: list.map((c) => c.name), fetchedAt: new Date().toISOString() };
   if (!errors.length) cache = { at: Date.now(), body };
   return json(body);
 }

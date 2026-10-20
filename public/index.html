@@ -57,6 +57,19 @@ button{cursor:pointer;border:0;background:none}
 .time{font-family:var(--display);font-size:26px;color:var(--ink);font-variant-numeric:tabular-nums}
 .greet{color:var(--muted);font-size:15px}
 .top .tools{margin-left:auto;display:flex;gap:8px;align-items:center}
+.calback{position:fixed;inset:0;z-index:59;background:rgba(31,42,51,.35)}
+.calmenu.cmphone{left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));min-width:0;max-width:none;padding:10px 10px 12px;border-radius:26px}
+.cmhead{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 10px 14px;font-family:var(--serif,inherit);font-size:20px;font-weight:600}
+.cmdone{min-height:44px;padding:0 20px;border-radius:999px;background:var(--accent);color:var(--accent-ink,#fff);font-weight:600;font-size:15px}
+.calmenu.cmphone .cmrow{min-height:60px;font-size:17px}
+@media (max-width:640px){ .top .tools .meta{display:none} }
+@media (max-width:900px){
+  .top .tools{flex-basis:100%;margin-left:0;flex-wrap:nowrap;gap:6px}
+  .top .tools .meta{white-space:nowrap;font-size:14px}
+  .top .tools #calBtn{margin-right:auto}
+  .top .tools .pill{padding:0 14px;font-size:14px;flex:none}
+  .top .tools .pill.icon{padding:0;width:44px;justify-content:center}
+}
 .calmenu{position:fixed;z-index:60;min-width:240px;max-width:calc(100vw - 24px);padding:8px;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:0 12px 40px rgba(31,42,51,.18)}
 .cmrow{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;border-radius:14px;text-align:left;font-weight:500;font-size:16px}
 .cmrow:active{background:var(--chip)}
@@ -242,7 +255,8 @@ button{cursor:pointer;border:0;background:none}
 
 @media (max-width:900px){
   body{overflow:auto}
-  .app{grid-template-columns:1fr;grid-template-rows:1fr auto;height:auto;min-height:100%}
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
+  .main{min-width:0;max-width:100vw}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
   .mono,.rail .spacer{display:none}
   .nav{flex:1 0 64px;font-size:11px;padding:10px 0}
@@ -496,7 +510,7 @@ function setCalHidden(n,hide){
   renderHome(); renderCal(); renderTools();
 }
 function calMenu(btn){
-  const old=document.getElementById("calMenu"); if(old){ old.remove(); return; }
+  const old=document.getElementById("calMenu"); if(old){ old.remove(); const b=document.getElementById("calBack"); if(b) b.remove(); return; }
   const names=[...calNames(),LOCAL_CAL];
   const m=h("div",{id:"calMenu",class:"calmenu",role:"menu"},names.map(n=>{
     const col=n===LOCAL_CAL?"none":(members().some(x=>x.name===n)?colorOf(n):"teal");
@@ -504,10 +518,18 @@ function calMenu(btn){
       h("span",{class:"dot"}),h("span",{class:"nm"},n),h("span",{class:"tick"},svg(IC.check)));
     return row;
   }));
+  const phone=matchMedia("(max-width:640px)").matches;
+  const close=()=>{ m.remove(); const b=document.getElementById("calBack"); if(b) b.remove(); };
+  if(phone){
+    m.classList.add("cmphone");
+    m.prepend(h("div",{class:"cmhead"},h("span",null,"Show calendars"),h("button",{class:"cmdone",onclick:close},"Done")));
+    document.body.append(h("div",{id:"calBack",class:"calback",onclick:close}),m);
+    return;
+  }
   document.body.append(m);
-  const r=btn.getBoundingClientRect();
-  m.style.top=(r.bottom+8)+"px"; m.style.right=Math.max(12,innerWidth-r.right)+"px";
-  setTimeout(()=>document.addEventListener("click",function f(e){ if(m.contains(e.target)) return; m.remove(); document.removeEventListener("click",f); }),0);
+  const r=btn.getBoundingClientRect(), w=m.offsetWidth;
+  m.style.top=(r.bottom+8)+"px"; m.style.left=Math.max(12,Math.min(r.right-w,innerWidth-w-12))+"px";
+  setTimeout(()=>document.addEventListener("click",function f(e){ if(m.contains(e.target)) return; close(); document.removeEventListener("click",f); }),0);
 }
 function eventsOn(k){
   const mine=calShown(LOCAL_CAL)?S.events.filter(e=>e.date===k):[];

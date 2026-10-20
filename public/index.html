@@ -434,11 +434,11 @@ async function api(path,opts={}){
   return j;
 }
 async function write(body){
-  try{ const j=await api("/api/db",{method:"POST",body:JSON.stringify(body)}); setTimeout(pull,150); return j; }
+  try{ const j=await api("/api/db",{method:"POST",body:JSON.stringify(body)}); setTimeout(pull,150); if(j&&j.appleError) toast(j.appleError); return j; }
   catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't save. Check the connection and try again."); VER=-1; pull(); return null; }
 }
-async function addDoc(c,data){ const id=uid(); S[c].push({...data,id}); renderAll(); await write({op:"add",coll:c,id,data}); }
-async function updDoc(c,id,patch){ const x=S[c].find(r=>r.id===id); if(x) Object.assign(x,patch); renderAll(); await write({op:"update",coll:c,id,data:patch}); }
+async function addDoc(c,data){ const id=uid(); S[c].push({...data,id}); renderAll(); return write({op:"add",coll:c,id,data}); }
+async function updDoc(c,id,patch){ const x=S[c].find(r=>r.id===id); if(x) Object.assign(x,patch); renderAll(); return write({op:"update",coll:c,id,data:patch}); }
 async function delDoc(c,id){ S[c]=S[c].filter(r=>r.id!==id); renderAll(); await write({op:"delete",coll:c,id}); }
 async function saveSettings(patch){ Object.assign(S.settings,patch); renderAll(); await write({op:"settings",data:{...S.settings}}); }
 
@@ -447,12 +447,13 @@ async function pull(){
   try{
     const j=await api("/api/state?since="+VER);
     hideLogin(); $("#banner").hidden=true;
-    const hadCal=FEAT.calendar, hadBud=FEAT.budget, hadAlb=FEAT.album;
+    const hadCal=FEAT.calendar, hadBud=FEAT.budget, hadAlb=FEAT.album, hadApl=FEAT.apple;
     FEAT=j.features||{};
     if(FEAT.build){ if(!BUILD) BUILD=FEAT.build; else if(FEAT.build!==BUILD) reloadWhenIdle(); }
     if(!hadCal&&FEAT.calendar) pullCalendar();
     if(!hadBud&&FEAT.budget) pullBudget();
     if(!hadAlb&&FEAT.album) pullAlbum();
+    if(!hadApl&&FEAT.apple) pullApple();
     if(!j.unchanged){
       VER=j.version;
       for(const c of COLLS){ S[c]=j.data[c]||[]; S.loaded[c]=true; }
@@ -466,7 +467,7 @@ async function pull(){
 }
 async function pullCalendar(){
   if(!FEAT.calendar) return;
-  try{ const j=await api("/api/calendar"); S.ext=j.events||[]; S.calNames=j.names||[]; S.calErr=(j.errors||[]).join(", "); renderHome(); renderCal(); renderTools(); }
+  try{ const j=await api("/api/calendar"); S.ext=(j.events||[]).filter(e=>!String(e.uid||"").startsWith("hd-")); S.calNames=j.names||[]; S.calErr=(j.errors||[]).join(", "); renderHome(); renderCal(); renderTools(); }
   catch(e){ S.calErr=e.message||"calendar"; }
 }
 // Everything the frame and screensaver rotate through: shared album + photos added here, newest first.
@@ -484,6 +485,11 @@ async function pullAlbum(){
   try{ const j=await api("/api/album"); S.album=j.photos||[]; S.albumName=j.name||"Shared album"; S.albumErr=""; }
   catch(e){ S.albumErr=e.message||"Couldn't read the shared album."; }
   rebuildRot(); renderPhotos();
+}
+async function pullApple(){
+  if(!FEAT.apple) return;
+  try{ const j=await api("/api/apple"); S.appleCals=j.calendars||[]; S.appleDefault=j.default||""; S.appleErr=""; }
+  catch(e){ S.appleCals=[]; S.appleErr=e.message||"Couldn't reach Apple Calendar."; }
 }
 async function pullBudget(){
   if(!FEAT.budget) return;
@@ -853,9 +859,14 @@ function eventSheet(e){
   const d=h("input",{id:"evDate",type:"date",value:e.date||today()});
   const tm=h("input",{id:"evTime",type:"time",value:e.time||""});
   const w=whoSelect("evWho",e.who);
-  const save=async()=>{ const title=t.value.trim(); if(!title){ t.focus(); return toast("Give the event a name."); } const data={title,date:d.value||today(),time:tm.value||"",who:w.value}; closeSheet(); if(editing) await updDoc("events",e.id,data); else await addDoc("events",{...data,createdAt:Date.now()}); toast(editing?"Event updated":"Event added"); };
+  let ap=null;
+  if(FEAT.apple&&(S.appleCals||[]).length){
+    ap=h("select",{id:"evApple"},[h("option",{value:""},"Don't add"),...S.appleCals.map(n=>h("option",{value:n},n))]);
+    ap.value=editing?(e.appleCal||""):(S.appleDefault||"");
+  }
+  const save=async()=>{ const title=t.value.trim(); if(!title){ t.focus(); return toast("Give the event a name."); } const data={title,date:d.value||today(),time:tm.value||"",who:w.value}; if(ap) data.appleCal=ap.value; closeSheet(); const j=editing?await updDoc("events",e.id,data):await addDoc("events",{...data,createdAt:Date.now()}); if(!(j&&j.appleError)) toast(editing?"Event updated":(data.appleCal?"Event added to Apple Calendar":"Event added")); };
   t.addEventListener("keydown",ev=>{ if(ev.key==="Enter") save(); });
-  openSheet([h("h2",null,editing?"Edit event":"New event"),field("What",t),h("div",{class:"row"},field("Day",d),field("Time (leave blank for all day)",tm)),field("Who",w),
+  openSheet([h("h2",null,editing?"Edit event":"New event"),field("What",t),h("div",{class:"row"},field("Day",d),field("Time (leave blank for all day)",tm)),field("Who",w),ap?field("Also save to Apple Calendar",ap):null,
     h("div",{class:"acts"},editing?h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this event?",e.title,"Delete",()=>delDoc("events",e.id))},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},editing?"Save":"Add event"))]);
 }
 function todoSheet(who){

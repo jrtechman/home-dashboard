@@ -13,6 +13,7 @@ It runs on **Vercel** only: the page and its small server functions, an **Upstas
 | `api/state.js`, `api/db.js` | Read and save tasks, lists, dishes, events, settings |
 | `api/upload.js` | Save and remove photos |
 | `api/calendar.js` | Reads your Apple Calendar links every 5 minutes |
+| `api/apple.js`, `lib/caldav.js` | Saves, moves and removes dashboard events in your iCloud calendar |
 | `api/budget.js` | Reads YNAB (read-only), only the categories you choose |
 | `api/import-recipe.js` | Imports a recipe from a recipe website link (free, no AI) |
 | `api/album.js` | Reads your shared iCloud photo album for the frame and slideshow |
@@ -44,6 +45,7 @@ Project → **Settings → Environment Variables**. Use `.env.example` as the ch
 - **`HOUSEHOLD_PASSCODE`** (required): what each screen asks for once.
 - **`CALENDARS`**: your Apple Calendar link(s) as `Name|link`, separated by `;`.
   To get a link: Calendar on Mac or iCloud.com → share the calendar → turn on **Public Calendar** → copy. The name you give it (e.g. `Family`, or a person's name from the dashboard's Settings) labels the event; if it matches a family member, their color is used.
+- **`ICLOUD_ID`**, **`ICLOUD_APP_PASSWORD`** and **`ICLOUD_CALENDAR`** (optional): lets events you add on the dashboard also appear in your Apple Calendar. Make an app-specific password at account.apple.com → Sign-In and Security → App-Specific Passwords (never use your real Apple password). `ICLOUD_CALENDAR` is the calendar new events go to by default, e.g. `Family`.
 - **`YNAB_TOKEN`** and **`YNAB_CATEGORIES`**: token from YNAB → Account Settings → Developer Settings. List only the categories you're comfortable showing on a wall, e.g. `Groceries, Dining Out, Fun Money`. If you leave `YNAB_CATEGORIES` empty, the Home card tells you which category names exist (names only, no amounts).
 - **`PHOTO_ALBUM`**: a shared iCloud album for the photo frame. In Photos, open the shared album → people icon → turn on **Public Website** → copy the link. Anyone in the album can add photos from their iPhone and they show up on the board within about 15 minutes.
 - **`ANTHROPIC_API_KEY`** (optional, paid): from console.anthropic.com, for "Fill in from the photo", about 1 cent per draft. Without it, use **Paste a recipe** (text from the Claude app, a note or a website) or **Import a recipe** (a recipe website link); both are free.
@@ -64,7 +66,7 @@ On an iPad wall mount, also turn on **Settings → Accessibility → Guided Acce
 - **Updates show up in about 4 seconds** on every screen. Calendar changes made on your phones appear within about 5 minutes.
 - **Shared album:** this uses the same requests as the album's public web page, since Apple has no official API for it, so an Apple change could stop it until the code is updated. Apple's newest album links (`photos.icloud.com/shared/album/…`) can't be read this way. Photos you add on the dashboard's Photos tab are a backup that always works.
 - **Recipe import** works with most recipe sites. A few block outside requests; for those, copy the recipe text and use Paste.
-- **Apple Calendar events are read-only** on the board; change them on your phone.
+- **Apple Calendar events are read-only** on the board; change them on your phone. Events you add on the dashboard can be saved to Apple Calendar too (set the `ICLOUD_` variables); editing or deleting them on the dashboard updates Apple, but changes you make to them in Apple Calendar don't come back.
 - **Privacy:** data and the budget sit behind the passcode. Photos are stored at long, unguessable web addresses; anyone given one of those addresses could open that photo. Anyone with a calendar's public link can view that calendar; to revoke, turn Public Calendar off and on again in Apple Calendar (this makes a new link, so update `CALENDARS`).
 - **Changing the passcode** signs every screen out (unless you set `SESSION_SECRET`).
 - **Run it locally:** `npm install`, then `npx vercel link` and `npx vercel env pull`, then `npm run dev`.

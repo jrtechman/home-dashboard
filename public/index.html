@@ -249,6 +249,19 @@ button{cursor:pointer;border:0;background:none}
   .cols2{grid-template-columns:1fr}
   .fab{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 }
+/* Phones: "Our dishes" becomes a compact list (thumbnail, name, minutes). The dinner list strip keeps its photo tiles. */
+@media (max-width:640px){
+  .dgrid{display:flex;flex-direction:column;gap:8px}
+  .dgrid .dish{display:flex;align-items:center;gap:12px;aspect-ratio:auto;min-height:72px;padding:8px 14px 8px 8px;border-radius:20px}
+  .dgrid .dish img{position:static;flex:none;width:56px;height:56px;border-radius:14px}
+  .dgrid .dish.noimg::before{content:"";flex:none;width:56px;height:56px;border-radius:14px;background:var(--soft)}
+  .dgrid .dish .lab,.dgrid .dish.noimg .lab{position:static;flex:1;min-width:0;padding:0;background:none;color:var(--ink);display:block}
+  .dgrid .dish .rt{font-size:18px}
+  .dgrid .dish .m{color:var(--muted);opacity:1}
+  .dgrid .dish .badge{position:static;order:3;flex:none;background:var(--chip)}
+  .dgrid .snap{display:flex;align-items:center;justify-content:center;gap:10px;aspect-ratio:auto;min-height:60px;padding:12px;border-radius:20px}
+  .dgrid .snap svg{width:26px;height:26px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* sign-in */

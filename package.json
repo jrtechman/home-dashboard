@@ -11,6 +11,7 @@
     "dev": "vercel dev"
   },
   "dependencies": {
+    "@simplewebauthn/server": "13.3.3",
     "@upstash/redis": "1.39.0",
     "@vercel/blob": "2.8.0",
     "fast-xml-parser": "4.5.1",

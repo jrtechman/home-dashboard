@@ -14,6 +14,7 @@ It runs on **Vercel** only: the page and its small server functions, an **Upstas
 | `api/upload.js` | Save and remove photos |
 | `api/calendar.js` | Reads your Apple Calendar links every 5 minutes |
 | `api/apple.js`, `lib/caldav.js` | Saves, moves and removes dashboard events in your iCloud calendar |
+| `api/passkey.js` | Face ID / Touch ID sign-in for phones (passkeys) |
 | `api/budget.js` | Reads YNAB (read-only), only the categories you choose |
 | `api/import-recipe.js` | Imports a recipe from a recipe website link (free, no AI) |
 | `api/album.js` | Reads your shared iCloud photo album for the frame and slideshow |
@@ -68,5 +69,6 @@ On an iPad wall mount, also turn on **Settings → Accessibility → Guided Acce
 - **Recipe import** works with most recipe sites. A few block outside requests; for those, copy the recipe text and use Paste.
 - **Apple Calendar events are read-only** on the board; change them on your phone. Events you add on the dashboard can be saved to Apple Calendar too (set the `ICLOUD_` variables); editing or deleting them on the dashboard updates Apple, but changes you make to them in Apple Calendar don't come back.
 - **Privacy:** data and the budget sit behind the passcode. Photos are stored at long, unguessable web addresses; anyone given one of those addresses could open that photo. Anyone with a calendar's public link can view that calendar; to revoke, turn Public Calendar off and on again in Apple Calendar (this makes a new link, so update `CALENDARS`).
+- **Face ID:** after signing in with the passcode on a phone, tap **Turn on Face ID** (offered once, or in Settings). Later sign-ins use Face ID. Each phone is listed in Settings, where you can remove it. Passkeys belong to the web address they were made on, so if you change the address, set Face ID up again. Changing the passcode does not remove Face ID phones; remove them in Settings.
 - **Changing the passcode** signs every screen out (unless you set `SESSION_SECRET`).
 - **Run it locally:** `npm install`, then `npx vercel link` and `npx vercel env pull`, then `npm run dev`.

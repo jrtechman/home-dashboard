@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#EAF0F5">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Home">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Home Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Figtree:wght@400;500;600;700&display=swap">
@@ -140,6 +143,12 @@ button{cursor:pointer;border:0;background:none}
 .snap{display:grid;place-content:center;justify-items:center;gap:8px;aspect-ratio:1;max-width:100%;border-radius:26px;border:2px dashed var(--line);color:var(--muted);font-weight:600;text-align:center;padding:16px}
 .snap svg{width:36px;height:36px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linejoin:round}
 .hero{display:block;width:100%;max-width:100%;aspect-ratio:16/9;max-height:300px;object-fit:cover;border-radius:22px;background:var(--chip)}
+.imp{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:20px;background:var(--chip)}
+.imp textarea,.imp input{min-height:52px;border-radius:14px;border:0;background:#fff;padding:12px 14px;font-size:16px}
+.imp textarea{min-height:140px;resize:vertical;line-height:1.45}
+.imp .hint{margin:0}
+.srclink{color:var(--accent);font-weight:600;text-decoration:none}
+.srclink:hover{text-decoration:underline}
 .thumb{display:block;width:100%;height:130px;object-fit:cover;border-radius:20px;margin:8px 0 6px}
 .tthumb{width:120px;height:120px;border-radius:22px;object-fit:cover;flex:none}
 
@@ -367,7 +376,8 @@ function guessAisle(t){ const s=" "+t.toLowerCase(); for(const [a,kws] of AISLES
 const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null};
 const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
 let VER=-1, FEAT={}, live=true, pulling=false, photoSig="";
-let BUILD=null, reloadT=null;
+let BUILD=null, reloadT=null, ROT=[];
+S.album=[]; S.albumName="";
 // A new version was deployed: reload once nobody is mid-edit.
 function reloadWhenIdle(){
   if(reloadT) return;
@@ -401,17 +411,17 @@ async function pull(){
   try{
     const j=await api("/api/state?since="+VER);
     hideLogin(); $("#banner").hidden=true;
-    const hadCal=FEAT.calendar, hadBud=FEAT.budget;
+    const hadCal=FEAT.calendar, hadBud=FEAT.budget, hadAlb=FEAT.album;
     FEAT=j.features||{};
     if(FEAT.build){ if(!BUILD) BUILD=FEAT.build; else if(FEAT.build!==BUILD) reloadWhenIdle(); }
     if(!hadCal&&FEAT.calendar) pullCalendar();
     if(!hadBud&&FEAT.budget) pullBudget();
+    if(!hadAlb&&FEAT.album) pullAlbum();
     if(!j.unchanged){
       VER=j.version;
       for(const c of COLLS){ S[c]=j.data[c]||[]; S.loaded[c]=true; }
       S.settings={...DEFAULTS,...(j.data.settings||{})};
-      const sig=S.photos.map(p=>p.id).sort().join(",");
-      if(sig!==photoSig){ photoSig=sig; frameImgs=null; if(S.photoIdx>=S.photos.length) S.photoIdx=0; }
+      rebuildRot();
       renderAll(); idle();
     }
   }catch(e){
@@ -422,6 +432,22 @@ async function pullCalendar(){
   if(!FEAT.calendar) return;
   try{ const j=await api("/api/calendar"); S.ext=j.events||[]; S.calErr=(j.errors||[]).join(", "); renderHome(); renderCal(); }
   catch(e){ S.calErr=e.message||"calendar"; }
+}
+// Everything the frame and screensaver rotate through: shared album + photos added here, newest first.
+function rebuildRot(){
+  const up=S.photos.map(p=>({id:"u:"+p.id,url:p.url,t:p.addedAt||0}));
+  const al=S.album.map(p=>({id:"a:"+p.id,url:p.url,t:Date.parse(p.date)||0}));
+  ROT=[...up,...al].filter(p=>p.url).sort((a,b)=>b.t-a.t);
+  const sig=ROT.map(p=>p.id).join(",");
+  if(sig!==photoSig){ photoSig=sig; frameImgs=null; if(S.photoIdx>=ROT.length) S.photoIdx=0; renderFrame(); }
+  else if(frameImgs&&ROT.length){ // album links are refreshed by iCloud every few hours; keep the frame pointed at a live one
+    const cur=ROT[S.photoIdx%ROT.length]; if(cur&&frameImgs[0].style.opacity!=="0"&&frameImgs[0].src!==cur.url) frameImgs[0].src=cur.url; }
+}
+async function pullAlbum(){
+  if(!FEAT.album) return;
+  try{ const j=await api("/api/album"); S.album=j.photos||[]; S.albumName=j.name||"Shared album"; S.albumErr=""; }
+  catch(e){ S.albumErr=e.message||"Couldn't read the shared album."; }
+  rebuildRot(); renderPhotos();
 }
 async function pullBudget(){
   if(!FEAT.budget) return;
@@ -609,7 +635,7 @@ function renderMeals(){
   m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner list"),h("span",{class:"meta",style:"margin-top:8px"},dl.length?`${dl.length} planned`:""),h("span",{class:"grow"}),budgetChip(/dining|restaurant|eating out|take ?out/i)));
   if(dl.length){ const st=h("div",{class:"strip"}); dl.forEach(x=>st.append(dishTile(x,false))); m.append(st); }
   else m.append(h("p",{class:"hint",style:"margin:0 4px"},"Nothing planned yet. Tap a dish below and choose “Add to dinner list”."));
-  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Our dishes"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>recipeSheet()},"Add without a photo"),h("button",{class:"pill primary",onclick:snapDish},svg(IC.cam),"Snap a dish")));
+  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Our dishes"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"link")},"Import a recipe"),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"paste")},"Paste a recipe"),h("button",{class:"pill primary",onclick:snapDish},svg(IC.cam),"Snap a dish")));
   const g=h("div",{class:"dgrid"});
   g.append(h("button",{class:"snap",onclick:snapDish},svg(IC.cam),"Snap a dish you made or ate"));
   const list=[...S.recipes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
@@ -659,15 +685,23 @@ function renderPhotos(){
   const P=$("#photos"); P.replaceChildren();
   const bar=h("div",{class:"acts",style:"margin-bottom:14px"});
   if(FEAT.photos) bar.append(h("button",{class:"pill primary",onclick:()=>$("#fileIn").click()},svg(IC.up),"Add photos"));
-  bar.append(h("button",{class:"pill",onclick:()=>openSaver()},"Start slideshow"),h("span",{class:"meta"},`${S.photos.length} photo${S.photos.length===1?"":"s"}`));
+  bar.append(h("button",{class:"pill",onclick:()=>openSaver()},"Start slideshow"),h("span",{class:"meta"},`${ROT.length} photo${ROT.length===1?"":"s"} in rotation`));
   P.append(bar);
-  if(!FEAT.photos && S.loaded.photos) P.append(h("p",{class:"hint"},"Photo storage isn't connected yet. Add a Blob store from your Vercel project's Storage tab, then redeploy."));
-  if(!S.photos.length){ P.append(h("p",{class:"hint"},"Add a few recent photos from this device. They rotate in the Home frame and fill the screen when the dashboard sleeps.")); return; }
-  const g=h("div",{class:"pgrid"});
-  [...S.photos].sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)).forEach(p=>{
-    g.append(h("div",{class:"ph"},h("img",{src:photoUrl(p),alt:"Family photo",loading:"lazy"}),h("button",{class:"x","aria-label":"Remove photo",onclick:()=>confirmSheet("Remove this photo?","It leaves the frame and the slideshow.","Remove",async()=>{ await delDoc("photos",p.id); deleteImage(p.url); })},svg(IC.x))));
-  });
-  P.append(g);
+  if(FEAT.album){
+    P.append(h("h2",{class:"sec",style:"margin:6px 4px 4px"},S.albumName||"Shared album"));
+    P.append(h("p",{class:"hint",style:"margin:0 4px 10px"},S.albumErr?S.albumErr:"Add or remove these in the Photos app on your iPhone. Changes show up here within about 15 minutes."));
+    if(S.album.length){ const g=h("div",{class:"pgrid"}); S.album.forEach(p=>g.append(h("div",{class:"ph"},h("img",{src:p.url,alt:"Shared album photo",loading:"lazy"})))); P.append(g); }
+  }
+  if(!FEAT.album&&!FEAT.photos&&S.loaded.photos) P.append(h("p",{class:"hint"},"No photo source is connected yet. Add PHOTO_ALBUM (a shared iCloud album) or a Blob store in Vercel, then redeploy."));
+  if(S.photos.length||(!FEAT.album&&FEAT.photos)){
+    if(FEAT.album) P.append(h("h2",{class:"sec",style:"margin:18px 4px 8px"},"Added here"));
+    if(!S.photos.length){ P.append(h("p",{class:"hint"},"Add a few recent photos from this device. They rotate in the Home frame and fill the screen when the dashboard sleeps.")); return; }
+    const g=h("div",{class:"pgrid"});
+    [...S.photos].sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)).forEach(p=>{
+      g.append(h("div",{class:"ph"},h("img",{src:photoUrl(p),alt:"Family photo",loading:"lazy"}),h("button",{class:"x","aria-label":"Remove photo",onclick:()=>confirmSheet("Remove this photo?","It leaves the frame and the slideshow.","Remove",async()=>{ await delDoc("photos",p.id); deleteImage(p.url); })},svg(IC.x))));
+    });
+    P.append(g);
+  }
 }
 $("#fileIn").addEventListener("change",async e=>{
   const files=[...e.target.files]; e.target.value="";
@@ -686,13 +720,13 @@ function shrink(file){ return new Promise(res=>{ const img=new Image(); const u=
 let frameImgs=null;
 function renderFrame(){
   const F=$("#frame");
-  if(!S.photos.length){ frameImgs=null; F.replaceChildren(h("div",{class:"frame-empty"},h("strong",null,"Recent photos"),h("span",null,"Photos you add show up here and rotate on their own."),h("button",{class:"pill",style:"background:#fff",onclick:()=>setView("photos")},"Add photos"))); return; }
+  if(!ROT.length){ frameImgs=null; F.replaceChildren(h("div",{class:"frame-empty"},h("strong",null,"Recent photos"),h("span",null,FEAT.album?"Add photos to your shared album in the Photos app and they show up here.":"Photos you add show up here and rotate on their own."),h("button",{class:"pill",style:"background:#fff",onclick:()=>setView("photos")},"Add photos"))); return; }
   if(!frameImgs){ const a=h("img",{alt:"Family photo"}),b=h("img",{alt:"",style:"opacity:0"}); frameImgs=[a,b]; F.replaceChildren(a,b,h("div",{class:"cap"},h("button",{class:"pill",onclick:()=>openSaver()},"Slideshow"))); a.src=photoUrl(curPhoto()); }
 }
-function curPhoto(){ const ps=S.photos; return ps[S.photoIdx%ps.length]; }
+function curPhoto(){ return ROT[S.photoIdx%ROT.length]; }
 function advancePhoto(){
-  if(S.photos.length<2) return;
-  S.photoIdx=(S.photoIdx+1)%S.photos.length;
+  if(ROT.length<2) return;
+  S.photoIdx=(S.photoIdx+1)%ROT.length;
   const url=photoUrl(curPhoto());
   [frameImgs,saverImgs].forEach(pair=>{ if(!pair) return; const [a,b]=pair; const show=a.style.opacity==="0"?a:b, hide=show===a?b:a; show.src=url; show.onload=()=>{show.style.opacity="1";hide.style.opacity="0";}; });
 }
@@ -702,7 +736,7 @@ setInterval(advancePhoto,12000);
 let saverImgs=null;
 function openSaver(){
   const s=$("#saver"); s.replaceChildren();
-  if(S.photos.length){ const a=h("img",{alt:""}),b=h("img",{alt:"",style:"opacity:0"}); a.src=photoUrl(curPhoto()); saverImgs=[a,b]; s.append(a,b); } else { saverImgs=null; s.append(h("div",{class:"noimg"})); }
+  if(ROT.length){ const a=h("img",{alt:""}),b=h("img",{alt:"",style:"opacity:0"}); a.src=photoUrl(curPhoto()); saverImgs=[a,b]; s.append(a,b); } else { saverImgs=null; s.append(h("div",{class:"noimg"})); }
   s.append(h("div",{class:"veil"}),h("div",{class:"clock",id:"saverClock"}));
   s.hidden=false; renderSaverClock();
 }
@@ -758,11 +792,38 @@ function todoSheet(who){
   t.addEventListener("keydown",ev=>{ if(ev.key==="Enter") save(); });
   openSheet([h("h2",null,"New task"),field("Task",t),field("For",w),h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},"Add task"))]);
 }
-function recipeSheet(r,file){
+/* Reads recipe text pasted from the Claude app, a website or a note. */
+function parseRecipeText(text){
+  const raw=String(text||"").replace(/\r/g,"").split("\n").map(l=>l.replace(/\*\*|__|`/g,"").trim());
+  const strip=l=>l.replace(/^#{1,6}\s*/,"").replace(/^[-*•·▪◦–]\s+/,"").replace(/^\d+[.)]\s+/,"").replace(/^step\s*\d+\s*[:.)-]?\s*/i,"").replace(/^\[[ xX]?\]\s*/,"").trim();
+  const head=(l,re)=>{ const s=l.replace(/^#{1,6}\s*/,"").replace(/\s*[:：]\s*$/,"").trim(); return s.length<45&&re.test(s); };
+  const ING=/^(the )?(ingredients?|what you('ll)? need|you('ll)? need)(\s*\(.*\))?$/i, STEP=/^(the )?(instructions?|directions?|steps?|method|preparation|how to make( it)?)(\s*\(.*\))?$/i, END=/^(notes?|tips?|variations?|to serve|serving suggestions?|storage|nutrition|enjoy|substitutions?)\b/i;
+  const CHAT=/^(here('s| is)|sure|absolutely|great|this (looks|is|appears)|that looks|based on|it looks)/i;
+  const minsIn=s=>{ let m=0; const hr=s.match(/([\d.½]+)\s*(?:hours?|hrs?|h)\b/i), mn=s.match(/(\d+)\s*(?:minutes?|mins?)\b/i); if(hr) m+=parseFloat(hr[1].replace("½",".5"))*60; if(mn) m+=Number(mn[1]); return Math.round(m); };
+  let title="", mode=null, minutes=0; const ingredients=[], steps=[];
+  const all=raw.join("\n"), dur="([\\d.½]+\\s*(?:hours?|hrs?|h|minutes?|mins?)\\b(?:\\s*(?:and\\s*)?\\d+\\s*(?:minutes?|mins?)\\b)?)";
+  const grab=label=>{ const m=all.match(new RegExp(label+"\\s*time[^\\d\\n]{0,15}"+dur,"i")); return m?minsIn(m[1]):0; };
+  minutes=grab("total")||(grab("prep(?:aration)?")+grab("cook(?:ing)?"));
+  for(const l of raw){
+    if(!l||/^[-=_*]{3,}$/.test(l)) continue;
+    if(head(l,ING)){ mode="i"; continue; }
+    if(head(l,STEP)){ mode="s"; continue; }
+    if(head(l,END)){ mode="x"; continue; }
+    if(!mode){
+      if(!title && !CHAT.test(l) && !/(time|serves|servings|yield|makes)\b/i.test(l)) title=strip(l).replace(/^recipe:\s*/i,"").replace(/[:.!]$/,"");
+      continue;
+    }
+    const s=strip(l); if(!s) continue;
+    if(/[:：]$/.test(s)&&s.length<40) continue; // sub-heading like "For the sauce:"
+    if(mode==="i") ingredients.push(s); else if(mode==="s") steps.push(s);
+  }
+  return {title:title.slice(0,120),minutes,ingredients:ingredients.slice(0,60),steps:steps.slice(0,40)};
+}
+function recipeSheet(r,file,mode){
   r=r||{};
-  let blob=file||null, objUrl=null;
+  let blob=file||null, objUrl=null, remotePhoto="", source=r.source||"";
   const prev=h("img",{class:"hero",alt:"Dish photo"});
-  const setPrev=()=>{ if(objUrl){URL.revokeObjectURL(objUrl);objUrl=null;} if(blob){ objUrl=URL.createObjectURL(blob); prev.src=objUrl; prev.hidden=false; } else if(r.photoUrl){ prev.src=r.photoUrl; prev.hidden=false; } else prev.hidden=true; };
+  const setPrev=()=>{ if(objUrl){URL.revokeObjectURL(objUrl);objUrl=null;} if(blob){ objUrl=URL.createObjectURL(blob); prev.src=objUrl; prev.hidden=false; } else if(r.photoUrl){ prev.src=r.photoUrl; prev.hidden=false; } else if(remotePhoto){ prev.src=remotePhoto; prev.hidden=false; } else prev.hidden=true; };
   const t=h("input",{id:"rcTitle",placeholder:"Grandma's meatloaf",value:r.title||""});
   const mn=h("input",{id:"rcMin",type:"number",min:"0",inputmode:"numeric",placeholder:"45",value:r.minutes||""});
   const ing=h("textarea",{id:"rcIng",placeholder:"One per line, e.g.\n2 lb ground beef\n1 onion"}); ing.value=(r.ingredients||[]).join("\n");
@@ -787,6 +848,47 @@ function recipeSheet(r,file){
     }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't read the photo. Fill it in by hand."); }
     finally{ draftBtn.disabled=false; draftBtn.textContent="Fill in from the photo"; }
   });
+  const fill=(out,overwrite)=>{
+    if(!out) return 0; let n=0;
+    if(out.title&&(overwrite||!t.value.trim())){ t.value=out.title; n++; }
+    if(out.minutes&&(overwrite||!mn.value)){ mn.value=out.minutes; n++; }
+    if(out.ingredients&&out.ingredients.length&&(overwrite||!ing.value.trim())){ ing.value=out.ingredients.join("\n"); n++; }
+    if(out.steps&&out.steps.length&&(overwrite||!st.value.trim())){ st.value=out.steps.join("\n"); n++; }
+    return n;
+  };
+  // Paste panel
+  const pasteIn=h("textarea",{id:"rcPaste",placeholder:"Paste a recipe here, e.g. from the Claude app or a recipe website."});
+  const pastePanel=h("div",{class:"imp",hidden:true},h("label",{for:"rcPaste",class:"meta"},"Recipe text"),pasteIn,
+    h("div",{class:"acts"},h("span",{class:"hint grow"},"Headings like Ingredients and Instructions help it sort the lines."),h("button",{class:"pill primary",onclick:()=>{
+      const out=parseRecipeText(pasteIn.value);
+      if(!out.ingredients.length&&!out.steps.length&&!out.title) return toast("Couldn't find a recipe in that text.");
+      fill(out,true); pastePanel.hidden=true; pasteIn.value="";
+      toast(out.ingredients.length||out.steps.length?"Filled in. Check it over, then save.":"Got the name only. Add ingredients and steps by hand.");
+    }},"Fill in")));
+  // Link panel
+  const linkIn=h("input",{id:"rcLink",type:"url",inputmode:"url",placeholder:"https://www.allrecipes.com/recipe/…",autocomplete:"off"});
+  const linkGo=h("button",{class:"pill primary"},"Import");
+  const doImport=async()=>{
+    const u=linkIn.value.trim(); if(!u){ linkIn.focus(); return; }
+    linkGo.disabled=true; linkGo.textContent="Reading the page…";
+    try{
+      const out=await api("/api/import-recipe",{method:"POST",body:JSON.stringify({url:u})});
+      fill(out,true); source=out.source||u;
+      if(out.photo&&!blob&&!r.photoUrl){ remotePhoto=out.photo; setPrev(); }
+      linkPanel.hidden=true; linkIn.value="";
+      toast("Recipe imported. Check it over, then save.");
+    }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't import that link."); }
+    finally{ linkGo.disabled=false; linkGo.textContent="Import"; }
+  };
+  linkGo.addEventListener("click",doImport);
+  linkIn.addEventListener("keydown",e=>{ if(e.key==="Enter") doImport(); });
+  const linkPanel=h("div",{class:"imp",hidden:true},h("label",{for:"rcLink",class:"meta"},"Recipe page link"),h("div",{class:"row"},linkIn,linkGo),
+    h("p",{class:"hint"},"Works with most recipe websites. If a site won't import, copy its recipe text and use Paste instead."));
+  const toggle=(show,hide,focusEl)=>{ hide.hidden=true; show.hidden=!show.hidden; if(!show.hidden) setTimeout(()=>focusEl.focus(),20); };
+  const pasteBtn=h("button",{class:"pill",onclick:()=>toggle(pastePanel,linkPanel,pasteIn)},"Paste a recipe");
+  const linkBtn=h("button",{class:"pill",onclick:()=>toggle(linkPanel,pastePanel,linkIn)},"From a link");
+  if(mode==="link") linkPanel.hidden=false;
+  if(mode==="paste") pastePanel.hidden=false;
   const saveBtn=h("button",{class:"pill primary"},"Save dish");
   saveBtn.addEventListener("click",async()=>{
     const title=t.value.trim(); if(!title){ t.focus(); return toast("Give the dish a name."); }
@@ -797,12 +899,17 @@ function recipeSheet(r,file){
       try{ const url=await uploadImage(blob); if(r.photoUrl) deleteImage(r.photoUrl); photoUrl=url; }
       catch(e){ saveBtn.disabled=false; saveBtn.textContent="Save dish"; if(e.code==="auth") return; return toast(e.code==="too_large"?"That photo is too large.":(e.message||"The photo didn't upload. Try again.")); }
     }
-    const data={title,minutes:Number(mn.value)||0,ingredients:ing.value.split("\n").map(x=>x.trim()).filter(Boolean),steps:st.value.split("\n").map(x=>x.trim()).filter(Boolean),photoUrl};
+    if(!blob&&!photoUrl&&remotePhoto&&FEAT.photos){
+      saveBtn.disabled=true; saveBtn.textContent="Saving photo…";
+      try{ const j=await api("/api/upload",{method:"POST",body:JSON.stringify({fromUrl:remotePhoto})}); photoUrl=j.url; }
+      catch(e){ if(e.code==="auth"){ saveBtn.disabled=false; saveBtn.textContent="Save dish"; return; } toast("Saved without the site's photo. You can add your own later."); }
+    }
+    const data={title,minutes:Number(mn.value)||0,ingredients:ing.value.split("\n").map(x=>x.trim()).filter(Boolean),steps:st.value.split("\n").map(x=>x.trim()).filter(Boolean),photoUrl,source};
     closeSheet(); if(objUrl) URL.revokeObjectURL(objUrl);
     if(r.id) await updDoc("recipes",r.id,data); else await addDoc("recipes",{...data,createdAt:Date.now()});
     toast(r.id?"Dish saved":"Dish added");
   });
-  openSheet([h("h2",null,r.id?"Edit dish":"New dish"),prev,pick,h("div",{class:"acts"},photoBtn,draftBtn),
+  openSheet([h("h2",null,r.id?"Edit dish":"New dish"),prev,pick,h("div",{class:"acts"},photoBtn,draftBtn,pasteBtn,linkBtn),pastePanel,linkPanel,
     h("div",{class:"row"},field("Name",t),h("div",{class:"field",style:"flex:0 0 120px;min-width:0"},h("label",{for:"rcMin"},"Minutes"),mn)),field("Ingredients",ing),field("Steps",st),
     h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),saveBtn)],true);
 }
@@ -817,7 +924,7 @@ function openRecipe(id){
   const inList=onDinner(r.id);
   const dinBtn=inList?h("button",{class:"pill",onclick:async()=>{ closeSheet(); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); toast("Taken off the dinner list"); }},"Remove from dinner list")
     :h("button",{class:"pill primary",onclick:async()=>{ closeSheet(); await addDoc("dinnerlist",{recipeId:r.id,addedAt:Date.now()}); toast("Added to the dinner list"); }},"Add to dinner list");
-  openSheet([dishUrl(r)?h("img",{class:"hero",src:dishUrl(r),alt:r.title}):null,h("div",null,h("h2",null,r.title),h("div",{class:"meta"},r.minutes?`${r.minutes} minutes`:"",inList?" · on the dinner list":"",r.example?" · example recipe":"")),
+  openSheet([dishUrl(r)?h("img",{class:"hero",src:dishUrl(r),alt:r.title}):null,h("div",null,h("h2",null,r.title),h("div",{class:"meta"},r.minutes?`${r.minutes} minutes`:"",inList?" · on the dinner list":"",r.example?" · example recipe":""),r.source?h("div",{style:"margin-top:4px"},h("a",{class:"srclink",href:r.source,target:"_blank",rel:"noopener noreferrer"},"View original recipe · "+(()=>{ try{ return new URL(r.source).hostname.replace(/^www\./,""); }catch(e){ return "link"; } })())):null),
     h("div",{class:"cols2"},h("div",null,h("h3",null,"Ingredients"),ingList,h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",onclick:addAll},"Add missing to list"))),
       h("div",{style:"min-width:0"},h("h3",null,"Steps"),(r.steps||[]).length?h("ol",{class:"steps"},(r.steps||[]).map(s=>h("li",null,s))):h("p",{class:"hint"},"No steps written yet."))),
     h("div",{class:"acts"},h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this dish?",r.title+" and its photo will be removed.","Delete",async()=>{ if(isTonight) await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); await delDoc("recipes",r.id); deleteImage(r.photoUrl); })},"Delete"),h("button",{class:"pill",onclick:()=>recipeSheet(r)},"Edit"),h("span",{class:"grow"}),
@@ -850,7 +957,8 @@ $("#fab").addEventListener("click",()=>{
     h("button",{class:"chip",onclick:()=>todoSheet("")},"Task"),
     h("button",{class:"chip",onclick:()=>{closeSheet();setView("lists");setTimeout(()=>$("#shopIn")?.focus(),30);}},"Grocery item"),
     h("button",{class:"chip",onclick:()=>{closeSheet();snapDish();}},"Dish photo"),
-    FEAT.photos?h("button",{class:"chip",onclick:()=>{closeSheet();$("#fileIn").click();}},"Photos"):null)]);
+    FEAT.photos?h("button",{class:"chip",onclick:()=>{closeSheet();$("#fileIn").click();}},"Photos"):null,
+    h("button",{class:"chip",onclick:()=>recipeSheet(null,null,"link")},"Recipe from a link"))]);
 });
 document.querySelectorAll(".nav[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
 
@@ -870,6 +978,7 @@ pull();
 setInterval(()=>{ if(document.visibilityState==="visible") pull(); },4000);
 setInterval(()=>{ if(document.visibilityState==="visible") pullCalendar(); },5*60000);
 setInterval(()=>{ if(document.visibilityState==="visible") pullBudget(); },10*60000);
+setInterval(()=>{ if(document.visibilityState==="visible") pullAlbum(); },15*60000);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") pull(); });
 })();
 </script>

@@ -1,5 +1,6 @@
 import { put, del } from "@vercel/blob";
 import { json, fail, guard, readJson } from "../lib/server.js";
+import { safeFetch } from "../lib/safe-fetch.js";
 
 const TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
 const MAX = 4 * 1024 * 1024; // the page shrinks photos to well under this before sending
@@ -9,9 +10,24 @@ export async function POST(request) {
   const denied = guard(request);
   if (denied) return denied;
   if (!process.env.BLOB_READ_WRITE_TOKEN) return fail(500, "Photo storage isn't connected. Add a Blob store from the Vercel Storage tab.");
-  const type = (request.headers.get("content-type") || "").split(";")[0].trim();
+  let type = (request.headers.get("content-type") || "").split(";")[0].trim();
+  let buf;
+  if (type === "application/json") {
+    // { fromUrl } saves a copy of an imported recipe's photo.
+    let body;
+    try { body = await readJson(request, 4000); } catch { return fail(400, "Send a photo address."); }
+    try {
+      const got = await safeFetch(body.fromUrl, { accept: "image/*", maxBytes: MAX });
+      if (!got.res.ok) return fail(502, "Couldn't download that photo.");
+      type = (got.res.headers.get("content-type") || "").split(";")[0].trim();
+      buf = got.buf;
+    } catch (e) {
+      return fail(e.status || 502, e.status ? e.message : "Couldn't download that photo.");
+    }
+  } else {
+    buf = Buffer.from(await request.arrayBuffer());
+  }
   if (!TYPES[type]) return fail(415, "Send a JPEG, PNG, WebP or GIF image.");
-  const buf = Buffer.from(await request.arrayBuffer());
   if (!buf.length) return fail(400, "The photo was empty.");
   if (buf.length > MAX) return fail(413, "That photo is too large.");
   try {

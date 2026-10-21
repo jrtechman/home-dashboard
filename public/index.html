@@ -732,19 +732,19 @@ function budgetSheet(){
     const all=b.all||[]; const chosen=new Set(budgetChosen().map(c=>bnorm(c.name)));
     body.append(h("p",{class:"hint",style:"margin:0 0 8px"},"Tick a category to show it on the Home page."));
     const list=h("div",{class:"bud all"});
-    /* Just names and ticks here; amounts and bars show on the Home card. */
+    /* Just names and ticks here; amounts and bars show on the Home card. Ticked categories are listed first. */
     const makeRow=c=>{
-      const on=chosen.has(bnorm(c.name));
-      const t=h("input",{type:"checkbox","aria-label":"Show "+c.name+" on Home"}); t.checked=on;
+      const t=h("input",{type:"checkbox","aria-label":"Show "+c.name+" on Home"}); t.checked=chosen.has(bnorm(c.name));
       t.addEventListener("change",()=>{ t.checked?chosen.add(bnorm(c.name)):chosen.delete(bnorm(c.name));
-        saveSettings({budgetCats:all.filter(x=>chosen.has(bnorm(x.name))).map(x=>x.name)}); const nr=makeRow(c); row.replaceWith(nr); row=nr; nr.querySelector("input").focus(); });
-      let row=h("label",{class:"brow plain"},t,h("span",null,c.name));
-      return row; };
-    all.forEach(c=>list.append(makeRow(c)));
-    if(!all.length) list.append(h("p",{class:"hint"},"No categories found in this budget."));
-    if(b.overspent) list.append(h("div",{class:"meta"},`${b.overspent} categor${b.overspent===1?"y is":"ies are"} overspent in YNAB`));
-    if(b.fetchedAt) list.append(h("div",{class:"meta"},"Updated "+new Date(b.fetchedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})));
-    body.append(list); };
+        saveSettings({budgetCats:all.filter(x=>chosen.has(bnorm(x.name))).map(x=>x.name)}); fill(); });
+      return h("label",{class:"brow plain"},t,h("span",null,c.name)); };
+    const fill=()=>{ const keep=list.scrollTop; list.replaceChildren(); const on=all.filter(c=>chosen.has(bnorm(c.name))), off=all.filter(c=>!chosen.has(bnorm(c.name)));
+      [...on,...off].forEach(c=>list.append(makeRow(c))); list.scrollTop=keep; };
+    fill();
+    body.append(list);
+    if(!all.length) body.append(h("p",{class:"hint"},"No categories found in this budget."));
+    if(b.overspent) body.append(h("div",{class:"meta",style:"margin-top:8px"},`${b.overspent} categor${b.overspent===1?"y is":"ies are"} overspent in YNAB`));
+    if(b.fetchedAt) body.append(h("div",{class:"meta"},"Updated "+new Date(b.fetchedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}))); };
   draw(); if(FEAT.budget) pullBudget().then(()=>{ if($("#sheetHost").contains(body)&&!body.querySelector("input:focus")) draw(); });
   openSheet([h("h2",null,"Budget this month"),body,h("div",{class:"acts"},h("a",{class:"pill",href:"https://app.ynab.com/",target:"_blank",rel:"noopener"},"Open YNAB"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }

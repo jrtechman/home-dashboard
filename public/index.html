@@ -157,6 +157,7 @@ button{cursor:pointer;border:0;background:none}
 
 /* home */
 .home{flex:1;min-height:0;display:grid;grid-template-columns:1.05fr 1fr 1.25fr;gap:12px;padding:4px 18px 16px}
+.home.noframe{grid-template-columns:1.05fr 1fr}
 .card{border-radius:var(--r-col);background:var(--tint);padding:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0 0 12px;text-wrap:balance}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
@@ -346,7 +347,7 @@ button{cursor:pointer;border:0;background:none}
   .top{padding-left:16px;padding-right:16px}
   .date{font-size:26px}.time{font-size:20px}
   .view{overflow:visible}
-  .home{grid-template-columns:1fr;padding-inline:16px}
+  .home,.home.noframe{grid-template-columns:1fr;padding-inline:16px}
   .frame{min-height:300px}
   .board{min-height:70vh;padding-inline:16px}
   .col{flex-basis:78vw}
@@ -448,7 +449,7 @@ button{cursor:pointer;border:0;background:none}
         </div>
         <div class="stack">
           <div class="card c-amber" id="homeDinner"></div>
-          <div class="card c-sage"><h2>Open tasks</h2><div class="scroll" id="homeTasks"></div></div>
+          <div class="card c-sage" id="homeTasksCard"><h2>Open tasks</h2><div class="scroll" id="homeTasks"></div></div>
           <div class="card c-teal" id="homeBudget" hidden></div>
           <div class="card c-amber verse" id="homeVerse"></div>
         </div>
@@ -569,7 +570,7 @@ async function pull(){
       VER=j.version;
       for(const c of COLLS){ S[c]=j.data[c]||[]; S.loaded[c]=true; }
       const oldPl=JSON.stringify(S.settings.place||null);
-      S.settings={...DEFAULTS,...(j.data.settings||{})};
+      S.settings={...DEFAULTS,...(j.data.settings||{})}; S.admin=!!j.admin;
       if(oldPl!==JSON.stringify(S.settings.place||null)||(S.settings.place&&!S.weather)){ if(!S.wxBusy){ S.wxBusy=true; pullWeather().finally(()=>{S.wxBusy=false;}); } }
       if(!S.verse&&!S.verseBusy){ S.verseBusy=true; pullVerse().finally(()=>{S.verseBusy=false;}); }
       rebuildRot();
@@ -634,12 +635,14 @@ function clothing(w){
   return {main, extra};
 }
 async function pullWeather(){
+  if(!mod("weather")) return;
   const p=S.settings.place; if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon)){ S.weather=null; renderWx(); return; }
-  try{ S.weather=await api(`/api/weather?lat=${p.lat}&lon=${p.lon}`); }catch(e){ S.weather={error:e.message||"Couldn't get the weather."}; }
+  S.wxAt=Date.now(); try{ S.weather=await api(`/api/weather?lat=${p.lat}&lon=${p.lon}`); }catch(e){ S.weather=e&&e.code==="auth"?null:{error:e.message||"Couldn't get the weather."}; }
   renderWx();
 }
 async function pullVerse(){
-  try{ S.verse=await api("/api/verse"); }catch(e){ S.verse={error:"Couldn't load the verse."}; }
+  if(!mod("verse")) return;
+  S.verseAt=Date.now(); try{ S.verse=await api("/api/verse"); }catch(e){ S.verse=e&&e.code==="auth"?null:{error:"Couldn't load the verse."}; }
   renderVerse();
 }
 function renderWx(){
@@ -924,7 +927,7 @@ function budgetFor(re){ const b=S.budget; if(!b||!b.categories) return null; ret
 function budgetChip(re){ const c=budgetFor(re); if(!c) return null; return h("span",{class:"bchip"+(c.balance<0?" over":"")},c.balance<0?`${c.name}: over by ${money(-c.balance)}`:`${c.name}: ${money(c.balance)} left`); }
 function renderBudget(){
   const B=$("#homeBudget"); if(!B) return;
-  if(!FEAT.budget||!S.budget){ B.hidden=true; return; }
+  if(!FEAT.budget||!S.budget||!mod("budget_card")){ B.hidden=true; return; }
   B.hidden=false; B.replaceChildren(h("h2",null,"Budget this month"));
   const b=S.budget;
   if(b.error){ B.append(h("p",{class:"hint"},b.error)); return; }
@@ -1165,7 +1168,7 @@ function renderMeals(){
     h("div",{style:"min-width:0"},h("div",{class:"lbl"},"Tonight"),h("div",{class:"dinner-title"},r?r.title:"Nothing picked"),h("div",{class:"meta"},r?(r.minutes?r.minutes+" minutes":""):"Give a dish on the dinner list a day, or open it and choose “Make tonight”.")),
     r?h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>openRecipe(r.id)},"Open recipe"),h("button",{class:"pill",onclick:()=>cookedTonight(r)},"We had it")):null));
   const dl=[...S.dinnerlist].sort((a,b)=>(a.date&&!b.date?-1:!a.date&&b.date?1:(a.date||"").localeCompare(b.date||""))||((a.addedAt||0)-(b.addedAt||0))).map(d=>({d,r:S.recipes.find(x=>x.id===d.recipeId)})).filter(x=>x.r);
-  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner list"),h("span",{class:"meta",style:"margin-top:8px"},dl.length?`${dl.length} planned`:""),h("span",{class:"grow"}),h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"help",by:meName()||"Someone",ep:pushId()})}); toast(j.already?"You asked a few minutes ago":"Asked the family for help with the menu"); }catch(e){ toast(e.message||"Couldn't send the request."); } }},"Ask for help"),budgetChip(/dining|restaurant|eating out|take ?out/i)));
+  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner list"),h("span",{class:"meta",style:"margin-top:8px"},dl.length?`${dl.length} planned`:""),h("span",{class:"grow"}),mod("askhelp")?h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"help",by:meName()||"Someone",ep:pushId()})}); toast(j.already?"You asked a few minutes ago":"Asked the family for help with the menu"); }catch(e){ toast(e.message||"Couldn't send the request."); } }},"Ask for help"):null,budgetChip(/dining|restaurant|eating out|take ?out/i)));
   if(dl.length){ const st=h("div",{class:"strip"}); dl.forEach(({d,r})=>st.append(dishTile(r,false,d))); m.append(st); }
   else m.append(h("p",{class:"hint",style:"margin:0 4px"},"Nothing planned yet. Tap a dish below and choose “Add to dinner list”."));
   m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Our dishes"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"link")},"Import a recipe"),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"paste")},"Paste a recipe"),h("button",{class:"pill primary",onclick:snapDish},svg(IC.cam),"Snap a dish")));
@@ -1353,12 +1356,12 @@ function menuSheet(){
   const row=(icon,label,fn,sub)=>h("button",{class:"mrow",onclick:()=>{ closeSheet(); fn(); }},icon,label,sub?h("span",{class:"sub"},sub):null);
   openSheet([h("h2",null,"Menu"),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
-      row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")),
-      row(ico("#budgetBtn"),"Budget",budgetSheet),
-      row(ico("#histBtn"),"Meal history",histSheet),
-      row(ico("#camBtn"),"Cameras",()=>camsSheet(false)),
-      row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)),
-      row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver),
+      mod("photos")?row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")):null,
+      mod("budget")?row(ico("#budgetBtn"),"Budget",budgetSheet):null,
+      mod("history")?row(ico("#histBtn"),"Meal history",histSheet):null,
+      mod("cameras")?row(ico("#camBtn"),"Cameras",()=>camsSheet(false)):null,
+      mod("links")?row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)):null,
+      mod("sleep")?row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver):null,
       row(ico("#settingsBtn"),"Settings",settingsSheet)),
     h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
 }
@@ -1583,7 +1586,7 @@ function settingsSheet(){
   const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); closeSheet(); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value)}); idle(); toast("Settings saved"); };
   openSheet([h("h2",null,"Settings"),field("Household name",hh),
     h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),faceSection(),pushSection(),
+    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),faceSection(),pushSection(),adminSection(),
     exCount?h("div",{class:"acts"},h("span",{class:"meta grow"},`${exCount} example items are on the board.`),h("button",{class:"pill danger",onclick:()=>confirmSheet("Remove the examples?","Events, tasks, groceries and recipes marked “example” will be deleted.","Remove examples",async()=>{ for(const c of COLLS) for(const r of S[c].filter(r=>r.example)) await delDoc(c,r.id); toast("Examples removed"); })},"Remove examples")):null,
     h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ closeSheet(); try{ await api("/api/login",{method:"DELETE"}); }catch(e){} showLogin(); }},"Sign out this screen"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]);
 }
@@ -1604,9 +1607,57 @@ $("#fab").addEventListener("click",()=>{
 document.querySelectorAll(".nav[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
 
 /* ---------- render ---------- */
+/* ---------- features on/off (set by an admin) ---------- */
+const MODULES=[
+  ["Home page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"],["photoframe","Photo frame"]]],
+  ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"]]],
+  ["Menu and extras",[["budget","Budget screen"],["history","Meal history"],["cameras","Cameras"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
+];
+function mod(id){ return ((S.settings&&S.settings.modules)||{})[id]!==false; }
+function applyModules(){
+  const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
+  ["calendar","tasks","meals","lists","photos"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
+  show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));
+  show($("#homeWx"),mod("weather")); show($("#homeVerse"),mod("verse")); show($("#homeDinner"),mod("dinner")); show($("#homeTasksCard"),mod("tasks_card")); show($("#frame"),mod("photoframe"));
+  const home=document.querySelector(".home"); if(home) home.classList.toggle("noframe",!mod("photoframe"));
+  if(["calendar","tasks","meals","lists","photos"].includes(S.view)&&!mod(S.view)) setView("home");
+  if(mod("weather")&&S.settings.place&&!S.weather&&!S.wxBusy&&Date.now()-(S.wxAt||0)>60000){ S.wxBusy=true; pullWeather().finally(()=>{S.wxBusy=false;}); }
+  if(mod("verse")&&!S.verse&&!S.verseBusy&&Date.now()-(S.verseAt||0)>60000){ S.verseBusy=true; pullVerse().finally(()=>{S.verseBusy=false;}); }
+}
+function adminSection(){
+  const box=h("div",null,h("h3",null,"Admin")), body=h("div",{style:"display:flex;flex-direction:column;gap:8px"}); box.append(body);
+  const post=async(b)=>api("/api/admin",{method:"POST",body:JSON.stringify(b)});
+  const draw=async()=>{
+    body.replaceChildren(); let st={admin:false,hasPasscode:true,fromEnv:false};
+    try{ st=await api("/api/admin"); }catch(e){}
+    S.admin=!!st.admin;
+    if(!st.admin){
+      const pw=h("input",{type:"password",id:"admPw",autocomplete:st.hasPasscode?"current-password":"new-password",placeholder:st.hasPasscode?"Admin passcode":"Choose an admin passcode (6+ characters)"});
+      const go=async()=>{ try{ await post({op:st.hasPasscode?"unlock":"setup",passcode:pw.value}); toast(st.hasPasscode?"Admin unlocked on this device":"Admin passcode set. This device is now admin."); draw(); }catch(e){ toast(e.message||"Couldn't unlock."); } };
+      pw.addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+      body.append(h("p",{class:"hint",style:"margin:0"},st.hasPasscode?"Only an admin can choose which features are on. Enter the admin passcode to unlock this device.":"Only an admin can choose which features are on. Set a separate admin passcode now. Do this yourself first, before others open Settings."),pw,h("div",{class:"acts"},h("button",{class:"pill primary",onclick:go},st.hasPasscode?"Unlock admin":"Set admin passcode")));
+      return;
+    }
+    body.append(h("div",{class:"acts"},h("span",{class:"meta grow"},"Admin is unlocked on this device."),h("button",{class:"pill",onclick:async()=>{ try{ await post({op:"lock"}); }catch(e){} draw(); }},"Lock")));
+    body.append(h("p",{class:"hint",style:"margin:0"},"Switch features on or off for every screen. Turning one off only hides it; nothing is deleted."));
+    MODULES.forEach(([group,items])=>{
+      body.append(h("h3",{style:"margin:6px 0 0;font-size:15px"},group));
+      items.forEach(([id,label])=>{
+        const c=h("input",{type:"checkbox"}); c.checked=mod(id);
+        c.addEventListener("change",async()=>{ const next={...(S.settings.modules||{})}; if(c.checked) delete next[id]; else next[id]=false; await saveSettings({modules:next}); });
+        body.append(h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},c,label));
+      });
+    });
+    if(!st.fromEnv){
+      const cur=h("input",{type:"password",placeholder:"Current admin passcode",autocomplete:"current-password"}), nw=h("input",{type:"password",placeholder:"New admin passcode (6+ characters)",autocomplete:"new-password"});
+      body.append(h("h3",{style:"margin:6px 0 0;font-size:15px"},"Change admin passcode"),cur,nw,h("div",{class:"acts"},h("button",{class:"pill",onclick:async()=>{ try{ await post({op:"change",passcode:cur.value,newPasscode:nw.value}); cur.value=""; nw.value=""; toast("Admin passcode changed"); }catch(e){ toast(e.message||"Couldn't change it."); } }},"Change passcode")));
+    }
+  };
+  draw(); return box;
+}
 function renderAll(){
   $("#mono").textContent=(S.settings.household||"H").trim()[0]?.toUpperCase()||"H";
-  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget();
+  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); applyModules();
 }
 function toB64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(",")[1]); fr.onerror=rej; fr.readAsDataURL(blob); }); }
 

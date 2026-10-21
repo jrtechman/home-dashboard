@@ -14,8 +14,9 @@ import * as upload from "../lib/routes/upload.js";
 import * as weather from "../lib/routes/weather.js";
 import * as verse from "../lib/routes/verse.js";
 import * as push from "../lib/routes/push.js";
+import * as admin from "../lib/routes/admin.js";
 
-const ROUTES = { album, apple, budget, calendar, db, "draft-recipe": draftRecipe, "import-recipe": importRecipe, login, passkey, state, upload, weather, verse, push };
+const ROUTES = { album, apple, budget, calendar, db, "draft-recipe": draftRecipe, "import-recipe": importRecipe, login, passkey, state, upload, weather, verse, push, admin };
 
 async function handle(request) {
   const url = new URL(request.url);

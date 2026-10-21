@@ -325,7 +325,7 @@ button{cursor:pointer;border:0;background:none}
   body{overflow:auto}
   .menu-btn{display:flex}
   .rail{gap:0}
-  .nav[data-view=photos],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn{display:none}
+  .nav[data-view=photos],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn{display:none}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
@@ -413,6 +413,7 @@ button{cursor:pointer;border:0;background:none}
     <button class="nav menu-btn" id="menuBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
     <div class="spacer"></div>
     <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
+    <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>Meal history</button>
     <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
     <button class="nav" id="linksBtn"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>Links</button>
     <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
@@ -509,7 +510,7 @@ function guessAisle(t){ const s=" "+t.toLowerCase(); for(const [a,kws] of AISLES
 
 /* ---------- state ---------- */
 const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null,place:null,links:[],cameras:[]};
-const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
+const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],mealhistory:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
 let VER=-1, FEAT={}, live=true, pulling=false, photoSig="";
 let BUILD=null, reloadT=null, ROT=[];
 S.album=[]; S.albumName="";
@@ -521,7 +522,7 @@ function reloadWhenIdle(){
   reloadT=setTimeout(tryIt,1500);
 }
 S.ext=[]; S.budget=null;
-const COLLS=["events","todos","shopping","recipes","photos","dinnerlist","lists","listitems"];
+const COLLS=["events","todos","shopping","recipes","photos","dinnerlist","lists","listitems","mealhistory"];
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
 
 async function api(path,opts={}){
@@ -1095,7 +1096,40 @@ function dishTile(r,badge,entry){
 }
 function snapDish(){ $("#dishIn").click(); }
 $("#dishIn").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) recipeSheet(null,f); });
-async function cookedTonight(r){ await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); toast("Marked as made and taken off the dinner list"); }
+async function cookedTonight(r){
+  const planned=S.dinnerlist.find(d=>d.recipeId===r.id&&d.date), day=(planned&&planned.date<=today()&&planned.date)||today();
+  if(!S.mealhistory.some(m=>m.recipeId===r.id&&m.date===day)) await addDoc("mealhistory",{recipeId:r.id,title:r.title,date:day,createdAt:Date.now()});
+  await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); toast("Marked as made, saved to meal history and taken off the dinner list"); }
+/* Meal history: what we had on which day. "We had it" records here automatically; past meals can be added by hand. */
+function histSheet(){
+  const rows=[...S.mealhistory].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||((b.createdAt||0)-(a.createdAt||0)));
+  const counts={}; rows.forEach(m=>{ const k=m.recipeId||m.title; counts[k]=(counts[k]||0)+1; });
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  const topTitle=top&&rows.find(m=>(m.recipeId||m.title)===top[0]).title;
+  const list=h("div",{class:"pcs"});
+  if(!rows.length) list.append(h("p",{class:"hint"},"Nothing recorded yet. Tap “We had it” on a dish, or add a past meal below."));
+  let month="";
+  rows.forEach(m=>{ const d=parseKey(m.date), mk=MO[d.getMonth()]+" "+d.getFullYear();
+    if(mk!==month){ month=mk; list.append(h("h3",{style:"margin:10px 2px 0"},mk)); }
+    const r=m.recipeId&&S.recipes.find(x=>x.id===m.recipeId);
+    list.append(h("div",{class:"lrow"},
+      h(r?"button":"div",{class:"lk",style:"justify-content:space-between;gap:12px;text-align:left"+(r?";border:0":""),onclick:r?()=>{ closeSheet(); openRecipe(r.id); }:null},h("span",{style:"overflow:hidden;text-overflow:ellipsis"},m.title),h("span",{class:"meta",style:"flex:none"},WD[d.getDay()].slice(0,3)+", "+MO[d.getMonth()]+" "+d.getDate())),
+      h("button",{class:"pill icon","aria-label":"Remove "+m.title,style:"background:var(--card)",onclick:async()=>{ await delDoc("mealhistory",m.id); histSheet(); }},svg(IC.x)))); });
+  const dateIn=h("input",{id:"hDate",type:"date",value:today(),max:today()});
+  const pick=h("select",{id:"hDish"},[h("option",{value:""},"Choose a dish…"),...[...S.recipes].sort((a,b)=>a.title.localeCompare(b.title)).map(r=>h("option",{value:r.id},r.title)),h("option",{value:"_other"},"Something else…")]);
+  const other=h("input",{id:"hOther",placeholder:"What did you have?",hidden:true});
+  pick.addEventListener("change",()=>{ other.hidden=pick.value!=="_other"; if(!other.hidden) other.focus(); });
+  const add=async()=>{ if(!dateIn.value) return toast("Pick a date."); let title="",recipeId="";
+    if(pick.value==="_other"){ title=other.value.trim(); } else if(pick.value){ const r=S.recipes.find(x=>x.id===pick.value); if(r){ title=r.title; recipeId=r.id; } }
+    if(!title) return toast("Choose a dish or type what you had.");
+    await addDoc("mealhistory",{...(recipeId?{recipeId}:{}),title,date:dateIn.value,createdAt:Date.now()}); histSheet(); };
+  openSheet([h("h2",null,"Meal history"),
+    rows.length?h("p",{class:"meta",style:"margin:0"},`${rows.length} meal${rows.length===1?"":"s"} recorded`+(top&&top[1]>1?` · most often: ${topTitle} (${top[1]}×)`:"")):null,
+    list,
+    h("div",{style:"display:flex;flex-direction:column;gap:8px;padding-top:6px"},h("h3",{style:"margin:0"},"Add a past meal"),field("Day",dateIn),field("Dish",pick),other,h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Add to history"))),
+    h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+}
+$("#histBtn").addEventListener("click",histSheet);
 function renderMeals(){
   const m=$("#meals"); m.replaceChildren();
   const r=tonightRecipe(), tu=dishUrl(r);
@@ -1295,6 +1329,7 @@ function menuSheet(){
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
       row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")),
       row(ico("#budgetBtn"),"Budget",budgetSheet),
+      row(ico("#histBtn"),"Meal history",histSheet),
       row(ico("#camBtn"),"Cameras",()=>camsSheet(false)),
       row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)),
       row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver),

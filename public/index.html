@@ -162,7 +162,7 @@ button{cursor:pointer;border:0;background:none}
 .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0 0 12px;text-wrap:balance}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .stack{display:grid;grid-template-rows:auto 1fr auto auto;gap:12px;min-height:0}
-.stack.left{grid-template-rows:auto 1fr}
+.stack.left{display:flex;flex-direction:column}.stack.left>.card{flex:none}.stack.left>.todaycard{flex:1 1 0;min-height:140px}
 .wx{cursor:pointer}
 .wx .wxtop{display:flex;align-items:center;gap:14px}
 .wx .wxt{font-family:var(--display);font-size:46px;line-height:1;font-variant-numeric:tabular-nums}
@@ -186,6 +186,10 @@ button{cursor:pointer;border:0;background:none}
 .verse .vt{font-family:var(--display);font-size:19px;line-height:1.4;text-wrap:pretty}
 .verse .vr{margin-top:8px;font-weight:600;font-size:14px;color:var(--muted)}
 .verse .vr a{color:inherit}
+.fam{padding:14px 20px}.fam h2{font-size:20px;margin:0 0 6px}
+.rem{display:flex;align-items:center;gap:10px;padding:4px 0;font-weight:600;font-size:16px}.rem input{width:22px;height:22px;flex:none}.rem.done span.grow{text-decoration:line-through;opacity:.55}.meta.late{color:#C0503A;font-weight:700}
+.cdrow{display:flex;align-items:center;gap:10px;padding:3px 0;font-size:16px}.cdrow b{font-family:var(--display);font-weight:500;color:var(--strong)}
+.notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.note{padding:14px;border-radius:16px}.note .nt{white-space:pre-wrap;word-break:break-word;font-size:16px}
 .lrow{display:flex;align-items:center;gap:10px}
 .lrow .lk{flex:1;min-width:0;display:flex;align-items:center;min-height:56px;padding:0 18px;border-radius:18px;background:var(--chip);font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pcs{display:flex;flex-direction:column;gap:8px}
@@ -337,7 +341,7 @@ button{cursor:pointer;border:0;background:none}
   body{overflow:auto}
   .menu-btn{display:flex}
   .rail{gap:0}
-  .nav[data-view=photos],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn{display:none}
+  .nav[data-view=photos],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn,#famBtn{display:none}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
@@ -426,6 +430,7 @@ button{cursor:pointer;border:0;background:none}
     <div class="spacer"></div>
     <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
     <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>Meal history</button>
+    <button class="nav" id="famBtn"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a2.6 2.6 0 010 5M17.5 14a5 5 0 013 5"/></svg>Family</button>
     <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
     <button class="nav" id="linksBtn"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>Links</button>
     <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
@@ -445,7 +450,8 @@ button{cursor:pointer;border:0;background:none}
       <div class="home">
         <div class="stack left">
           <div class="card c-sage wx" id="homeWx"></div>
-          <div class="card c-blue"><h2 id="todayTitle">Today</h2><div class="scroll" id="homeToday"></div></div>
+          <div class="card c-teal fam" id="homeFam" style="display:none"></div>
+          <div class="card c-blue todaycard"><h2 id="todayTitle">Today</h2><div class="scroll" id="homeToday"></div></div>
         </div>
         <div class="stack">
           <div class="card c-amber" id="homeDinner"></div>
@@ -522,7 +528,7 @@ function guessAisle(t){ const s=" "+t.toLowerCase(); for(const [a,kws] of AISLES
 
 /* ---------- state ---------- */
 const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null,place:null,links:[],cameras:[]};
-const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],mealhistory:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
+const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],mealhistory:[],reminders:[],countdowns:[],notes:[],prayers:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
 let VER=-1, FEAT={}, live=true, pulling=false, photoSig="";
 let BUILD=null, reloadT=null, ROT=[];
 S.album=[]; S.albumName="";
@@ -534,7 +540,7 @@ function reloadWhenIdle(){
   reloadT=setTimeout(tryIt,1500);
 }
 S.ext=[]; S.budget=null;
-const COLLS=["events","todos","shopping","recipes","photos","dinnerlist","lists","listitems","mealhistory"];
+const COLLS=["events","todos","shopping","recipes","photos","dinnerlist","lists","listitems","mealhistory","reminders","countdowns","notes","prayers"];
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
 
 async function api(path,opts={}){
@@ -834,7 +840,7 @@ async function offerFace(){
 $("#faceBtn").addEventListener("click",faceSignIn);
 /* Push notifications (per device): shopping-list adds and "help with the dinner menu" requests from other people */
 const pushId=()=>{ try{ return localStorage.getItem("hd_push_id")||""; }catch(e){ return ""; } };
-const pushPrefs=()=>{ try{ return {shopping:true,help:true,...JSON.parse(localStorage.getItem("hd_push_prefs")||"{}")}; }catch(e){ return {shopping:true,help:true}; } };
+const pushPrefs=()=>{ try{ return {shopping:true,help:true,reminders:true,...JSON.parse(localStorage.getItem("hd_push_prefs")||"{}")}; }catch(e){ return {shopping:true,help:true,reminders:true}; } };
 const pushCan=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 const isInstalled=()=>navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
@@ -856,7 +862,7 @@ function pushSection(){
     if(!pushId()){ body.append(h("p",{class:"hint",style:"margin:0"},"Get a notification when someone adds to the shopping list or asks for help with the dinner menu."),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:async()=>{ try{ if(await enablePush()){ toast("Notifications are on"); draw(); } }catch(e){ toast(e.message||"Couldn't turn on notifications."); } }},"Turn on notifications"))); return; }
     const prefs=pushPrefs();
     const row=(k,label)=>{ const c=h("input",{type:"checkbox"}); c.checked=prefs[k]!==false; c.addEventListener("change",async()=>{ prefs[k]=c.checked; try{ localStorage.setItem("hd_push_prefs",JSON.stringify(prefs)); await api("/api/push",{method:"POST",body:JSON.stringify({op:"prefs",id:pushId(),prefs})}); }catch(e){ toast(e.message||"Couldn't save."); } }); return h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},c,label); };
-    body.append(row("shopping","Someone adds to the shopping list"),row("help","Someone asks for help with the dinner menu"),
+    body.append(row("shopping","Someone adds to the shopping list"),row("help","Someone asks for help with the dinner menu"),row("reminders","Reminders due today (every morning)"),
       h("div",{class:"acts"},h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/push",{method:"POST",body:JSON.stringify({op:"test",id:pushId()})}); toast("Test sent"); }catch(e){ toast(e.message||"Couldn't send."); } }},"Send a test"),
         h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/push",{method:"POST",body:JSON.stringify({op:"unsubscribe",id:pushId()})}); }catch(e){} try{ localStorage.removeItem("hd_push_id"); const reg=await navigator.serviceWorker.ready; const s=await reg.pushManager.getSubscription(); s&&await s.unsubscribe(); }catch(e){} draw(); }},"Turn off")));
   };
@@ -1359,6 +1365,10 @@ function menuSheet(){
       mod("photos")?row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")):null,
       mod("budget")?row(ico("#budgetBtn"),"Budget",budgetSheet):null,
       mod("history")?row(ico("#histBtn"),"Meal history",histSheet):null,
+      mod("reminders")?row(ico("#famBtn"),"Reminders",()=>remSheet()):null,
+      mod("countdowns")?row(ico("#famBtn"),"Countdowns",()=>cdSheet()):null,
+      mod("notes")?row(ico("#famBtn"),"Family notes",notesSheet):null,
+      mod("prayer")?row(ico("#famBtn"),"Prayer list",prayerSheet):null,
       mod("cameras")?row(ico("#camBtn"),"Cameras",()=>camsSheet(false)):null,
       mod("links")?row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)):null,
       mod("sleep")?row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver):null,
@@ -1608,16 +1618,150 @@ document.querySelectorAll(".nav[data-view]").forEach(b=>b.addEventListener("clic
 
 /* ---------- render ---------- */
 /* ---------- features on/off (set by an admin) ---------- */
+/* Family: recurring reminders, countdowns, notes board, prayer list. Each can be switched off by the admin. */
+function remOccurs(r,k){
+  const a=r&&r.date; if(!a||k<a) return false;
+  const rep=r.repeat||"none"; if(rep==="none") return k===a;
+  const n=Math.max(1,Math.floor(Number(r.every))||1), A=parseKey(a), D=parseKey(k);
+  const days=Math.round((D-A)/864e5);
+  if(rep==="day") return days%n===0;
+  if(rep==="week") return days%(7*n)===0;
+  const months=(D.getFullYear()-A.getFullYear())*12+D.getMonth()-A.getMonth();
+  if(months%(rep==="year"?12*n:n)) return false;
+  if(rep!=="month"&&rep!=="year") return false;
+  const last=new Date(D.getFullYear(),D.getMonth()+1,0).getDate();
+  return D.getDate()===Math.min(A.getDate(),last);
+}
+const REPS=[["none","Doesn't repeat"],["day","Every day"],["week","Every week"],["month","Every month"],["year","Every year"]];
+function repText(r){ const rep=r.repeat||"none"; if(rep==="none") return "Once"; const n=Math.max(1,Number(r.every)||1), u={day:"day",week:"week",month:"month",year:"year"}[rep];
+  return n===1?"Every "+u:`Every ${n} ${u}s`; }
+function shortDay(k){ const d=parseKey(k); return WD[d.getDay()].slice(0,3)+", "+MO[d.getMonth()]+" "+d.getDate(); }
+function cdNext(c){ const t=today(); if(!c.date||c.date>=t||!c.yearly) return c.date; const A=parseKey(c.date), y=parseKey(t).getFullYear();
+  let k=keyOf(new Date(y,A.getMonth(),A.getDate())); if(k<t) k=keyOf(new Date(y+1,A.getMonth(),A.getDate())); return k; }
+function cdDays(c){ return Math.round((parseKey(cdNext(c))-parseKey(today()))/864e5); }
+function cdWord(c){ const n=cdDays(c); return n===0?"Today!":n===1?"Tomorrow":n>0?n+" days":Math.abs(n)+" days ago"; }
+function cdYears(c){ if(!c.yearly) return ""; const n=parseKey(cdNext(c)).getFullYear()-parseKey(c.date).getFullYear(); return n>0?` · ${n} year${n===1?"":"s"}`:""; }
+function renderFam(){
+  const B=$("#homeFam"); if(!B) return; B.replaceChildren(); const k=today(), tm=keyOf(addDays(parseKey(k),1)), bits=[];
+  if(mod("reminders")){
+    const rows=[];
+    S.reminders.forEach(r=>{
+      const od=(r.repeat||"none")==="none"&&r.date<k&&!r.doneOn;
+      if(remOccurs(r,k)||od) rows.push({r,when:od?"Overdue":"",today:true,od});
+      else if(remOccurs(r,tm)) rows.push({r,when:"Tomorrow",today:false});
+    });
+    rows.sort((a,b)=>(b.today-a.today)||a.r.title.localeCompare(b.r.title));
+    if(rows.length){
+      B.append(h("h2",null,"Reminders"));
+      rows.slice(0,5).forEach(({r,when,today:isT,od})=>{
+        const done=isT&&r.doneOn===k;
+        const c=h("input",{type:"checkbox","aria-label":"Done: "+r.title}); c.checked=!!done; c.disabled=!isT;
+        c.addEventListener("change",()=>updDoc("reminders",r.id,{doneOn:c.checked?k:""}));
+        bits.push(1);
+        B.append(h("label",{class:"rem"+(done?" done":"")},c,h("span",{class:"grow"},r.title),when?h("span",{class:"meta"+(od?" late":"")},when):null));
+      });
+    }
+  }
+  if(mod("countdowns")){
+    const list=S.countdowns.filter(c=>c.date&&cdDays(c)>=0).sort((a,b)=>cdDays(a)-cdDays(b)).slice(0,3);
+    if(list.length){
+      B.append(h("h2",{style:bits.length?"margin-top:10px":""},"Countdowns")); bits.push(1);
+      list.forEach(c=>B.append(h("div",{class:"cdrow"},h("span",{class:"grow"},c.title),h("b",null,cdWord(c)))));
+    }
+  }
+  B.style.display=bits.length?"":"none";
+}
+function famSheet(){
+  const row=(label,fn)=>h("button",{class:"mrow",onclick:()=>{ closeSheet(); fn(); }},label);
+  openSheet([h("h2",null,"Family"),h("div",{style:"display:flex;flex-direction:column;gap:8px"},
+    mod("reminders")?row("Reminders",()=>remSheet()):null,mod("countdowns")?row("Countdowns",()=>cdSheet()):null,
+    mod("notes")?row("Family notes",notesSheet):null,mod("prayer")?row("Prayer list",prayerSheet):null),
+    h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
+}
+function remSheet(editing){
+  if(editing===undefined){
+    const rows=[...S.reminders].sort((a,b)=>(a.title||"").localeCompare(b.title||""));
+    const list=h("div",{class:"pcs"});
+    if(!rows.length) list.append(h("p",{class:"hint"},"Nothing yet. Add trash day, a bill, a filter change, pet medication…"));
+    rows.forEach(r=>list.append(h("button",{class:"mrow",style:"justify-content:space-between",onclick:()=>remSheet(r)},h("span",null,r.title,r.push?" 🔔":""),h("span",{class:"meta"},repText(r)+" · "+shortDay(r.date)))));
+    openSheet([h("h2",null,"Reminders"),h("p",{class:"hint",style:"margin:0"},"Shown on Home on the day (and the day before). A bell means a notification goes out that morning."),list,
+      h("div",{class:"acts"},h("button",{class:"pill primary",onclick:()=>remSheet(null)},"Add reminder"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true); return;
+  }
+  const r=editing||{};
+  const t=h("input",{id:"rmT",placeholder:"e.g. Trash and recycling out",value:r.title||""});
+  const d=h("input",{id:"rmD",type:"date",value:r.date||today()});
+  const rep=h("select",{id:"rmR"},REPS.map(([v,l])=>h("option",{value:v},l))); rep.value=r.repeat||"none";
+  const ev=h("input",{id:"rmE",type:"number",min:"1",max:"60",value:r.every||1,style:"width:90px"});
+  const evBox=h("div",{class:"field"},h("label",{for:"rmE"},"Repeat every (number)"),ev);
+  const sync=()=>{ evBox.style.display=rep.value==="none"?"none":""; }; rep.addEventListener("change",sync); sync();
+  const pc=h("input",{type:"checkbox",id:"rmP"}); pc.checked=r.push!==false&&(editing?!!r.push:true);
+  const save=async()=>{ const title=t.value.trim(); if(!title){ t.focus(); return toast("Give the reminder a name."); } if(!d.value) return toast("Pick a day.");
+    const data={title,date:d.value,repeat:rep.value,every:Math.max(1,Math.min(60,Number(ev.value)||1)),push:pc.checked,doneOn:""};
+    closeSheet(); if(editing) await updDoc("reminders",r.id,data); else await addDoc("reminders",{...data,createdAt:Date.now()}); toast("Reminder saved"); remSheet(); };
+  openSheet([h("h2",null,editing?"Edit reminder":"New reminder"),field("What",t),field("First day",d),field("Repeats",rep),evBox,
+    h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},pc,"Send a notification that morning"),
+    h("div",{class:"acts"},h("button",{class:"pill primary",onclick:save},"Save"),editing?h("button",{class:"pill danger",onclick:async()=>{ closeSheet(); await delDoc("reminders",r.id); remSheet(); }},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>remSheet()},"Back"))]);
+}
+function cdSheet(editing){
+  if(editing===undefined){
+    const rows=[...S.countdowns].filter(c=>c.date).sort((a,b)=>{ const x=cdDays(a),y=cdDays(b); return (x<0)-(y<0)||x-y; });
+    const list=h("div",{class:"pcs"});
+    if(!rows.length) list.append(h("p",{class:"hint"},"Nothing yet. Add a birthday, anniversary, trip or holiday."));
+    rows.forEach(c=>list.append(h("button",{class:"mrow",style:"justify-content:space-between",onclick:()=>cdSheet(c)},h("span",null,c.title),h("span",{class:"meta"},cdWord(c)+cdYears(c)))));
+    openSheet([h("h2",null,"Countdowns"),list,h("div",{class:"acts"},h("button",{class:"pill primary",onclick:()=>cdSheet(null)},"Add countdown"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true); return;
+  }
+  const c=editing||{};
+  const t=h("input",{id:"cdT",placeholder:"e.g. Emma's birthday",value:c.title||""}), d=h("input",{id:"cdD",type:"date",value:c.date||today()});
+  const y=h("input",{type:"checkbox",id:"cdY"}); y.checked=!!c.yearly;
+  const save=async()=>{ const title=t.value.trim(); if(!title){ t.focus(); return toast("Give it a name."); } if(!d.value) return toast("Pick a day.");
+    const data={title,date:d.value,yearly:y.checked}; closeSheet(); if(editing) await updDoc("countdowns",c.id,data); else await addDoc("countdowns",{...data,createdAt:Date.now()}); cdSheet(); };
+  openSheet([h("h2",null,editing?"Edit countdown":"New countdown"),field("What",t),field("Day (for a birthday, use the birth date)",d),
+    h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},y,"Repeats every year"),
+    h("div",{class:"acts"},h("button",{class:"pill primary",onclick:save},"Save"),editing?h("button",{class:"pill danger",onclick:async()=>{ closeSheet(); await delDoc("countdowns",c.id); cdSheet(); }},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>cdSheet()},"Back"))]);
+}
+const NOTE_COLORS=[["c-amber","Yellow"],["c-sage","Green"],["c-blue","Blue"],["c-teal","Teal"]];
+function notesSheet(){
+  const rows=[...S.notes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const grid=h("div",{class:"notes"});
+  if(!rows.length) grid.append(h("p",{class:"hint"},"No notes yet. Leave one for the family below."));
+  rows.forEach(n=>grid.append(h("div",{class:"note card "+(n.color||"c-amber")},h("div",{class:"nt"},n.text),
+    h("div",{class:"acts",style:"margin-top:8px"},h("span",{class:"meta grow"},(n.by?n.by+" · ":"")+(n.createdAt?shortDay(keyOf(new Date(n.createdAt))):"")),
+      h("button",{class:"pill icon","aria-label":"Remove note",onclick:async()=>{ await delDoc("notes",n.id); notesSheet(); }},svg(IC.x))))));
+  const tx=h("textarea",{id:"ntT",rows:"3",placeholder:"Write a note for the family…",style:"width:100%"});
+  const col=h("select",{id:"ntC"},NOTE_COLORS.map(([v,l])=>h("option",{value:v},l)));
+  const add=async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } await addDoc("notes",{text:text.slice(0,600),color:col.value,by:meName(),createdAt:Date.now()}); notesSheet(); };
+  openSheet([h("h2",null,"Family notes"),grid,field("New note",tx),field("Color",col),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Post note"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+}
+function prayerSheet(showAnswered){
+  const open=S.prayers.filter(p=>!p.answered).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)), done=S.prayers.filter(p=>p.answered).sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0));
+  const list=h("div",{class:"pcs"});
+  if(!open.length) list.append(h("p",{class:"hint"},"Nothing on the list yet. Add a person or a request below."));
+  open.forEach(p=>list.append(h("div",{class:"lrow"},h("div",{class:"lk",style:"flex-direction:column;align-items:flex-start;justify-content:center;white-space:normal;padding:10px 18px"},h("span",null,p.text),p.who?h("span",{class:"meta"},p.who):null),
+    h("button",{class:"pill",onclick:async()=>{ await updDoc("prayers",p.id,{answered:true,answeredAt:Date.now()}); prayerSheet(showAnswered); }},"Answered"),
+    h("button",{class:"pill icon","aria-label":"Remove",style:"background:var(--card)",onclick:async()=>{ await delDoc("prayers",p.id); prayerSheet(showAnswered); }},svg(IC.x)))));
+  const ans=h("div",{class:"pcs"});
+  if(showAnswered) done.forEach(p=>ans.append(h("div",{class:"lrow"},h("div",{class:"lk",style:"justify-content:space-between;gap:10px;opacity:.75"},h("span",{style:"overflow:hidden;text-overflow:ellipsis"},p.text+(p.who?" ("+p.who+")":"")),h("span",{class:"meta",style:"flex:none"},p.answeredAt?shortDay(keyOf(new Date(p.answeredAt))):"")),
+    h("button",{class:"pill",onclick:async()=>{ await updDoc("prayers",p.id,{answered:false}); prayerSheet(true); }},"Reopen"),
+    h("button",{class:"pill icon","aria-label":"Remove",style:"background:var(--card)",onclick:async()=>{ await delDoc("prayers",p.id); prayerSheet(true); }},svg(IC.x)))));
+  const tx=h("input",{id:"pyT",placeholder:"What to pray for"}), who=h("input",{id:"pyW",placeholder:"For (optional)"});
+  const add=async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } await addDoc("prayers",{text:text.slice(0,300),who:who.value.trim().slice(0,60),answered:false,createdAt:Date.now()}); prayerSheet(showAnswered); };
+  tx.addEventListener("keydown",e=>{ if(e.key==="Enter") add(); });
+  openSheet([h("h2",null,"Prayer list"),list,h("div",{style:"display:flex;flex-direction:column;gap:8px"},field("Request",tx),field("For",who),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Add"))),
+    done.length?h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>prayerSheet(!showAnswered)},showAnswered?"Hide answered":`Show answered (${done.length})`)):null,ans,
+    h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+}
+$("#famBtn").addEventListener("click",famSheet);
 const MODULES=[
   ["Home page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"],["photoframe","Photo frame"]]],
   ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"]]],
+  ["Family",[["reminders","Recurring reminders"],["countdowns","Countdowns"],["notes","Family notes"],["prayer","Prayer list"]]],
   ["Menu and extras",[["budget","Budget screen"],["history","Meal history"],["cameras","Cameras"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
 ];
 function mod(id){ return ((S.settings&&S.settings.modules)||{})[id]!==false; }
 function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
   ["calendar","tasks","meals","lists","photos"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
-  show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));
+  show($("#famBtn"),mod("reminders")||mod("countdowns")||mod("notes")||mod("prayer")); show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));
   show($("#homeWx"),mod("weather")); show($("#homeVerse"),mod("verse")); show($("#homeDinner"),mod("dinner")); show($("#homeTasksCard"),mod("tasks_card")); show($("#frame"),mod("photoframe"));
   const home=document.querySelector(".home"); if(home) home.classList.toggle("noframe",!mod("photoframe"));
   if(["calendar","tasks","meals","lists","photos"].includes(S.view)&&!mod(S.view)) setView("home");
@@ -1657,7 +1801,7 @@ function adminSection(){
 }
 function renderAll(){
   $("#mono").textContent=(S.settings.household||"H").trim()[0]?.toUpperCase()||"H";
-  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); applyModules();
+  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); applyModules();
 }
 function toB64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(",")[1]); fr.onerror=rej; fr.readAsDataURL(blob); }); }
 

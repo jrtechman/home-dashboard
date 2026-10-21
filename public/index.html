@@ -1406,7 +1406,7 @@ function menuSheet(){
   const row=(icon,label,fn,sub)=>h("button",{class:"mrow",onclick:()=>{ closeSheet(); fn(); }},icon,label,sub?h("span",{class:"sub"},sub):null);
   openSheet([h("h2",null,"Menu"),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
-      row(ico("#guestBtn"),guestOn()?"Guest mode: on (tap to turn off)":"Guests are here",()=>setGuest(!guestOn())),
+      row(ico("#guestBtn"),guestOn()?"Guest mode: on (tap to turn off)":"Guests are here",guestToggle),
       mod("photos")?row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")):null,
       mod("budget")?row(ico("#budgetBtn"),"Budget",budgetSheet):null,
       mod("history")?row(ico("#histBtn"),"Meal history",histSheet):null,
@@ -1853,8 +1853,17 @@ function guestOn(){ return !!(S.settings&&S.settings.guest); }
 function rawMod(id){ return ((S.settings&&S.settings.modules)||{})[id]!==false; }
 function mod(id){ if(guestOn()&&GUEST_HIDES.has(id)) return false; return rawMod(id); }
 function setGuest(on){ saveSettings({guest:!!on}); toast(on?"Guest mode on. Private cards are hidden.":"Guest mode off"); }
-$("#guestBtn").addEventListener("click",()=>setGuest(!guestOn()));
-$("#guestBar").addEventListener("click",()=>setGuest(false));
+function guestToggle(){ if(!guestOn()) return setGuest(true); guestUnlockSheet(); }
+function guestUnlockSheet(){
+  const pw=h("input",{type:"password",autocomplete:"current-password",placeholder:"Household passcode",id:"guestPw"}), err=h("p",{class:"hint",style:"margin:0;color:#B4443C;min-height:1.2em"});
+  const go=async()=>{ if(!pw.value) return; try{ const r=await fetch("/api/login",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({passcode:pw.value})}); const j=await r.json().catch(()=>({})); if(!r.ok){ err.textContent=j.error||"That passcode isn't right."; pw.select(); return; } closeSheet(); setGuest(false); }catch(e){ err.textContent="Couldn't check the passcode. Try again."; } };
+  pw.addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+  openSheet([h("h2",null,"Turn off guest mode"),h("p",{class:"hint",style:"margin:0 0 8px"},"Enter the household passcode to show everything again."),pw,err,
+    h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:go},"Turn off"))]);
+  setTimeout(()=>pw.focus(),50);
+}
+$("#guestBtn").addEventListener("click",guestToggle);
+$("#guestBar").addEventListener("click",guestToggle);
 function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
   $("#guestBar").hidden=!guestOn(); $("#guestBtn").classList.toggle("on",guestOn()); $("#guestBtn").lastChild.textContent=guestOn()?"Guests here":"Guests";

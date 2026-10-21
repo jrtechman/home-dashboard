@@ -614,11 +614,11 @@ function clothing(w){
 }
 async function pullWeather(){
   const p=S.settings.place; if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon)){ S.weather=null; renderWx(); return; }
-  try{ S.weather=await api(`/api/extras?lat=${p.lat}&lon=${p.lon}`); }catch(e){ S.weather={error:e.message||"Couldn't get the weather."}; }
+  try{ S.weather=await api(`/api/weather?lat=${p.lat}&lon=${p.lon}`); }catch(e){ S.weather={error:e.message||"Couldn't get the weather."}; }
   renderWx();
 }
 async function pullVerse(){
-  try{ S.verse=await api("/api/extras?what=verse"); }catch(e){ S.verse={error:"Couldn't load the verse."}; }
+  try{ S.verse=await api("/api/verse"); }catch(e){ S.verse={error:"Couldn't load the verse."}; }
   renderVerse();
 }
 function renderWx(){
@@ -646,7 +646,7 @@ function placeSheet(){
   const res=h("div",{class:"pcs"}), msg=h("div",{class:"err"});
   const choose=async pl=>{ closeSheet(); S.weather=null; await saveSettings({place:pl}); pullWeather(); toast("Weather location saved"); };
   const search=async()=>{ msg.textContent=""; res.replaceChildren(); if(!q.value.trim()) return;
-    try{ const j=await api("/api/extras?q="+encodeURIComponent(q.value.trim()));
+    try{ const j=await api("/api/weather?q="+encodeURIComponent(q.value.trim()));
       if(!j.places.length) msg.textContent="No place found. Try the city name only.";
       j.places.forEach(pl=>res.append(h("button",{class:"mrow",onclick:()=>choose({name:pl.name,lat:pl.lat,lon:pl.lon})},pl.name)));
     }catch(e){ msg.textContent=e.message||"Couldn't search."; } };

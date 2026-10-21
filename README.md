@@ -9,16 +9,16 @@ It runs on **Vercel** only: the page and its small server functions, an **Upstas
 | Path | What it does |
 |---|---|
 | `public/index.html` | The whole dashboard screen |
-| `api/login.js` | Household passcode sign-in (stays signed in for a year) |
-| `api/state.js`, `api/db.js` | Read and save tasks, lists, dishes, events, settings |
-| `api/upload.js` | Save and remove photos |
-| `api/calendar.js` | Reads your Apple Calendar links every 5 minutes |
-| `api/apple.js`, `lib/caldav.js` | Saves, moves and removes dashboard events in your iCloud calendar |
-| `api/passkey.js` | Face ID / Touch ID sign-in for phones (passkeys) |
-| `api/budget.js` | Reads YNAB (read-only), only the categories you choose |
-| `api/import-recipe.js` | Imports a recipe from a recipe website link (free, no AI) |
-| `api/album.js` | Reads your shared iCloud photo album for the frame and slideshow |
-| `api/draft-recipe.js` | Optional: sends a dish photo to Claude to draft the recipe (needs an API key) |
+| `lib/routes/login.js` | Household passcode sign-in (stays signed in for a year) |
+| `lib/routes/state.js`, `lib/routes/db.js` | Read and save tasks, lists, dishes, events, settings |
+| `lib/routes/upload.js` | Save and remove photos |
+| `lib/routes/calendar.js` | Reads your Apple Calendar links every 5 minutes |
+| `lib/routes/apple.js`, `lib/caldav.js` | Saves, moves and removes dashboard events in your iCloud calendar |
+| `lib/routes/passkey.js` | Face ID / Touch ID sign-in for phones (passkeys) |
+| `lib/routes/budget.js` | Reads YNAB (read-only), only the categories you choose |
+| `lib/routes/import-recipe.js` | Imports a recipe from a recipe website link (free, no AI) |
+| `lib/routes/album.js` | Reads your shared iCloud photo album for the frame and slideshow |
+| `lib/routes/draft-recipe.js` | Optional: sends a dish photo to Claude to draft the recipe (needs an API key) |
 
 ## Set it up (about 20 minutes)
 

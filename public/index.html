@@ -1128,6 +1128,14 @@ function todoSheet(who){
   openSheet([h("h2",null,"New task"),field("Task",t),field("For",w),h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},"Add task"))]);
 }
 /* Reads recipe text pasted from the Claude app, a website or a note. */
+function tidyIng(raw){
+  let s=String(raw||"").replace(/\s+/g," ").trim(), lead="";
+  const m=/^([\d\s½¼¾⅓⅔\/.\-–]+?)\s*\(([^()]{1,25})\)\s*(.*)$/.exec(s);
+  if(m&&/\d/.test(m[2])&&/\b(oz|ounces?|g|grams?|kg|ml|l|lbs?|pounds?|fl)\b/i.test(m[2])){ lead=m[1].trim()+" ("+m[2].trim()+") "; s=m[3]; }
+  let prev; do{ prev=s; s=s.replace(/\([^()]*\)/g," "); }while(s!==prev);
+  s=s.replace(/[()]/g," ").replace(/,(?!\d).*$/,"").replace(/\s*[-–—]\s*(?:see\s+)?notes?\b.*$/i,"").replace(/\b(?:see\s+)?notes?\s*\d+\b/gi,"");
+  return (lead+s.replace(/\s+/g," ").replace(/[\s,;:\/\-–]+$/,"").trim()).trim();
+}
 function parseRecipeText(text){
   const raw=String(text||"").replace(/\r/g,"").split("\n").map(l=>l.replace(/\*\*|__|`/g,"").trim());
   const strip=l=>l.replace(/^#{1,6}\s*/,"").replace(/^[-*•·▪◦–]\s+/,"").replace(/^\d+[.)]\s+/,"").replace(/^step\s*\d+\s*[:.)-]?\s*/i,"").replace(/^\[[ xX]?\]\s*/,"").trim();
@@ -1150,7 +1158,7 @@ function parseRecipeText(text){
     }
     const s=strip(l); if(!s) continue;
     if(/[:：]$/.test(s)&&s.length<40) continue; // sub-heading like "For the sauce:"
-    if(mode==="i") ingredients.push(s); else if(mode==="s") steps.push(s);
+    if(mode==="i"){ const t=tidyIng(s); if(t) ingredients.push(t); } else if(mode==="s") steps.push(s);
   }
   return {title:title.slice(0,120),minutes,ingredients:ingredients.slice(0,60),steps:steps.slice(0,40)};
 }
@@ -1177,7 +1185,7 @@ function recipeSheet(r,file,mode){
       const out=await api("/api/draft-recipe",{method:"POST",body:JSON.stringify(body)});
       if(!t.value.trim()&&out&&out.title) t.value=String(out.title);
       if(!mn.value&&out&&out.minutes) mn.value=Number(out.minutes)||"";
-      if(!ing.value.trim()&&out&&Array.isArray(out.ingredients)) ing.value=out.ingredients.map(String).join("\n");
+      if(!ing.value.trim()&&out&&Array.isArray(out.ingredients)) ing.value=out.ingredients.map(x=>tidyIng(String(x))).filter(Boolean).join("\n");
       if(!st.value.trim()&&out&&Array.isArray(out.steps)) st.value=out.steps.map(String).join("\n");
       toast("Draft filled in. Fix anything that's off.");
     }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't read the photo. Fill it in by hand."); }

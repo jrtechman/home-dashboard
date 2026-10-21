@@ -190,6 +190,17 @@ button{cursor:pointer;border:0;background:none}
 .rem{display:flex;align-items:center;gap:10px;padding:4px 0;font-weight:600;font-size:16px}.rem input{width:22px;height:22px;flex:none}.rem.done span.grow{text-decoration:line-through;opacity:.55}.meta.late{color:#C0503A;font-weight:700}
 .cdrow{display:flex;align-items:center;gap:10px;padding:3px 0;font-size:16px}.cdrow b{font-family:var(--display);font-weight:500;color:var(--strong)}
 .notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.note{padding:14px;border-radius:16px}.note .nt{white-space:pre-wrap;word-break:break-word;font-size:16px}
+.view[data-name=home]{position:relative}
+.notelayer{position:absolute;inset:0;pointer-events:none;z-index:6;overflow:hidden}
+.sticky{position:absolute;width:176px;min-height:128px;padding:20px 14px 28px;box-sizing:border-box;pointer-events:auto;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;font-family:"Bradley Hand","Segoe Print","Chalkboard SE","Comic Sans MS",cursive;font-size:18px;line-height:1.3;color:#3a3320;background:var(--paper);box-shadow:0 1px 1px rgba(0,0,0,.12),0 10px 18px rgba(60,50,20,.22);transform:rotate(var(--rot,0deg));transition:box-shadow .15s,transform .15s}
+.sticky::before{content:"";position:absolute;top:-9px;left:50%;width:62px;height:20px;margin-left:-31px;background:rgba(255,255,255,.55);box-shadow:0 1px 2px rgba(0,0,0,.12);transform:rotate(-2deg)}
+.sticky::after{content:"";position:absolute;right:0;bottom:0;width:26px;height:26px;background:linear-gradient(135deg,rgba(0,0,0,0) 50%,rgba(0,0,0,.10) 50%);}
+.sticky.drag{cursor:grabbing;transform:rotate(0deg) scale(1.04);box-shadow:0 18px 30px rgba(60,50,20,.34);transition:none;z-index:50}
+.sticky .st{white-space:pre-wrap;word-break:break-word;max-height:190px;overflow:hidden}
+.sticky .sb{position:absolute;left:14px;bottom:8px;font-family:var(--body,system-ui);font-size:11px;font-weight:700;opacity:.55}
+.p-amber{--paper:#FFF1A8}.p-sage{--paper:#D9F0C8}.p-blue{--paper:#CFE6FA}.p-teal{--paper:#F9D3E0}.note.paper{background:var(--paper);color:#3a3320;border-radius:4px;box-shadow:0 4px 10px rgba(60,50,20,.18)}
+:root[data-theme="dark"] .sticky{color:#2c2616}
+@media (max-width:900px){.sticky{width:150px;min-height:108px;font-size:16px}}
 .lrow{display:flex;align-items:center;gap:10px}
 .lrow .lk{flex:1;min-width:0;display:flex;align-items:center;min-height:56px;padding:0 18px;border-radius:18px;background:var(--chip);font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pcs{display:flex;flex-direction:column;gap:8px}
@@ -449,6 +460,7 @@ button{cursor:pointer;border:0;background:none}
     <div id="banner" class="banner" hidden></div>
 
     <section class="view" data-name="home">
+      <div id="noteLayer" class="notelayer"></div>
       <div class="home">
         <div class="stack left">
           <div class="card c-sage wx" id="homeWx"></div>
@@ -1757,18 +1769,47 @@ function cdSheet(editing){
     h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},y,"Repeats every year"),
     h("div",{class:"acts"},h("button",{class:"pill primary",onclick:save},"Save"),editing?h("button",{class:"pill danger",onclick:async()=>{ closeSheet(); await delDoc("countdowns",c.id); cdSheet(); }},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>cdSheet()},"Back"))]);
 }
-const NOTE_COLORS=[["c-amber","Yellow"],["c-sage","Green"],["c-blue","Blue"],["c-teal","Teal"]];
+const NOTE_COLORS=[["c-amber","Yellow"],["c-sage","Green"],["c-blue","Blue"],["c-teal","Pink"]];
+/* Notes pasted on the Home page: drag one anywhere; its spot is saved and shown on every screen. */
+let noteDrag=false;
+const notePos=(n,i)=>({x:typeof n.x==="number"?n.x:58+((i*13)%30),y:typeof n.y==="number"?n.y:6+((i*23)%46)});
+const noteRot=n=>{ let h=0; for(const c of String(n.id)) h=(h*31+c.charCodeAt(0))|0; return ((Math.abs(h)%70)/10-3.5).toFixed(1)+"deg"; };
+function renderNotes(){
+  const L=$("#noteLayer"); if(!L||noteDrag) return; L.replaceChildren();
+  if(!mod("notes")) return;
+  [...S.notes].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(-10).forEach((n,i)=>{
+    const pos=notePos(n,i), el=h("div",{class:"sticky p-"+((n.color||"c-amber").replace("c-","")),style:`left:${pos.x}%;top:${pos.y}%;--rot:${noteRot(n)}`,"data-id":n.id},h("div",{class:"st"},n.text),n.by?h("div",{class:"sb"},n.by):null);
+    let sx=0,sy=0,ox=0,oy=0,moved=false,pid=null;
+    el.addEventListener("pointerdown",e=>{ if(e.button>0) return; pid=e.pointerId; el.setPointerCapture(pid); const r=L.getBoundingClientRect(), b=el.getBoundingClientRect(); sx=e.clientX; sy=e.clientY; ox=b.left-r.left; oy=b.top-r.top; moved=false; });
+    el.addEventListener("pointermove",e=>{ if(pid!==e.pointerId) return; const dx=e.clientX-sx, dy=e.clientY-sy;
+      if(!moved&&Math.hypot(dx,dy)<6) return; if(!moved){ moved=true; noteDrag=true; el.classList.add("drag"); }
+      const r=L.getBoundingClientRect(); const x=Math.max(0,Math.min(r.width-el.offsetWidth,ox+dx)), y=Math.max(0,Math.min(r.height-el.offsetHeight,oy+dy));
+      el.style.left=x+"px"; el.style.top=y+"px"; });
+    const end=async e=>{ if(pid!==e.pointerId) return; pid=null;
+      if(!moved){ editNote(n); return; }
+      const r=L.getBoundingClientRect(); const x=Math.round(parseFloat(el.style.left)/r.width*1000)/10, y=Math.round(parseFloat(el.style.top)/r.height*1000)/10;
+      noteDrag=false; el.classList.remove("drag"); await updDoc("notes",n.id,{x,y}); };
+    el.addEventListener("pointerup",end); el.addEventListener("pointercancel",e=>{ if(pid===e.pointerId){ pid=null; noteDrag=false; renderNotes(); } });
+    L.append(el); });
+}
+function editNote(n){
+  const tx=h("textarea",{id:"enT",rows:"4",style:"width:100%"}); tx.value=n.text||"";
+  const col=h("select",{id:"enC"},NOTE_COLORS.map(([v,l])=>h("option",{value:v},l))); col.value=n.color||"c-amber";
+  openSheet([h("h2",null,"Sticky note"),h("p",{class:"hint",style:"margin:0"},"Drag the note on Home to move it."),field("Note",tx),field("Color",col),
+    h("div",{class:"acts"},h("button",{class:"pill primary",onclick:async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } closeSheet(); await updDoc("notes",n.id,{text:text.slice(0,600),color:col.value}); }},"Save"),
+      h("button",{class:"pill danger",onclick:async()=>{ closeSheet(); await delDoc("notes",n.id); }},"Remove"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
+}
 function notesSheet(){
   const rows=[...S.notes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const grid=h("div",{class:"notes"});
   if(!rows.length) grid.append(h("p",{class:"hint"},"No notes yet. Leave one for the family below."));
-  rows.forEach(n=>grid.append(h("div",{class:"note card "+(n.color||"c-amber")},h("div",{class:"nt"},n.text),
+  rows.forEach(n=>grid.append(h("div",{class:"note paper p-"+((n.color||"c-amber").replace("c-",""))},h("div",{class:"nt"},n.text),
     h("div",{class:"acts",style:"margin-top:8px"},h("span",{class:"meta grow"},(n.by?n.by+" · ":"")+(n.createdAt?shortDay(keyOf(new Date(n.createdAt))):"")),
       h("button",{class:"pill icon","aria-label":"Remove note",onclick:async()=>{ await delDoc("notes",n.id); notesSheet(); }},svg(IC.x))))));
   const tx=h("textarea",{id:"ntT",rows:"3",placeholder:"Write a note for the family…",style:"width:100%"});
   const col=h("select",{id:"ntC"},NOTE_COLORS.map(([v,l])=>h("option",{value:v},l)));
-  const add=async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } await addDoc("notes",{text:text.slice(0,600),color:col.value,by:meName(),createdAt:Date.now()}); notesSheet(); };
-  openSheet([h("h2",null,"Family notes"),grid,field("New note",tx),field("Color",col),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Post note"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+  const add=async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } await addDoc("notes",{text:text.slice(0,600),color:col.value,by:meName(),createdAt:Date.now(),x:Math.round((52+Math.random()*30)*10)/10,y:Math.round((6+Math.random()*40)*10)/10}); notesSheet(); };
+  openSheet([h("h2",null,"Family notes"),h("p",{class:"hint",style:"margin:0"},"New notes are stuck on the Home page. Drag one there to move it; tap it to edit or remove."),grid,field("New note",tx),field("Color",col),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Post note"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
 function prayerSheet(showAnswered){
   const open=S.prayers.filter(p=>!p.answered).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)), done=S.prayers.filter(p=>p.answered).sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0));
@@ -1839,7 +1880,7 @@ function adminSection(){
 }
 function renderAll(){
   $("#mono").textContent=(S.settings.household||"H").trim()[0]?.toUpperCase()||"H";
-  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); renderPrayer(); applyModules();
+  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); renderPrayer(); renderNotes(); applyModules();
 }
 function toB64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(",")[1]); fr.onerror=rej; fr.readAsDataURL(blob); }); }
 

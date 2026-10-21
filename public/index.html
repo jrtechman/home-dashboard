@@ -298,6 +298,8 @@ button{cursor:pointer;border:0;background:none}
 /* settings page */
 .settingspage{flex:1;min-height:0;overflow-y:auto;padding:4px 2px 110px;-webkit-overflow-scrolling:touch}.sheet.spage{width:min(760px,100%);max-height:none;overflow:visible;margin:0 auto;box-shadow:none}
 .nav.cur{background:var(--chip)}
+.pdots{display:flex;gap:16px;justify-content:center;margin:8px 0}.pd{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);transition:.1s}.pd.on{background:var(--ink);border-color:var(--ink)}.pdots.shake{animation:pshake .3s}@keyframes pshake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.ppad{display:grid;grid-template-columns:repeat(3,76px);gap:12px;justify-content:center;margin:4px 0 8px}.pk{height:68px;width:76px;padding:0;border-radius:50%;border:0;background:var(--chip);font-family:var(--display);font-weight:600;font-size:26px;color:var(--ink);cursor:pointer;display:grid;place-items:center;-webkit-tap-highlight-color:transparent}.pk:active{background:var(--soft)}.pk.x,.pk.del{font-family:inherit;font-weight:600;font-size:15px;background:transparent;color:var(--muted)}.pk.del{font-size:24px}
 .pill.on{background:var(--ink);color:var(--bg)}.pill.on svg{stroke:var(--bg)}
 /* sheet */
 .scrim{position:fixed;inset:0;background:rgba(31,42,51,.28);display:grid;grid-template-columns:minmax(0,1fr);place-items:center;z-index:20;padding:20px}
@@ -1936,14 +1938,46 @@ function guestOn(){ return !!(S.settings&&S.settings.guest); }
 function rawMod(id){ return ((S.settings&&S.settings.modules)||{})[id]!==false; }
 function mod(id){ if(id==="photoframe") return false; if(guestOn()&&guestHides().has(id)) return false; return rawMod(id); }
 function setGuest(on){ saveSettings({guest:!!on}); toast(on?"Guest mode on. Private cards are hidden.":"Guest mode off"); }
-function guestToggle(){ if(!guestOn()) return setGuest(true); guestUnlockSheet(); }
-function guestUnlockSheet(){
+/* guest PIN */
+async function guestApi(path,body){ try{ const r=await fetch(path,{method:body?"POST":"GET",credentials:"same-origin",headers:body?{"content-type":"application/json"}:{},body:body?JSON.stringify(body):undefined}); const j=await r.json().catch(()=>({})); return r.ok?{ok:true,...j}:{ok:false,error:j.error||"Something went wrong."}; }catch(e){ return {ok:false,error:"Couldn't reach the dashboard. Try again."}; } }
+async function guestHasPin(){ const j=await guestApi("/api/guest"); return j.ok?!!j.hasPin:null; }
+/* A 4-digit keypad. onDone(pin) returns {ok:true} to finish or {error:"..."} to show a message and clear the dots. */
+function pinPad({title,hint,onDone,extra}){
+  let pin=""; const dots=h("div",{class:"pdots","aria-live":"polite"}), msg=h("p",{class:"hint",style:"margin:0;min-height:1.3em;text-align:center;color:#B4443C"},"");
+  const draw=()=>dots.replaceChildren(...[0,1,2,3].map(i=>h("span",{class:"pd"+(i<pin.length?" on":"")})));
+  let busy=false;
+  const press=async d=>{ if(busy||pin.length>=4) return; pin+=d; msg.textContent=""; draw(); if(pin.length===4){ busy=true; const r=await onDone(pin); busy=false; if(r&&r.error){ msg.textContent=r.error; pin=""; dots.classList.remove("shake"); void dots.offsetWidth; dots.classList.add("shake"); draw(); } } };
+  const back=()=>{ if(busy) return; pin=pin.slice(0,-1); draw(); };
+  const key=(label,fn,cls)=>h("button",{class:"pk "+(cls||""),type:"button","aria-label":cls==="del"?"Delete":cls==="x"?"Cancel":label,onclick:fn},label);
+  const pad=h("div",{class:"ppad"},...[1,2,3,4,5,6,7,8,9].map(n=>key(String(n),()=>press(String(n)))),key("Cancel",closeSheet,"x"),key("0",()=>press("0")),key("⌫",back,"del"));
+  draw();
+  openSheet([h("h2",{style:"text-align:center"},title),hint?h("p",{class:"hint",style:"margin:0;text-align:center"},hint):null,dots,msg,pad,extra||null]);
+  const wrap=$("#sheetHost .sheet"); if(wrap){ wrap.tabIndex=-1; wrap.focus({preventScroll:true}); wrap.addEventListener("keydown",e=>{ if(/^\d$/.test(e.key)) press(e.key); else if(e.key==="Backspace") back(); else if(e.key==="Escape") closeSheet(); }); }
+}
+/* Pick a new PIN (twice). current = the existing PIN or {passcode} when changing one. */
+function pinSetFlow(current,after){
+  const again=first=>pinPad({title:"Confirm the PIN",hint:"Enter the same 4 digits again.",onDone:async pin=>{
+    if(pin!==first) return {error:"Those didn't match. Try again."};
+    const body={op:"set",pin,...(current&&current.passcode?{passcode:current.passcode}:current?{current}:{})};
+    const r=await guestApi("/api/guest",body); if(!r.ok) return {error:r.error};
+    closeSheet(); toast("Guest PIN saved"); if(after) after(); return {ok:true}; }});
+  pinPad({title:current?"Choose a new PIN":"Choose a guest PIN",hint:"4 digits. You'll use it to turn guest mode off.",onDone:async pin=>{ again(pin); return {ok:true}; }});
+}
+function guestPassSheet(then){
   const pw=h("input",{type:"password",autocomplete:"current-password",placeholder:"Household passcode",id:"guestPw"}), err=h("p",{class:"hint",style:"margin:0;color:#B4443C;min-height:1.2em"});
-  const go=async()=>{ if(!pw.value) return; try{ const r=await fetch("/api/login",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({passcode:pw.value})}); const j=await r.json().catch(()=>({})); if(!r.ok){ err.textContent=j.error||"That passcode isn't right."; pw.select(); return; } closeSheet(); setGuest(false); }catch(e){ err.textContent="Couldn't check the passcode. Try again."; } };
+  const go=async()=>{ if(!pw.value) return; const r=await guestApi("/api/guest",{op:"verify",passcode:pw.value}); if(!r.ok){ err.textContent=r.error; pw.select(); return; } closeSheet(); then(pw.value); };
   pw.addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
-  openSheet([h("h2",null,"Turn off guest mode"),h("p",{class:"hint",style:"margin:0 0 8px"},"Enter the household passcode to show everything again."),pw,err,
-    h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:go},"Turn off"))]);
+  openSheet([h("h2",null,"Use the household passcode"),h("p",{class:"hint",style:"margin:0 0 8px"},"The same passcode you sign in with."),pw,err,
+    h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:go},"Continue"))]);
   setTimeout(()=>pw.focus(),50);
+}
+async function guestToggle(){
+  if(!guestOn()){ const has=await guestHasPin(); if(has===false) return pinSetFlow(null,()=>setGuest(true)); return setGuest(true); }
+  guestUnlockSheet();
+}
+function guestUnlockSheet(){
+  pinPad({title:"Enter PIN",hint:"Enter the guest PIN to show everything again.",onDone:async pin=>{ const r=await guestApi("/api/guest",{op:"verify",pin}); if(!r.ok) return {error:r.error}; closeSheet(); setGuest(false); return {ok:true}; },
+    extra:h("div",{class:"acts",style:"justify-content:center"},h("button",{class:"pill",onclick:()=>guestPassSheet(()=>setGuest(false))},"Forgot PIN? Use the household passcode"))});
 }
 $("#guestBtn").addEventListener("click",guestToggle);
 $("#guestBar").addEventListener("click",guestToggle);
@@ -1968,6 +2002,10 @@ function guestSection(){
   const box=h("div",null,h("h3",null,"Guest mode: what it hides"));
   if(guestOn()){ box.append(h("p",{class:"hint",style:"margin:0"},"Guest mode is on. Turn it off (it asks for the passcode) to change what it hides.")); return box; }
   box.append(h("p",{class:"hint",style:"margin:0 0 8px"},"Ticked items are hidden on every screen while \"Guests are here\" is on."));
+  const pinBtn=h("button",{class:"pill",onclick:async()=>{ const has=await guestHasPin(); if(has===null) return toast("Couldn't reach the dashboard."); if(!has) return pinSetFlow(null);
+      pinPad({title:"Current PIN",hint:"Enter the current guest PIN first.",onDone:async pin=>{ const r=await guestApi("/api/guest",{op:"verify",pin}); if(!r.ok) return {error:r.error}; pinSetFlow(pin); return {ok:true}; },
+        extra:h("div",{class:"acts",style:"justify-content:center"},h("button",{class:"pill",onclick:()=>guestPassSheet(pass=>pinSetFlow({passcode:pass}))},"Forgot PIN? Use the household passcode"))}); }},"Set or change the guest PIN");
+  box.append(h("div",{class:"acts",style:"margin:0 0 8px"},pinBtn));
   const cur=guestHides(), grid=h("div",{style:"display:flex;flex-direction:column;gap:8px"});
   MODULES.forEach(([group,items])=>{
     grid.append(h("h3",{style:"margin:6px 0 0;font-size:15px"},group));

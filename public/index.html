@@ -211,6 +211,13 @@ button{cursor:pointer;border:0;background:none}
 .aisle{break-inside:avoid;margin-bottom:12px;border-radius:28px;background:var(--tint);padding:16px;display:flex;flex-direction:column;gap:8px}
 .aisle h3{font-family:var(--display);font-weight:500;font-size:22px;margin:2px 4px 4px;display:flex;justify-content:space-between;align-items:baseline}
 .aisle h3 span{font-family:var(--body);font-size:14px;color:var(--muted);font-weight:600}
+.listfoot .grow{flex:1}
+.ltabs{display:flex;gap:8px;overflow-x:auto;margin:0 0 14px;padding:2px 0 4px;scrollbar-width:none}
+.ltabs::-webkit-scrollbar{display:none}
+.ltab{flex:none;min-height:46px;padding:0 18px;border-radius:999px;background:var(--chip);font-weight:600;font-size:15px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.ltab .n{font-size:13px;font-weight:600;opacity:.65}
+.ltab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.ltab.add{background:transparent;border:2px dashed var(--line);color:var(--muted)}
 .listfoot{display:flex;gap:8px;margin:4px 0 14px;flex-wrap:wrap;align-items:center}
 
 /* photos */
@@ -440,7 +447,7 @@ function guessAisle(t){ const s=" "+t.toLowerCase(); for(const [a,kws] of AISLES
 
 /* ---------- state ---------- */
 const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null};
-const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
+const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
 let VER=-1, FEAT={}, live=true, pulling=false, photoSig="";
 let BUILD=null, reloadT=null, ROT=[];
 S.album=[]; S.albumName="";
@@ -452,7 +459,7 @@ function reloadWhenIdle(){
   reloadT=setTimeout(tryIt,1500);
 }
 S.ext=[]; S.budget=null;
-const COLLS=["events","todos","shopping","recipes","photos","dinnerlist"];
+const COLLS=["events","todos","shopping","recipes","photos","dinnerlist","lists","listitems"];
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
 
 async function api(path,opts={}){
@@ -825,17 +832,85 @@ function renderMeals(){
 }
 
 /* lists */
+/* lists: "Groceries" (fed by the dinner list) plus any lists you create and name */
+const onGroc=txt=>S.shopping.some(s=>!s.got&&s.text.toLowerCase()===String(txt).toLowerCase());
+function dinnerIngredients(){
+  const out=[];
+  S.dinnerlist.forEach(d=>{ const r=S.recipes.find(x=>x.id===d.recipeId); (r&&r.ingredients||[]).forEach(i=>{ if(!out.some(o=>o.toLowerCase()===i.toLowerCase())) out.push(i); }); });
+  return out;
+}
+function pickList(id){ S.listSel=id; try{ localStorage.setItem("hd_list",id); }catch(e){} renderLists(); }
+function listSheet(list){
+  const editing=!!list;
+  const t=h("input",{id:"lsName",placeholder:"Hardware store, Gift ideas, Packing…",value:list?list.name:"",maxlength:40});
+  let color=list?list.color:COLORS[S.lists.length%COLORS.length];
+  const sw=h("div",{class:"swatches"});
+  const drawSw=()=>{ sw.replaceChildren(...COLORS.map(c=>h("button",{class:"sw c-"+c,type:"button","aria-label":c,"aria-pressed":color===c?"true":"false",onclick:()=>{ color=c; drawSw(); }}))); };
+  drawSw();
+  const save=async()=>{
+    const name=t.value.trim(); if(!name){ t.focus(); return toast("Give the list a name."); }
+    closeSheet();
+    if(editing){ await updDoc("lists",list.id,{name,color}); toast("List updated"); }
+    else{ const id=uid(); S.listSel=id; try{ localStorage.setItem("hd_list",id); }catch(e){} S.lists.push({id,name,color,createdAt:Date.now()}); renderLists(); await write({op:"add",coll:"lists",id,data:{name,color,createdAt:Date.now()}}); toast("List created"); }
+  };
+  const removeList=async()=>{
+    const items=S.listitems.filter(i=>i.listId===list.id);
+    S.listSel="groceries"; try{ localStorage.setItem("hd_list","groceries"); }catch(e){}
+    for(const i of items) await delDoc("listitems",i.id);
+    await delDoc("lists",list.id); toast("List deleted");
+  };
+  t.addEventListener("keydown",e=>{ if(e.key==="Enter") save(); });
+  const delBtn=editing?h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this list?","“"+list.name+"” and everything on it will be removed.","Delete list",removeList)},"Delete"):null;
+  openSheet([h("h2",null,editing?"Edit list":"New list"),field("Name",t),h("div",{class:"field"},h("label",null,"Color"),sw),
+    h("div",{class:"acts"},delBtn,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},editing?"Save":"Create list"))]);
+  setTimeout(()=>t.focus(),50);
+}
 function renderLists(){
   const L=$("#lists");
   const keepVal=$("#shopIn")?.value||"", hadFocus=document.activeElement&&document.activeElement.id==="shopIn";
   L.replaceChildren();
+  const custom=[...S.lists].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  let sel=S.listSel||"groceries";
+  if(sel!=="groceries"&&!custom.find(l=>l.id===sel)) sel="groceries";
+  const tab=(id,label,n)=>h("button",{class:"ltab",role:"tab","aria-selected":sel===id?"true":"false",onclick:()=>pickList(id)},label,n?h("span",{class:"n"},String(n)):null);
+  L.append(h("div",{class:"ltabs",role:"tablist"},
+    tab("groceries","Groceries",S.shopping.filter(i=>!i.got).length),
+    ...custom.map(l=>tab(l.id,l.name,S.listitems.filter(i=>i.listId===l.id&&!i.done).length)),
+    h("button",{class:"ltab add",onclick:()=>listSheet()},"+ New list")));
+  if(sel==="groceries") groceriesView(L,keepVal); else customView(L,custom.find(l=>l.id===sel),keepVal);
+  if(hadFocus) $("#shopIn")?.focus();
+}
+function customView(L,list,keepVal){
+  const inp=h("input",{id:"shopIn",placeholder:"Add to "+list.name+"…",autocomplete:"off","aria-label":"New item for "+list.name}); inp.value=keepVal;
+  const add=()=>{ const v=inp.value.trim(); if(!v) return; addDoc("listitems",{listId:list.id,text:v,done:false,createdAt:Date.now()}); inp.value=""; inp.focus(); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter") add(); });
+  L.append(h("div",{class:"addbar"},inp,h("button",{class:"pill",onclick:add},"Add")));
+  const items=S.listitems.filter(i=>i.listId===list.id).sort((x,y)=>(!!x.done-!!y.done)||((x.createdAt||0)-(y.createdAt||0)));
+  const done=items.filter(i=>i.done).length;
+  L.append(h("div",{class:"listfoot"},h("span",{class:"meta"},(items.length-done)+" to do"),
+    done?h("button",{class:"pill",onclick:()=>items.filter(i=>i.done).forEach(i=>delDoc("listitems",i.id))},"Clear "+done+" done"):null,
+    h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>listSheet(list)},"Edit list")));
+  const wrap=h("div",{class:"aisles"});
+  if(!items.length) wrap.append(h("p",{class:"hint"},S.loaded.listitems||!live?"Nothing here yet. Type an item above.":"Loading…"));
+  else{
+    const box=h("div",{class:"aisle c-"+(list.color||"blue")},h("h3",null,list.name,h("span",null,String(items.length-done))));
+    items.forEach(i=>box.append(h("button",{class:"item"+(i.done?" done":""),onclick:()=>updDoc("listitems",i.id,{done:!i.done}),"aria-pressed":i.done?"true":"false"},h("span",{class:"txt"},i.text),h("span",{class:"check"},svg(IC.check)))));
+    wrap.append(box);
+  }
+  L.append(wrap);
+}
+function groceriesView(L,keepVal){
   const inp=h("input",{id:"shopIn",placeholder:"Add to the shopping list…",autocomplete:"off","aria-label":"New shopping item"});
   inp.value=keepVal;
   const add=()=>{ const v=inp.value.trim(); if(!v) return; addDoc("shopping",{text:v,aisle:guessAisle(v),got:false,createdAt:Date.now()}); inp.value=""; inp.focus(); };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter") add(); });
   L.append(h("div",{class:"addbar"},inp,h("button",{class:"pill",onclick:add},"Add")));
   const got=S.shopping.filter(s=>s.got).length, left=S.shopping.length-got;
-  L.append(h("div",{class:"listfoot"},h("span",{class:"meta"},`${left} to get`),budgetChip(/grocer/i),got?h("button",{class:"pill",onclick:()=>S.shopping.filter(s=>s.got).forEach(s=>delDoc("shopping",s.id))},`Clear ${got} in the cart`):null));
+  const miss=dinnerIngredients().filter(i=>!onGroc(i));
+  const pullIng=async()=>{ for(const i of miss) await addDoc("shopping",{text:i,aisle:guessAisle(i),got:false,createdAt:Date.now()}); toast("Added "+miss.length+" item"+(miss.length>1?"s":"")+" from the dinner list"); };
+  L.append(h("div",{class:"listfoot"},h("span",{class:"meta"},left+" to get"),budgetChip(/grocer/i),
+    miss.length?h("button",{class:"pill",onclick:pullIng},"+ Ingredients for the dinner list ("+miss.length+")"):null,
+    got?h("button",{class:"pill",onclick:()=>S.shopping.filter(s=>s.got).forEach(s=>delDoc("shopping",s.id))},"Clear "+got+" in the cart"):null));
   const wrap=h("div",{class:"aisles"});
   const tint={"Produce":"c-sage","Bakery":"c-amber","Meat & Seafood":"c-coral","Dairy & Eggs":"c-blue","Pantry":"c-gold","Frozen":"c-teal","Household":"c-lilac","Other":"c-none"};
   AISLE_ORDER.forEach(a=>{
@@ -845,9 +920,8 @@ function renderLists(){
     items.forEach(s=>box.append(h("button",{class:"item"+(s.got?" done":""),onclick:()=>updDoc("shopping",s.id,{got:!s.got}),"aria-pressed":s.got?"true":"false"},h("span",{class:"txt"},s.text,exTag(s)),h("span",{class:"check"},svg(IC.check)))));
     wrap.append(box);
   });
-  if(!S.shopping.length) wrap.append(h("p",{class:"hint"},S.loaded.shopping||!live?"The list is empty. Type an item above; it lands in the right aisle on its own.":"Loading…"));
+  if(!S.shopping.length) wrap.append(h("p",{class:"hint"},S.loaded.shopping||!live?"The list is empty. Type an item above, or add a dish to the dinner list and pull in its ingredients.":"Loading…"));
   L.append(wrap);
-  if(hadFocus) inp.focus();
 }
 
 /* photos */

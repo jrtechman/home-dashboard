@@ -192,6 +192,10 @@ button{cursor:pointer;border:0;background:none}
 .dish.noimg .lab{top:0;display:flex;flex-direction:column;justify-content:flex-end;background:none;color:var(--ink)}
 .dish.noimg .m{color:var(--muted);opacity:1}
 .dish .badge{position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--glass-hi);color:var(--ink);font-size:12px;font-weight:700}
+.dish .daytag{position:absolute;top:10px;left:10px;padding:4px 12px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:700}
+.dish .daytag.past{background:var(--glass-hi);color:var(--muted)}
+.dayrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dayrow input{flex:1 1 150px;min-width:0;min-height:48px;border-radius:14px;border:0;background:var(--chip);padding:0 14px}
 .dish .badge svg{width:12px;height:12px;stroke:currentColor;stroke-width:3;fill:none}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
 .snap{display:grid;place-content:center;justify-items:center;gap:8px;aspect-ratio:1;max-width:100%;border-radius:26px;border:2px dashed var(--line);color:var(--muted);font-weight:600;text-align:center;padding:16px}
@@ -792,7 +796,22 @@ function evCard(e,whenLabel){
     h("div",{class:"when"},whenLabel?h("div",null,whenLabel,h("div",null,fmtTime(e.time))):fmtTime(e.time)),
     h("div",{class:"what"},e.title,exTag(e),h("div",{class:"who"},h("span",{class:"dot"}),who)));
 }
-function tonightRecipe(){ const t=S.settings.tonight; if(!t||t.date!==today()) return null; return S.recipes.find(r=>r.id===t.id)||null; }
+function tonightRecipe(){
+  const t=S.settings.tonight;
+  if(t&&t.date===today()){ const r=S.recipes.find(r=>r.id===t.id); if(r) return r; }
+  const d=S.dinnerlist.find(d=>d.date===today()&&S.recipes.some(r=>r.id===d.recipeId));
+  return d?S.recipes.find(r=>r.id===d.recipeId):null;
+}
+/* days for dinner-list dishes */
+function dayLabel(k){
+  if(!k) return "";
+  const t=today(); if(k===t) return "Today";
+  const d=parseKey(k), diff=Math.round((d-parseKey(t))/864e5);
+  if(diff===1) return "Tomorrow";
+  if(diff>1&&diff<7) return WD[d.getDay()].slice(0,3);
+  return MO[d.getMonth()]+" "+d.getDate();
+}
+const plannedFor=k=>S.dinnerlist.filter(d=>d.date===k).map(d=>({d,r:S.recipes.find(r=>r.id===d.recipeId)})).filter(x=>x.r);
 
 /* calendar */
 function renderCal(){
@@ -802,8 +821,9 @@ function renderCal(){
     const d=addDays(start,i), k=keyOf(d), isToday=k===tk;
     const evs=eventsOn(k);
     const body=h("div",{class:"col-body"});
-    if(!evs.length) body.append(h("div",{class:"empty-day"},"Nothing planned"));
+    if(!evs.length&&!plannedFor(k).length) body.append(h("div",{class:"empty-day"},"Nothing planned"));
     evs.forEach(e=>body.append(evCard(e)));
+    plannedFor(k).forEach(({r})=>body.append(h("button",{class:"ev c-amber",onclick:()=>openRecipe(r.id)},h("div",{class:"when"},"Dinner"),h("div",{class:"what"},r.title,h("div",{class:"who"},h("span",{class:"dot"}),"Dinner plan")))));
     body.append(h("button",{class:"add-in",onclick:()=>eventSheet({date:k})},svg(IC.plus,""),"Add event"));
     b.append(h("div",{class:"col "+(isToday?"today c-blue":(d.getDay()%6===0?"c-amber":"c-none"))},
       h("button",{class:"dayhead",onclick:()=>eventSheet({date:k})},h("span",{class:"dn"},d.getDate()),h("span",{class:"dw"},WD[d.getDay()]),isToday?h("span",{class:"tag"},"Today"):null),
@@ -842,11 +862,12 @@ const dishUrl=r=>r&&r.photoUrl?r.photoUrl:null;
 const onDinner=id=>S.dinnerlist.find(d=>d.recipeId===id);
 const TINTS=["c-amber","c-teal","c-coral","c-blue","c-sage","c-lilac"];
 const tintOf=id=>TINTS[[...String(id)].reduce((n,c)=>n+c.charCodeAt(0),0)%TINTS.length];
-function dishTile(r,badge){
+function dishTile(r,badge,entry){
   const u=dishUrl(r);
   return h("button",{class:"dish "+(u?"":"noimg ")+tintOf(r.id),onclick:()=>openRecipe(r.id)},
     u?h("img",{src:u,alt:r.title,loading:"lazy"}):null,
-    badge&&onDinner(r.id)?h("span",{class:"badge"},svg(IC.check),"Dinner list"):null,
+    entry&&entry.date?h("span",{class:"daytag"+(entry.date<today()?" past":"")},dayLabel(entry.date)):null,
+    badge&&onDinner(r.id)&&!entry?h("span",{class:"badge"},svg(IC.check),onDinner(r.id).date?dayLabel(onDinner(r.id).date):"Dinner list"):null,
     h("div",{class:"lab"},h("div",{class:"rt"},r.title),h("div",{class:"m"},(r.minutes?r.minutes+" min":"Recipe")+(r.example?" · example":""))));
 }
 function snapDish(){ $("#dishIn").click(); }
@@ -857,11 +878,11 @@ function renderMeals(){
   const r=tonightRecipe(), tu=dishUrl(r);
   m.append(h("div",{class:"tonight c-amber"},
     tu?h("img",{class:"tthumb",src:tu,alt:r.title}):null,
-    h("div",{style:"min-width:0"},h("div",{class:"lbl"},"Tonight"),h("div",{class:"dinner-title"},r?r.title:"Nothing picked"),h("div",{class:"meta"},r?(r.minutes?r.minutes+" minutes":""):"Open a dish on the dinner list and choose “Make tonight”.")),
+    h("div",{style:"min-width:0"},h("div",{class:"lbl"},"Tonight"),h("div",{class:"dinner-title"},r?r.title:"Nothing picked"),h("div",{class:"meta"},r?(r.minutes?r.minutes+" minutes":""):"Give a dish on the dinner list a day, or open it and choose “Make tonight”.")),
     r?h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>openRecipe(r.id)},"Open recipe"),h("button",{class:"pill",onclick:()=>cookedTonight(r)},"We had it")):null));
-  const dl=[...S.dinnerlist].sort((a,b)=>(a.addedAt||0)-(b.addedAt||0)).map(d=>S.recipes.find(x=>x.id===d.recipeId)).filter(Boolean);
+  const dl=[...S.dinnerlist].sort((a,b)=>(a.date&&!b.date?-1:!a.date&&b.date?1:(a.date||"").localeCompare(b.date||""))||((a.addedAt||0)-(b.addedAt||0))).map(d=>({d,r:S.recipes.find(x=>x.id===d.recipeId)})).filter(x=>x.r);
   m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner list"),h("span",{class:"meta",style:"margin-top:8px"},dl.length?`${dl.length} planned`:""),h("span",{class:"grow"}),budgetChip(/dining|restaurant|eating out|take ?out/i)));
-  if(dl.length){ const st=h("div",{class:"strip"}); dl.forEach(x=>st.append(dishTile(x,false))); m.append(st); }
+  if(dl.length){ const st=h("div",{class:"strip"}); dl.forEach(({d,r})=>st.append(dishTile(r,false,d))); m.append(st); }
   else m.append(h("p",{class:"hint",style:"margin:0 4px"},"Nothing planned yet. Tap a dish below and choose “Add to dinner list”."));
   m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Our dishes"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"link")},"Import a recipe"),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"paste")},"Paste a recipe"),h("button",{class:"pill primary",onclick:snapDish},svg(IC.cam),"Snap a dish")));
   const g=h("div",{class:"dgrid"});
@@ -1238,7 +1259,17 @@ function openRecipe(id){
   const inList=onDinner(r.id);
   const dinBtn=inList?h("button",{class:"pill",onclick:async()=>{ closeSheet(); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); toast("Taken off the dinner list"); }},"Remove from dinner list")
     :h("button",{class:"pill primary",onclick:async()=>{ closeSheet(); await addDoc("dinnerlist",{recipeId:r.id,addedAt:Date.now()}); toast("Added to the dinner list"); }},"Add to dinner list");
-  openSheet([dishUrl(r)?h("img",{class:"hero",src:dishUrl(r),alt:r.title}):null,h("div",null,h("h2",null,r.title),h("div",{class:"meta"},r.minutes?`${r.minutes} minutes`:"",inList?" · on the dinner list":"",r.example?" · example recipe":""),r.source?h("div",{style:"margin-top:4px"},h("a",{class:"srclink",href:r.source,target:"_blank",rel:"noopener noreferrer"},"View original recipe · "+(()=>{ try{ return new URL(r.source).hostname.replace(/^www\./,""); }catch(e){ return "link"; } })())):null),
+  const dayInp=h("input",{id:"dinDay",type:"date",value:(inList&&inList.date)||""});
+  const setDay=async k=>{
+    dayInp.value=k; const e=onDinner(r.id);
+    if(e){ await updDoc("dinnerlist",e.id,{date:k}); toast(k?"Planned for "+dayLabel(k):"Day cleared"); }
+    else if(k){ await addDoc("dinnerlist",{recipeId:r.id,addedAt:Date.now(),date:k}); toast("Planned for "+dayLabel(k)); openRecipe(r.id); }
+  };
+  dayInp.addEventListener("change",()=>setDay(dayInp.value));
+  const dayRow=h("div",{class:"field"},h("label",{for:"dinDay"},"Dinner day"),
+    h("div",{class:"dayrow"},dayInp,h("button",{class:"pill",onclick:()=>setDay(today())},"Today"),h("button",{class:"pill",onclick:()=>setDay(keyOf(addDays(new Date(),1)))},"Tomorrow"),inList&&inList.date?h("button",{class:"pill",onclick:()=>setDay("")},"Clear"):null));
+  openSheet([dishUrl(r)?h("img",{class:"hero",src:dishUrl(r),alt:r.title}):null,h("div",null,h("h2",null,r.title),h("div",{class:"meta"},r.minutes?`${r.minutes} minutes`:"",inList?(inList.date?" · dinner "+dayLabel(inList.date).toLowerCase():" · on the dinner list"):"",r.example?" · example recipe":""),r.source?h("div",{style:"margin-top:4px"},h("a",{class:"srclink",href:r.source,target:"_blank",rel:"noopener noreferrer"},"View original recipe · "+(()=>{ try{ return new URL(r.source).hostname.replace(/^www\./,""); }catch(e){ return "link"; } })())):null),
+    dayRow,
     h("div",{class:"cols2"},h("div",null,h("h3",null,"Ingredients"),ingList,h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",onclick:addAll},"Add missing to list"))),
       h("div",{style:"min-width:0"},h("h3",null,"Steps"),(r.steps||[]).length?h("ol",{class:"steps"},(r.steps||[]).map(s=>h("li",null,s))):h("p",{class:"hint"},"No steps written yet."))),
     h("div",{class:"acts"},h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this dish?",r.title+" and its photo will be removed.","Delete",async()=>{ if(isTonight) await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); await delDoc("recipes",r.id); deleteImage(r.photoUrl); })},"Delete"),h("button",{class:"pill",onclick:()=>recipeSheet(r)},"Edit"),h("span",{class:"grow"}),

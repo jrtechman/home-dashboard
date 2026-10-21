@@ -876,7 +876,7 @@ async function offerFace(){
 $("#faceBtn").addEventListener("click",faceSignIn);
 /* Push notifications (per device): shopping-list adds and "help with the dinner menu" requests from other people */
 const pushId=()=>{ try{ return localStorage.getItem("hd_push_id")||""; }catch(e){ return ""; } };
-const pushPrefs=()=>{ try{ return {shopping:true,help:true,reminders:true,...JSON.parse(localStorage.getItem("hd_push_prefs")||"{}")}; }catch(e){ return {shopping:true,help:true,reminders:true}; } };
+const pushPrefs=()=>{ try{ return {shopping:true,help:true,reminders:true,tasks:true,...JSON.parse(localStorage.getItem("hd_push_prefs")||"{}")}; }catch(e){ return {shopping:true,help:true,reminders:true,tasks:true}; } };
 const pushCan=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 const isInstalled=()=>navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
@@ -898,7 +898,7 @@ function pushSection(){
     if(!pushId()){ body.append(h("p",{class:"hint",style:"margin:0"},"Get a notification when someone adds to the shopping list or asks for help with the dinner menu."),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:async()=>{ try{ if(await enablePush()){ toast("Notifications are on"); draw(); } }catch(e){ toast(e.message||"Couldn't turn on notifications."); } }},"Turn on notifications"))); return; }
     const prefs=pushPrefs();
     const row=(k,label)=>{ const c=h("input",{type:"checkbox"}); c.checked=prefs[k]!==false; c.addEventListener("change",async()=>{ prefs[k]=c.checked; try{ localStorage.setItem("hd_push_prefs",JSON.stringify(prefs)); await api("/api/push",{method:"POST",body:JSON.stringify({op:"prefs",id:pushId(),prefs})}); }catch(e){ toast(e.message||"Couldn't save."); } }); return h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},c,label); };
-    body.append(row("shopping","Someone adds to the shopping list"),row("help","Someone asks for help with the dinner menu"),row("reminders","Reminders due today (every morning)"),
+    body.append(row("shopping","Someone adds to the shopping list"),row("help","Someone asks for help with the dinner menu"),row("reminders","Reminders due today (every morning)"),row("tasks","Tasks coming due (every morning)"),
       h("div",{class:"acts"},h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/push",{method:"POST",body:JSON.stringify({op:"test",id:pushId()})}); toast("Test sent"); }catch(e){ toast(e.message||"Couldn't send."); } }},"Send a test"),
         h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/push",{method:"POST",body:JSON.stringify({op:"unsubscribe",id:pushId()})}); }catch(e){} try{ localStorage.removeItem("hd_push_id"); const reg=await navigator.serviceWorker.ready; const s=await reg.pushManager.getSubscription(); s&&await s.unsubscribe(); }catch(e){} draw(); }},"Turn off")));
   };
@@ -1151,8 +1151,10 @@ function renderCal(){
 
 /* tasks */
 function todoItem(t,showWho){
-  const due=taskDue(t), toggle=()=>updDoc("todos",t.id,{done:!t.done,doneAt:!t.done?Date.now():null});
-  const subs=[showWho?(t.who||"Everyone"):null,due?due.text:null].filter(Boolean).join(" · ");
+  const due=taskDue(t), toggle=()=>{ const nx=!t.done&&taskNext(t);
+    if(nx){ updDoc("todos",t.id,{date:nx,done:false,lastDone:today(),doneAt:Date.now()}); toast("Done. Next: "+shortDay(nx)+(t.time?" · "+fmtTime(t.time):"")); return; }
+    updDoc("todos",t.id,{done:!t.done,doneAt:!t.done?Date.now():null}); };
+  const subs=[showWho?(t.who||"Everyone"):null,due?due.text:null,taskRepText(t)?"↻ "+taskRepText(t):null,t.notify&&t.date?"🔔":null].filter(Boolean).join(" · ");
   const el=h("div",{class:"item tk c-"+colorOf(t.who)+(t.done?" done":""),role:"button",tabindex:"0",onclick:toggle,"aria-pressed":t.done?"true":"false"},
     h("span",{class:"txt"},t.text,exTag(t),subs?h("span",{class:"sub"+(due&&due.over?" over":"")},subs):null),
     h("button",{class:"tkedit","aria-label":"Edit or schedule task",title:"Edit or schedule",onclick:ev=>{ ev.stopPropagation(); todoSheet(t.who||"",t); }},svg('<path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/>')),
@@ -1483,20 +1485,55 @@ function eventSheet(e){
   openSheet([h("h2",null,editing?"Edit event":"New event"),field("What",t),h("div",{class:"row"},field("Day",d),field("Time (leave blank for all day)",tm)),field("Who",w),ap?field("Also save to Apple Calendar",ap):null,
     h("div",{class:"acts"},editing?h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this event?",e.title,"Delete",()=>delDoc("events",e.id))},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},editing?"Save":"Add event"))]);
 }
+/* recurring tasks */
+const ORD=n=>n===-1?"last":["1st","2nd","3rd","4th"][n-1];
+const nthOf=k=>{ const D=parseKey(k), dom=D.getDate(), last=new Date(D.getFullYear(),D.getMonth()+1,0).getDate(); return {wd:D.getDay(),nth:Math.ceil(dom/7),isLast:dom+7>last}; };
+function nthDate(y,m,wd,nth){ const last=new Date(y,m+1,0).getDate();
+  if(nth===-1){ const e=new Date(y,m,last); return new Date(y,m,last-((e.getDay()-wd+7)%7)); }
+  const f=new Date(y,m,1), day=1+((wd-f.getDay()+7)%7)+(nth-1)*7; return day>last?nthDate(y,m,wd,-1):new Date(y,m,day); }
+function taskOcc(t,n){ const A=parseKey(t.date), N=Math.max(1,Math.floor(Number(t.every))||1), rep=t.repeat;
+  if(rep==="day") return keyOf(addDays(A,n*N)); if(rep==="week") return keyOf(addDays(A,7*N*n));
+  const months=(rep==="year"?12:1)*N*n, y=A.getFullYear()+Math.floor((A.getMonth()+months)/12), m=(A.getMonth()+months)%12;
+  if(rep==="month"&&t.mode==="nth"&&t.wd!=null) return keyOf(nthDate(y,m,t.wd,t.nth));
+  return keyOf(new Date(y,m,Math.min(A.getDate(),new Date(y,m+1,0).getDate()))); }
+function taskNext(t){ if(!t.date||!t.repeat||t.repeat==="none") return null; const base=t.date>today()?t.date:today();
+  for(let n=1;n<5000;n++){ const k=taskOcc(t,n); if(k>base) return k; } return null; }
+function taskRepText(t){ if(!t.repeat||t.repeat==="none") return ""; const N=Math.max(1,Math.floor(Number(t.every))||1), u={day:"day",week:"week",month:"month",year:"year"}[t.repeat];
+  if(t.repeat==="week"&&t.date) return N===1?"Every "+WD[parseKey(t.date).getDay()]:`Every ${N} weeks on ${WD[parseKey(t.date).getDay()]}`;
+  if(t.repeat==="month"&&t.mode==="nth"&&t.wd!=null) return (N===1?"Every ":`Every ${N} months on the `)+ORD(t.nth)+" "+WD[t.wd];
+  return N===1?"Every "+u:`Every ${N} ${u}s`; }
 function todoSheet(who,existing){
   const editing=!!(existing&&existing.id), e=existing||{};
   const t=h("input",{id:"tdText",placeholder:"Take out the recycling",value:e.text||""}); const w=whoSelect("tdWho",editing?(e.who||""):who);
   const d=h("input",{id:"tdDate",type:"date",value:e.date||""}), tm=h("input",{id:"tdTime",type:"time",value:e.time||""});
-  const quick=(label,k)=>h("button",{class:"pill",type:"button",onclick:()=>{ d.value=k; }},label);
+  const rp=h("select",{id:"tdRep"},REPS.map(([v,l])=>h("option",{value:v},l))); rp.value=e.repeat||"none";
+  const ev=h("input",{id:"tdEvery",type:"number",min:"1",max:"60",value:e.every||1,style:"width:90px"});
+  const mm=h("select",{id:"tdMode"});
+  const nt=h("input",{type:"checkbox",id:"tdNotify"}); nt.checked=!!e.notify;
+  const evBox=field("Repeat every (number)",ev), mmBox=field("Monthly on",mm), rpBox=field("Repeats",rp), tmBox=field("Time (optional)",tm);
+  const ntBox=h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},nt,"Notify me when it's coming due (the morning of that day)");
+  const ntHint=h("p",{class:"hint",style:"margin:0"},"Sent to every device that has \"Tasks coming due\" on in Settings, Notifications, around 7am Eastern.");
+  const fillMode=()=>{ const keep=mm.value; mm.replaceChildren();
+    if(!d.value){ return; } const D=parseKey(d.value), x=nthOf(d.value);
+    mm.append(h("option",{value:"date"},"Day "+D.getDate()+" of the month"));
+    if(x.nth<=4) mm.append(h("option",{value:"nth"},"The "+ORD(x.nth)+" "+WD[x.wd]));
+    if(x.isLast) mm.append(h("option",{value:"last"},"The last "+WD[x.wd]));
+    mm.value=[...mm.options].some(o=>o.value===keep)?keep:(e.mode==="nth"&&e.nth===-1&&x.isLast?"last":e.mode==="nth"?"nth":"date"); };
+  const sync=()=>{ const has=!!d.value; rpBox.style.display=has?"":"none"; tmBox.style.display=has?"":"none"; ntBox.style.display=has?"":"none"; ntHint.style.display=has&&nt.checked?"":"none";
+    evBox.style.display=has&&rp.value!=="none"?"":"none"; mmBox.style.display=has&&rp.value==="month"?"":"none"; };
+  d.addEventListener("change",()=>{ fillMode(); sync(); }); rp.addEventListener("change",sync); nt.addEventListener("change",sync); fillMode(); sync();
+  const quick=(label,k)=>h("button",{class:"pill",type:"button",onclick:()=>{ d.value=k; fillMode(); sync(); }},label);
   const save=async()=>{ const v=t.value.trim(); if(!v){ t.focus(); return; } const date=d.value||"", time=date?(tm.value||""):"";
+    const data={text:v,who:w.value,date,time,repeat:date?rp.value:"none",every:Math.max(1,Math.min(60,Number(ev.value)||1)),notify:!!date&&nt.checked,mode:"",wd:null,nth:null};
+    if(data.repeat==="month"&&date&&(mm.value==="nth"||mm.value==="last")){ const x=nthOf(date); data.mode="nth"; data.wd=x.wd; data.nth=mm.value==="last"?-1:x.nth; }
     closeSheet();
-    if(editing){ await updDoc("todos",e.id,{text:v,who:w.value,date,time}); toast("Task updated"); }
-    else{ await addDoc("todos",{text:v,who:w.value,done:false,date,time,createdAt:Date.now()}); toast("Task added"); } };
-  t.addEventListener("keydown",ev=>{ if(ev.key==="Enter") save(); });
+    if(editing){ await updDoc("todos",e.id,data); toast("Task updated"); }
+    else{ await addDoc("todos",{...data,done:false,createdAt:Date.now()}); toast("Task added"); } };
+  t.addEventListener("keydown",ev2=>{ if(ev2.key==="Enter") save(); });
   openSheet([h("h2",null,editing?"Edit task":"New task"),field("Task",t),field("For",w),
-    field("Due day (optional)",d),h("div",{style:"display:flex;gap:8px;flex-wrap:wrap"},quick("Today",today()),quick("Tomorrow",keyOf(addDays(new Date(),1))),quick("Next week",keyOf(addDays(new Date(),7))),h("button",{class:"pill",type:"button",onclick:()=>{ d.value=""; tm.value=""; }},"No date")),
-    field("Time (optional)",tm),
-    h("div",{class:"acts"},editing?h("button",{class:"pill danger",onclick:()=>{ closeSheet(); delDoc("todos",e.id); toast("Task removed"); }},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},editing?"Save":"Add task"))]);
+    field("Due day (optional)",d),h("div",{style:"display:flex;gap:8px;flex-wrap:wrap"},quick("Today",today()),quick("Tomorrow",keyOf(addDays(new Date(),1))),quick("Next week",keyOf(addDays(new Date(),7))),h("button",{class:"pill",type:"button",onclick:()=>{ d.value=""; tm.value=""; sync(); }},"No date")),
+    tmBox,rpBox,evBox,mmBox,ntBox,ntHint,
+    h("div",{class:"acts"},editing?h("button",{class:"pill danger",onclick:()=>{ closeSheet(); delDoc("todos",e.id); toast("Task removed"); }},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},editing?"Save":"Add task"))],true);
 }
 function taskDue(t){ if(!t.date) return null; const over=!t.done&&(t.date<today()||(t.date===today()&&t.time&&t.time<new Date().toTimeString().slice(0,5)));
   return {over,text:(t.date<today()&&!t.done?"Overdue · ":"")+dayLabel(t.date)+(t.time?" · "+fmtTime(t.time):"")}; }

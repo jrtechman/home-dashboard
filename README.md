@@ -73,3 +73,7 @@ On an iPad wall mount, also turn on **Settings → Accessibility → Guided Acce
 - **Face ID:** after signing in with the passcode on a phone, tap **Turn on Face ID** (offered once, or in Settings). Later sign-ins use Face ID. Each phone is listed in Settings, where you can remove it. Passkeys belong to the web address they were made on, so if you change the address, set Face ID up again. Changing the passcode does not remove Face ID phones; remove them in Settings.
 - **Changing the passcode** signs every screen out (unless you set `SESSION_SECRET`).
 - **Run it locally:** `npm install`, then `npx vercel link` and `npx vercel env pull`, then `npm run dev`.
+
+## Wyze cameras (Menu, Cameras)
+
+The dashboard stores only addresses: each camera has a **picture address** (a still image, refreshed every 5 seconds in the tile) and a **live address** (opened when you tap the tile; a web page such as a WebRTC player, or an `.m3u8` HLS stream). Wyze has no official live-video service, so the video comes from a helper running at home, such as [docker-wyze-bridge](https://github.com/mrlt8/docker-wyze-bridge), made reachable over **https** (for example with Tailscale Serve). Add cameras with Menu, Cameras, Edit. Nothing is added to Vercel and no new environment variables are needed. See the project notes `wyze-cameras-setup` for the home-side steps.

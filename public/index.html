@@ -177,6 +177,14 @@ button{cursor:pointer;border:0;background:none}
 .lrow{display:flex;align-items:center;gap:10px}
 .lrow .lk{flex:1;min-width:0;display:flex;align-items:center;min-height:56px;padding:0 18px;border-radius:18px;background:var(--chip);font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pcs{display:flex;flex-direction:column;gap:8px}
+.camgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px}
+.camtile{position:relative;display:block;width:100%;padding:0;border:0;border-radius:18px;overflow:hidden;background:var(--chip);aspect-ratio:16/9;cursor:pointer}
+.camtile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.camtile .cn{position:absolute;left:10px;bottom:10px;padding:5px 12px;border-radius:999px;background:var(--glass-hi);color:var(--ink);font-weight:600;font-size:14px}
+.camtile .nopic{position:absolute;inset:0;display:grid;place-content:center;color:var(--muted);font-weight:500;font-size:14px;text-align:center;padding:10px}
+.camlive{width:100%;aspect-ratio:16/9;border:0;border-radius:18px;background:#000;display:block}
+.cedit{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:18px;background:var(--chip)}
+
 
 .dinner-title{font-family:var(--display);font-size:30px;line-height:1.15;margin:4px 0 6px;text-wrap:balance}
 .meta{color:var(--muted);font-weight:500;font-size:14px}
@@ -317,7 +325,7 @@ button{cursor:pointer;border:0;background:none}
   body{overflow:auto}
   .menu-btn{display:flex}
   .rail{gap:0}
-  .nav[data-view=photos],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn{display:none}
+  .nav[data-view=photos],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn{display:none}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
@@ -405,6 +413,7 @@ button{cursor:pointer;border:0;background:none}
     <button class="nav menu-btn" id="menuBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
     <div class="spacer"></div>
     <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
+    <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
     <button class="nav" id="linksBtn"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>Links</button>
     <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
     <button class="nav" id="settingsBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>Settings</button>
@@ -499,7 +508,7 @@ const AISLE_ORDER=["Produce","Bakery","Meat & Seafood","Dairy & Eggs","Pantry","
 function guessAisle(t){ const s=" "+t.toLowerCase(); for(const [a,kws] of AISLES){ if(kws.some(k=>s.includes(" "+k))) return a; } return "Other"; }
 
 /* ---------- state ---------- */
-const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null,place:null,links:[]};
+const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null,place:null,links:[],cameras:[]};
 const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
 let VER=-1, FEAT={}, live=true, pulling=false, photoSig="";
 let BUILD=null, reloadT=null, ROT=[];
@@ -677,7 +686,7 @@ function budgetSheet(){
   draw(); if(FEAT.budget) pullBudget().then(()=>{ if($("#sheetHost").contains(body)) draw(); });
   openSheet([h("h2",null,"Budget this month"),body,h("div",{class:"acts"},h("a",{class:"pill",href:"https://app.ynab.com/",target:"_blank",rel:"noopener"},"Open YNAB"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
 }
-const fixUrl=u=>{ u=String(u||"").trim(); if(!u) return ""; if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u="https://"+u; return /^https?:\/\//i.test(u)?u:""; };
+const fixUrl=u=>{ u=String(u||"").trim(); if(!u) return ""; if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u="https://"+u; return /^https?:\/\//i.test(u)?u:""; };
 function linksSheet(editing){
   const links=(S.settings.links||[]).map(l=>({...l}));
   const body=h("div",{class:"pcs"});
@@ -696,6 +705,48 @@ function linksSheet(editing){
   openSheet([h("h2",null,"Helpful links"),body,
     h("div",{class:"acts"},editing?h("button",{class:"pill",onclick:()=>linksSheet(false)},"Cancel"):h("button",{class:"pill",onclick:()=>linksSheet(true)},"Edit"),h("span",{class:"grow"}),editing?h("button",{class:"pill primary",onclick:save},"Save"):h("button",{class:"pill",onclick:closeSheet},"Close"))]);
 }
+/* Cameras: pictures and live video come straight from a helper at home (e.g. Wyze Bridge); the dashboard only stores the addresses. */
+const isHls=u=>/\.m3u8(\?|$)/i.test(u);
+function camsSheet(editing){
+  const cams=(S.settings.cameras||[]).map(c=>({...c}));
+  const body=h("div"); let timer=0;
+  const mixed=u=>location.protocol==="https:"&&/^http:\/\//i.test(u||"");
+  const liveSheet=c=>{
+    const v=isHls(c.live)?h("video",{class:"camlive",src:c.live,autoplay:"",muted:"",playsinline:"",controls:""}):h("iframe",{class:"camlive",src:c.live,allow:"autoplay; fullscreen; picture-in-picture",allowfullscreen:""});
+    if(v.tagName==="VIDEO"){ v.muted=true; v.play&&v.play().catch(()=>{}); }
+    openSheet([h("h2",null,c.name||"Camera"),c.live?v:h("p",{class:"hint"},"No live address set for this camera. Add one under Edit."),
+      mixed(c.live)?h("p",{class:"err"},"This address starts with http://, so the browser will block it here. Use an https:// address."):null,
+      h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>camsSheet(false)},"Back"))],true);
+  };
+  const tick=()=>{ if(!document.body.contains(body)){ clearInterval(timer); return; } body.querySelectorAll("img[data-snap]").forEach(i=>{ const u=i.dataset.snap; i.src=u+(u.includes("?")?"&":"?")+"_t="+Date.now(); }); };
+  const draw=()=>{ body.replaceChildren();
+    if(!editing){
+      if(!cams.length){ body.append(h("p",{class:"hint"},"No cameras yet. Tap Edit to add each camera's picture and live address (see the setup notes).")); return; }
+      const g=h("div",{class:"camgrid"});
+      cams.forEach(c=>{
+        const nopic=h("div",{class:"nopic"},c.snap?"Loading…":"No picture address");
+        const img=c.snap?h("img",{alt:c.name,"data-snap":c.snap,onload:()=>{ nopic.hidden=true; },onerror:()=>{ nopic.hidden=false; nopic.textContent="Can't reach this camera"; }}):null;
+        if(img) img.src=c.snap+(c.snap.includes("?")?"&":"?")+"_t="+Date.now();
+        g.append(h("button",{class:"camtile",onclick:()=>liveSheet(c)},nopic,img,h("span",{class:"cn"},c.name||"Camera")));
+      });
+      body.append(g,h("p",{class:"hint",style:"margin:8px 0 0"},"Pictures refresh every few seconds. Tap a camera for live video."));
+    } else {
+      cams.forEach((c,i)=>{
+        const n=h("input",{value:c.name,placeholder:"Name, e.g. Front door","aria-label":"Name"});
+        const sn=h("input",{value:c.snap||"",placeholder:"Picture address (https://…)","aria-label":"Picture address",inputmode:"url",autocapitalize:"off"});
+        const lv=h("input",{value:c.live||"",placeholder:"Live video address (https://…)","aria-label":"Live address",inputmode:"url",autocapitalize:"off"});
+        n.addEventListener("input",()=>{c.name=n.value;}); sn.addEventListener("input",()=>{c.snap=sn.value;}); lv.addEventListener("input",()=>{c.live=lv.value;});
+        body.append(h("div",{class:"cedit"},n,sn,lv,h("div",null,h("button",{class:"pill danger",onclick:()=>{cams.splice(i,1);draw();}},"Remove camera"))));
+      });
+      body.append(h("div",null,h("button",{class:"pill",onclick:()=>{cams.push({name:"",snap:"",live:""});draw();setTimeout(()=>body.querySelector(".cedit:last-child input")?.focus(),20);}},"+ Add camera")),
+        h("p",{class:"hint",style:"margin:6px 0 0"},"Addresses must start with https:// when the dashboard is on https. Don't put passwords in them."));
+    } };
+  draw(); if(!editing) timer=setInterval(tick,5000);
+  const save=async()=>{ const clean=cams.map(c=>({name:(c.name||"").trim(),snap:fixUrl(c.snap),live:fixUrl(c.live)})).filter(c=>c.snap||c.live).map(c=>({...c,name:c.name||"Camera"})); closeSheet(); await saveSettings({cameras:clean}); toast("Cameras saved"); };
+  openSheet([h("h2",null,"Cameras"),body,
+    h("div",{class:"acts"},editing?h("button",{class:"pill",onclick:()=>camsSheet(false)},"Cancel"):h("button",{class:"pill",onclick:()=>camsSheet(true)},"Edit"),h("span",{class:"grow"}),editing?h("button",{class:"pill primary",onclick:save},"Save"):h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+}
+$("#camBtn").addEventListener("click",()=>camsSheet(false));
 $("#budgetBtn").addEventListener("click",budgetSheet);
 $("#linksBtn").addEventListener("click",()=>linksSheet(false));
 async function pullBudget(){
@@ -1213,6 +1264,7 @@ function menuSheet(){
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
       row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")),
       row(ico("#budgetBtn"),"Budget",budgetSheet),
+      row(ico("#camBtn"),"Cameras",()=>camsSheet(false)),
       row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)),
       row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver),
       row(svg('<circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M12 4a8 8 0 010 16z" fill="currentColor"/>'),dark?"Switch to light mode":"Switch to dark mode",()=>setTheme(dark?"light":"dark")),

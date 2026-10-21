@@ -161,7 +161,7 @@ button{cursor:pointer;border:0;background:none}
 .card{border-radius:var(--r-col);background:var(--tint);padding:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0 0 12px;text-wrap:balance}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
-.stack{display:grid;grid-template-rows:auto 1fr auto auto;gap:12px;min-height:0}
+.stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.card{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack>.todaycard .scroll{flex:1 1 0;overflow-y:auto}.pray{cursor:pointer}.pray .py{padding:3px 0;font-size:16px}.pray .py small{color:var(--muted);margin-left:6px}
 .stack.left{display:flex;flex-direction:column}.stack.left>.card{flex:none}.stack.left>.todaycard{flex:1 1 0;min-height:140px}
 .wx{cursor:pointer}
 .wx .wxtop{display:flex;align-items:center;gap:14px}
@@ -456,6 +456,7 @@ button{cursor:pointer;border:0;background:none}
         <div class="stack">
           <div class="card c-amber" id="homeDinner"></div>
           <div class="card c-sage" id="homeTasksCard"><h2>Open tasks</h2><div class="scroll" id="homeTasks"></div></div>
+          <div class="card c-blue pray" id="homePrayer" style="display:none"></div>
           <div class="card c-teal" id="homeBudget" hidden></div>
           <div class="card c-amber verse" id="homeVerse"></div>
         </div>
@@ -1671,6 +1672,16 @@ function renderFam(){
   }
   B.style.display=bits.length?"":"none";
 }
+function renderPrayer(){
+  const B=$("#homePrayer"); if(!B) return; B.replaceChildren();
+  if(!mod("prayer")){ B.style.display="none"; return; }
+  B.style.display=""; const open=S.prayers.filter(p=>!p.answered).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  B.append(h("h2",null,"Prayer list"));
+  if(!open.length) B.append(h("div",{class:"empty-day"},"Tap to add a prayer request."));
+  open.slice(0,4).forEach(p=>B.append(h("div",{class:"py"},p.text,p.who?h("small",null,p.who):null)));
+  if(open.length>4) B.append(h("div",{class:"meta"},`+${open.length-4} more`));
+  B.onclick=()=>prayerSheet();
+}
 function famSheet(){
   const row=(label,fn)=>h("button",{class:"mrow",onclick:()=>{ closeSheet(); fn(); }},label);
   openSheet([h("h2",null,"Family"),h("div",{style:"display:flex;flex-direction:column;gap:8px"},
@@ -1801,7 +1812,7 @@ function adminSection(){
 }
 function renderAll(){
   $("#mono").textContent=(S.settings.household||"H").trim()[0]?.toUpperCase()||"H";
-  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); applyModules();
+  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); renderPrayer(); applyModules();
 }
 function toB64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(",")[1]); fr.onerror=rej; fr.readAsDataURL(blob); }); }
 

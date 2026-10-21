@@ -296,6 +296,7 @@ button{cursor:pointer;border:0;background:none}
 /* settings page */
 .settingspage{flex:1;min-height:0;overflow-y:auto;padding:4px 2px 110px;-webkit-overflow-scrolling:touch}.sheet.spage{width:min(760px,100%);max-height:none;overflow:visible;margin:0 auto;box-shadow:none}
 .nav.cur{background:var(--chip)}
+.pill.on{background:var(--ink);color:var(--bg)}.pill.on svg{stroke:var(--bg)}
 /* sheet */
 .scrim{position:fixed;inset:0;background:rgba(31,42,51,.28);display:grid;grid-template-columns:minmax(0,1fr);place-items:center;z-index:20;padding:20px}
 .sheet{box-sizing:border-box;background:var(--card);border-radius:30px;width:min(560px,100%);max-height:calc(100% - 20px);overflow-y:auto;padding:26px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(31,42,51,.18)}
@@ -338,7 +339,7 @@ button{cursor:pointer;border:0;background:none}
 .saver .nx{font-size:18px;margin-top:10px;opacity:.9}
 .saver .noimg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,#2C4A63,#1F2A33 70%)}
 
-#guestBar{position:fixed;top:calc(18px + env(safe-area-inset-top,0px));right:84px;z-index:60;background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:9px 18px;font:700 14px inherit;font-family:inherit;box-shadow:0 6px 20px rgba(0,0,0,.2);cursor:pointer;max-width:92vw}#guestBar[hidden]{display:none}@media(max-width:700px){#guestBar{top:auto;right:auto;left:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));font-size:13px;padding:8px 14px;white-space:nowrap}}
+#guestBar{position:fixed;top:auto;bottom:20px;left:104px;z-index:60;background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:9px 18px;font:700 14px inherit;font-family:inherit;box-shadow:0 6px 20px rgba(0,0,0,.2);cursor:pointer;max-width:92vw}#guestBar[hidden]{display:none}@media(max-width:700px){#guestBar{top:auto;right:auto;left:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));font-size:13px;padding:8px 14px;white-space:nowrap}}
 .nav.on{background:var(--chip)}
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:999px;font-weight:600;z-index:40;max-width:calc(100% - 32px)}
 .banner{margin:0 18px 8px;padding:10px 16px;border-radius:16px;background:var(--banner);color:var(--banner-ink);font-size:14px}
@@ -446,10 +447,8 @@ button{cursor:pointer;border:0;background:none}
     <button class="nav" data-view="photos"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8.5"/></svg>Photos</button>
     <button class="nav menu-btn" id="menuBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
     <div class="spacer"></div>
-    <button class="nav" id="guestBtn"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5M10 20v-5h4v5"/></svg>Guests</button>
     <button class="nav" id="famBtn"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a2.6 2.6 0 010 5M17.5 14a5 5 0 013 5"/></svg>Family</button>
     <button class="nav" id="linksBtn"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>Links</button>
-    <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
     <button class="nav" id="settingsBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>Settings</button>
   </nav>
 
@@ -493,6 +492,8 @@ button{cursor:pointer;border:0;background:none}
 <button class="fab" id="fab" aria-label="Add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 <button id="guestBar" hidden>Guest mode on · tap to end</button>
 <div id="moreBtns" hidden>
+    <button class="nav" id="guestBtn"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5M10 20v-5h4v5"/></svg>Guests</button>
+    <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
     <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
     <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>Meal history</button>
     <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
@@ -1055,6 +1056,10 @@ function renderTools(){
   } else if(S.view==="photos" || S.view==="home"){
     t.append(h("button",{class:"pill icon","aria-label":"Full screen",onclick:goFull},svg(IC.full)));
   }
+  const fs=t.querySelector('[aria-label="Full screen"]');
+  const tb=[h("button",{class:"pill icon"+(guestOn()?" on":""),id:"guestTop","aria-label":guestOn()?"Guest mode is on. Tap to turn off":"Guests are here",title:"Guests are here",onclick:guestToggle},svg(document.querySelector("#guestBtn svg").innerHTML)),
+    mod("sleep")?h("button",{class:"pill icon","aria-label":"Sleep (photo screensaver)",title:"Sleep",onclick:openSaver},svg(document.querySelector("#sleepBtn svg").innerHTML)):null].filter(Boolean);
+  tb.forEach(b=>fs?t.insertBefore(b,fs):t.append(b));
 }
 function goFull(){ try{ const p=document.documentElement.requestFullscreen?.(); p&&p.catch(()=>toast("Full screen isn't available here.")); }catch(e){ toast("Full screen isn't available here."); } }
 
@@ -1876,7 +1881,7 @@ $("#guestBtn").addEventListener("click",guestToggle);
 $("#guestBar").addEventListener("click",guestToggle);
 function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
-  $("#guestBar").hidden=!guestOn(); $("#guestBtn").classList.toggle("on",guestOn()); $("#guestBtn").lastChild.textContent=guestOn()?"Guests here":"Guests";
+  $("#guestBar").hidden=!guestOn(); $("#guestBtn").classList.toggle("on",guestOn()); { const g=$("#guestTop"); if(g){ g.classList.toggle("on",guestOn()); g.setAttribute("aria-label",guestOn()?"Guest mode is on. Tap to turn off":"Guests are here"); } } $("#guestBtn").lastChild.textContent=guestOn()?"Guests here":"Guests";
   ["calendar","tasks","meals","lists","photos"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
   show($("#famBtn"),mod("reminders")||mod("countdowns")||mod("notes")||mod("prayer")); show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));
   show($("#homeWx"),mod("weather")); show($("#homeVerse"),mod("verse")); show($("#homeDinner"),mod("dinner")); show($("#homeTasksCard"),mod("tasks_card")); show($("#frame"),mod("photoframe"));

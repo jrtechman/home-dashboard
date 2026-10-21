@@ -589,7 +589,7 @@ async function pull(){
     if(!hadApl&&FEAT.apple) pullApple();
     if(!j.unchanged){
       VER=j.version;
-      for(const c of COLLS){ S[c]=j.data[c]||[]; S.loaded[c]=true; }
+      for(const c of COLLS){ S[c]=j.data[c]||[]; S.loaded[c]=true; } tidyRecipes();
       const oldPl=JSON.stringify(S.settings.place||null);
       S.settings={...DEFAULTS,...(j.data.settings||{})}; S.admin=!!j.admin;
       if(oldPl!==JSON.stringify(S.settings.place||null)||(S.settings.place&&!S.weather)){ if(!S.wxBusy){ S.wxBusy=true; pullWeather().finally(()=>{S.wxBusy=false;}); } }
@@ -1474,6 +1474,13 @@ function tidyIng(raw){
   let prev; do{ prev=s; s=s.replace(/\([^()]*\)/g," "); }while(s!==prev);
   s=s.replace(/[()]/g," ").replace(/,(?!\d).*$/,"").replace(/\s*[-–—]\s*(?:see\s+)?notes?\b.*$/i,"").replace(/\b(?:see\s+)?notes?\s*\d+\b/gi,"");
   return (lead+s.replace(/\s+/g," ").replace(/[\s,;:\/\-–]+$/,"").trim()).trim();
+}
+/* Recipes saved before the import cleanup (or typed with notes in brackets): tidy their ingredient lines once. Only lines with brackets are touched. */
+function tidyRecipes(){
+  if(S.tidied||!S.loaded.recipes) return; S.tidied=true;
+  S.recipes.forEach(r=>{ if(!Array.isArray(r.ingredients)||!r.ingredients.some(x=>/[()]/.test(String(x)))) return;
+    const t=r.ingredients.map(x=>/[()]/.test(String(x))?tidyIng(String(x)):String(x)).filter(Boolean);
+    if(t.join("\n")!==r.ingredients.join("\n")) updDoc("recipes",r.id,{ingredients:t}); });
 }
 function parseRecipeText(text){
   const raw=String(text||"").replace(/\r/g,"").split("\n").map(l=>l.replace(/\*\*|__|`/g,"").trim());

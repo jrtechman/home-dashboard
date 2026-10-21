@@ -75,6 +75,10 @@ button{cursor:pointer;border:0;background:none}
 .nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav[aria-current="page"]{background:var(--rail-on)}
 .rail .spacer{flex:1}
+.menu-btn{display:none}
+.mrow{display:flex;align-items:center;gap:14px;width:100%;min-height:60px;padding:0 18px;border-radius:18px;background:var(--chip);font-weight:600;font-size:17px;text-align:left}
+.mrow svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.mrow .sub{margin-left:auto;font-weight:500;font-size:14px;color:var(--muted)}
 
 /* main */
 .main{display:flex;flex-direction:column;min-width:0;min-height:0;padding-right:env(safe-area-inset-right,0px)}
@@ -290,6 +294,9 @@ button{cursor:pointer;border:0;background:none}
 
 @media (max-width:900px){
   body{overflow:auto}
+  .menu-btn{display:flex}
+  .rail{gap:0}
+  .nav[data-view=photos],#sleepBtn,#settingsBtn{display:none}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
@@ -374,6 +381,7 @@ button{cursor:pointer;border:0;background:none}
     <button class="nav" data-view="meals"><svg viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 005 0V3M7 11v10M17 21V3c-2.5 1-3.5 4-3.5 7.5V13H17"/></svg>Meals</button>
     <button class="nav" data-view="lists"><svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/></svg>Lists</button>
     <button class="nav" data-view="photos"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8.5"/></svg>Photos</button>
+    <button class="nav menu-btn" id="menuBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
     <div class="spacer"></div>
     <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
     <button class="nav" id="settingsBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>Settings</button>
@@ -711,6 +719,7 @@ function setView(v){
   S.view=v;
   document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.name!==v);
   document.querySelectorAll(".nav[data-view]").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  const mb=$("#menuBtn"); if(mb){ if(v==="photos") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
   try{ history.replaceState(null,"","#"+v); }catch(e){}
   renderTools(); updateGreet();
 }
@@ -1033,6 +1042,20 @@ function renderSaverClock(){
 }
 $("#saver").addEventListener("click",()=>{ $("#saver").hidden=true; saverImgs=null; idle(); });
 $("#sleepBtn").addEventListener("click",openSaver);
+/* Phones: the bottom bar ends in a Menu button that holds Photos, Sleep, appearance and Settings. */
+function menuSheet(){
+  const ico=sel=>{ const e=document.querySelector(sel+" svg"); return svg(e?e.innerHTML:""); };
+  const dark=applyTheme();
+  const row=(icon,label,fn,sub)=>h("button",{class:"mrow",onclick:()=>{ closeSheet(); fn(); }},icon,label,sub?h("span",{class:"sub"},sub):null);
+  openSheet([h("h2",null,"Menu"),
+    h("div",{style:"display:flex;flex-direction:column;gap:8px"},
+      row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")),
+      row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver),
+      row(svg('<circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M12 4a8 8 0 010 16z" fill="currentColor"/>'),dark?"Switch to light mode":"Switch to dark mode",()=>setTheme(dark?"light":"dark")),
+      row(ico("#settingsBtn"),"Settings",settingsSheet)),
+    h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
+}
+$("#menuBtn").addEventListener("click",menuSheet);
 let idleT; function idle(){ clearTimeout(idleT); const m=Number(S.settings.idleMin)||0; if(m>0) idleT=setTimeout(()=>{ if($("#sheetHost").firstChild) return idle(); openSaver(); },m*60000); }
 ["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{ idle(); lockWake(); },{passive:true}));
 

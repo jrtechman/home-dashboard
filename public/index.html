@@ -964,7 +964,7 @@ if(darkMQ.addEventListener) darkMQ.addEventListener("change",()=>{ if(themePref(
 applyTheme();
 function renderTools(){
   const t=$("#tools"); t.replaceChildren();
-  if((S.view==="calendar"||S.view==="home")&&FEAT.calendar){
+  if(S.view==="calendar"&&FEAT.calendar){
     const hid=HIDDEN_CALS.filter(n=>calNames().includes(n)||n===LOCAL_CAL).length;
     t.append(h("button",{class:"pill",id:"calBtn","aria-haspopup":"true",onclick:e=>{ e.stopPropagation(); calMenu(e.currentTarget); }},hid?`Calendars (${calNames().length+1-hid})`:"Calendars",svg('<path d="M6 9l6 6 6-6"/>')));
   }

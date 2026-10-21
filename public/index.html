@@ -1214,7 +1214,7 @@ function renderMeals(){
     h("div",{style:"min-width:0"},h("div",{class:"lbl"},"Tonight"),h("div",{class:"dinner-title"},r?r.title:"Nothing picked"),h("div",{class:"meta"},r?(r.minutes?r.minutes+" minutes":""):"Give a dish on the dinner list a day, or open it and choose “Make tonight”.")),
     r?h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>openRecipe(r.id)},"Open recipe"),h("button",{class:"pill",onclick:()=>cookedTonight(r)},"We had it")):null));
   const dl=[...S.dinnerlist].sort((a,b)=>(a.date&&!b.date?-1:!a.date&&b.date?1:(a.date||"").localeCompare(b.date||""))||((a.addedAt||0)-(b.addedAt||0))).map(d=>({d,r:S.recipes.find(x=>x.id===d.recipeId)})).filter(x=>x.r);
-  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner list"),h("span",{class:"meta",style:"margin-top:8px"},dl.length?`${dl.length} planned`:""),h("span",{class:"grow"}),mod("askhelp")?h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"help",by:meName()||"Someone",ep:pushId()})}); toast(j.already?"You asked a few minutes ago":"Asked the family for help with the menu"); }catch(e){ toast(e.message||"Couldn't send the request."); } }},"Ask for help"):null,budgetChip(/dining|restaurant|eating out|take ?out/i)));
+  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner list"),h("span",{class:"meta",style:"margin-top:8px"},dl.length?`${dl.length} planned`:""),h("span",{class:"grow"}),mod("askhelp")?h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"help",by:meName()||"Someone",ep:pushId()})}); toast(j.already?"You asked a few minutes ago":"Asked the family for help with the menu"); }catch(e){ toast(e.message||"Couldn't send the request."); } }},"Ask for help"):null));
   if(dl.length){ const st=h("div",{class:"strip"}); dl.forEach(({d,r})=>st.append(dishTile(r,false,d))); m.append(st); }
   else m.append(h("p",{class:"hint",style:"margin:0 4px"},"Nothing planned yet. Tap a dish below and choose “Add to dinner list”."));
   m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Our dishes"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"link")},"Import a recipe"),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"paste")},"Paste a recipe"),h("button",{class:"pill primary",onclick:snapDish},svg(IC.cam),"Snap a dish")));
@@ -1303,7 +1303,7 @@ function groceriesView(L,keepVal){
   const got=S.shopping.filter(s=>s.got).length, left=S.shopping.length-got;
   const miss=dinnerIngredients().filter(i=>!onGroc(i));
   const pullIng=async()=>{ for(const i of miss) await addDoc("shopping",{text:i,aisle:guessAisle(i),got:false,createdAt:Date.now()}); toast("Added "+miss.length+" item"+(miss.length>1?"s":"")+" from the dinner list"); };
-  L.append(h("div",{class:"listfoot"},h("span",{class:"meta"},left+" to get"),budgetChip(/grocer/i),
+  L.append(h("div",{class:"listfoot"},h("span",{class:"meta"},left+" to get"),
     miss.length?h("button",{class:"pill",onclick:pullIng},"+ Ingredients for the dinner list ("+miss.length+")"):null,
     got?h("button",{class:"pill",onclick:()=>S.shopping.filter(s=>s.got).forEach(s=>delDoc("shopping",s.id))},"Clear "+got+" in the cart"):null));
   const wrap=h("div",{class:"aisles"});

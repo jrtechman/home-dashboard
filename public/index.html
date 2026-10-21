@@ -409,6 +409,8 @@ button{cursor:pointer;border:0;background:none}
 .bar i{display:block;height:100%;border-radius:999px;background:var(--strong)}
 .brow.over .amt{color:var(--danger)}
 .brow.over .bar i{background:var(--danger)}
+.sheet .bar{background:var(--chip)}.sheet .bar i{background:#5FA9AC}
+.bud.all{max-height:58vh;overflow-y:auto;padding-right:4px}.bud.all input{width:20px;height:20px;flex:none}#homeBudget{cursor:pointer}
 .bchip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;background:var(--chip);font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
 .bchip.over{color:var(--danger)}
 .ev.ext{background:var(--glass)}
@@ -712,19 +714,23 @@ function placeSheet(){
 function budgetSheet(){
   const body=h("div");
   const draw=()=>{ body.replaceChildren();
-    if(!FEAT.budget){ body.append(h("p",{class:"hint"},"YNAB isn't connected yet. Add YNAB_TOKEN (and YNAB_CATEGORIES) in Vercel, then redeploy.")); return; }
+    if(!FEAT.budget){ body.append(h("p",{class:"hint"},"YNAB isn't connected yet. Add YNAB_TOKEN in Vercel, then redeploy.")); return; }
     const b=S.budget; if(!b){ body.append(h("p",{class:"hint"},"Loading…")); return; }
     if(b.error){ body.append(h("p",{class:"hint"},b.error)); return; }
-    if(b.needsSetup){ body.append(h("p",{class:"hint"},"Choose which categories show by setting YNAB_CATEGORIES in Vercel. Your categories:"),h("p",{class:"meta"},(b.available||[]).join(", "))); return; }
-    const list=h("div",{class:"bud"});
-    b.categories.forEach(c=>{ const over=c.balance<0, pct=c.assigned>0?Math.max(0,Math.min(1,c.balance/c.assigned)):(over?0:1);
-      list.append(h("div",{class:"brow"+(over?" over":"")},h("div",{class:"bh"},h("span",null,c.name),h("span",{class:"amt"},over?`Over ${money(-c.balance)}`:`${money(c.balance)} left`)),h("div",{class:"bar"},h("i",{style:`width:${Math.round(pct*100)}%`})),h("div",{class:"sub"},`Spent ${money(Math.max(0,c.spent))} of ${money(c.assigned)}`))); });
-    if(!b.categories.length) list.append(h("p",{class:"hint"},"None of the YNAB_CATEGORIES names matched your budget. Check the spelling."));
+    const all=b.all||[]; const chosen=new Set(budgetChosen().map(c=>bnorm(c.name)));
+    body.append(h("p",{class:"hint",style:"margin:0 0 8px"},"Tick a category to show it on the Home page."));
+    const list=h("div",{class:"bud all"}); let grp=null;
+    all.forEach(c=>{
+      if(c.group!==grp){ grp=c.group; if(grp) list.append(h("h3",{style:"margin:8px 0 0"},grp)); }
+      const t=h("input",{type:"checkbox","aria-label":"Show "+c.name+" on Home"}); t.checked=chosen.has(bnorm(c.name));
+      t.addEventListener("change",()=>{ t.checked?chosen.add(bnorm(c.name)):chosen.delete(bnorm(c.name)); saveSettings({budgetCats:all.filter(x=>chosen.has(bnorm(x.name))).map(x=>x.name)}); });
+      list.append(budgetRow(c,t)); });
+    if(!all.length) list.append(h("p",{class:"hint"},"No categories found in this budget."));
     if(b.overspent) list.append(h("div",{class:"meta"},`${b.overspent} categor${b.overspent===1?"y is":"ies are"} overspent in YNAB`));
     if(b.fetchedAt) list.append(h("div",{class:"meta"},"Updated "+new Date(b.fetchedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})));
     body.append(list); };
-  draw(); if(FEAT.budget) pullBudget().then(()=>{ if($("#sheetHost").contains(body)) draw(); });
-  openSheet([h("h2",null,"Budget this month"),body,h("div",{class:"acts"},h("a",{class:"pill",href:"https://app.ynab.com/",target:"_blank",rel:"noopener"},"Open YNAB"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
+  draw(); if(FEAT.budget) pullBudget().then(()=>{ if($("#sheetHost").contains(body)&&!body.querySelector("input:focus")) draw(); });
+  openSheet([h("h2",null,"Budget this month"),body,h("div",{class:"acts"},h("a",{class:"pill",href:"https://app.ynab.com/",target:"_blank",rel:"noopener"},"Open YNAB"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
 const fixUrl=u=>{ u=String(u||"").trim(); if(!u) return ""; if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u="https://"+u; return /^https?:\/\//i.test(u)?u:""; };
 function linksSheet(editing){
@@ -930,7 +936,19 @@ function eventsOn(k){
   return [...mine,...ext].sort((a,b)=>(a.time||"").localeCompare(b.time||""));
 }
 const money=n=>{ try{ return new Intl.NumberFormat(undefined,{style:"currency",currency:(S.budget&&S.budget.currency)||"USD",maximumFractionDigits:Math.abs(n)>=1000?0:2}).format(n); }catch(e){ return "$"+n.toFixed(2); } };
-function budgetFor(re){ const b=S.budget; if(!b||!b.categories) return null; return b.categories.find(c=>re.test(c.name))||null; }
+function budgetFor(re){ const b=S.budget; if(!b) return null; return (b.all||b.categories||[]).find(c=>re.test(c.name))||null; }
+const bnorm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+/* Which categories show on Home: the choice saved in settings, else the ones named in YNAB_CATEGORIES. */
+function budgetChosen(){ const b=S.budget; if(!b) return []; const all=b.all||b.categories||[];
+  const names=Array.isArray(S.settings.budgetCats)?S.settings.budgetCats:(b.categories||[]).map(c=>c.name);
+  const set=new Set(names.map(bnorm)); return all.filter(c=>set.has(bnorm(c.name))); }
+/* The bar fills as money is spent; it is full when the category is used up or overspent. */
+function budgetRow(c,toggle){
+  const over=c.balance<0, spent=Math.max(0,c.spent||0), pct=over?1:(c.assigned>0?Math.min(1,spent/c.assigned):(spent>0?1:0));
+  return h("div",{class:"brow"+(over?" over":"")},
+    h("div",{class:"bh"},toggle?h("span",{style:"display:flex;gap:10px;align-items:center;min-width:0"},toggle,h("span",null,c.name)):h("span",null,c.name),h("span",{class:"amt"},over?`Over ${money(-c.balance)}`:`${money(c.balance)} left`)),
+    h("div",{class:"bar"},h("i",{style:`width:${Math.round(pct*100)}%`})),
+    h("div",{class:"sub"},`Spent ${money(spent)} of ${money(c.assigned)}`)); }
 function budgetChip(re){ const c=budgetFor(re); if(!c) return null; return h("span",{class:"bchip"+(c.balance<0?" over":"")},c.balance<0?`${c.name}: over by ${money(-c.balance)}`:`${c.name}: ${money(c.balance)} left`); }
 function renderBudget(){
   const B=$("#homeBudget"); if(!B) return;
@@ -938,17 +956,11 @@ function renderBudget(){
   B.hidden=false; B.replaceChildren(h("h2",null,"Budget this month"));
   const b=S.budget;
   if(b.error){ B.append(h("p",{class:"hint"},b.error)); return; }
-  if(b.needsSetup){ B.append(h("p",{class:"hint"},"Choose which YNAB categories show here by setting YNAB_CATEGORIES in Vercel, e.g. Groceries, Dining Out.")); return; }
-  const list=h("div",{class:"bud"});
-  b.categories.forEach(c=>{
-    const over=c.balance<0, pct=c.assigned>0?Math.max(0,Math.min(1,c.balance/c.assigned)):(over?0:1);
-    list.append(h("div",{class:"brow"+(over?" over":"")},
-      h("div",{class:"bh"},h("span",null,c.name),h("span",{class:"amt"},over?`Over ${money(-c.balance)}`:`${money(c.balance)} left`)),
-      h("div",{class:"bar"},h("i",{style:`width:${Math.round(pct*100)}%`})),
-      h("div",{class:"sub"},`Spent ${money(Math.max(0,c.spent))} of ${money(c.assigned)}`)));
-  });
-  if(!b.categories.length) list.append(h("p",{class:"hint"},"None of the YNAB_CATEGORIES names matched your budget. Check the spelling."));
-  if(b.overspent) list.append(h("div",{class:"meta"},`${b.overspent} categor${b.overspent===1?"y is":"ies are"} overspent in YNAB`));
+  const chosen=budgetChosen(), list=h("div",{class:"bud"});
+  chosen.forEach(c=>list.append(budgetRow(c)));
+  if(!chosen.length) list.append(h("p",{class:"hint"},"Tap to choose which categories show here."));
+  if(chosen.some(c=>c.balance<0)) list.append(h("div",{class:"meta"},`${chosen.filter(c=>c.balance<0).length} overspent`));
+  B.onclick=()=>budgetSheet();
   B.append(list);
 }
 

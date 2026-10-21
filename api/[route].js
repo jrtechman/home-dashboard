@@ -13,8 +13,9 @@ import * as state from "../lib/routes/state.js";
 import * as upload from "../lib/routes/upload.js";
 import * as weather from "../lib/routes/weather.js";
 import * as verse from "../lib/routes/verse.js";
+import * as push from "../lib/routes/push.js";
 
-const ROUTES = { album, apple, budget, calendar, db, "draft-recipe": draftRecipe, "import-recipe": importRecipe, login, passkey, state, upload, weather, verse };
+const ROUTES = { album, apple, budget, calendar, db, "draft-recipe": draftRecipe, "import-recipe": importRecipe, login, passkey, state, upload, weather, verse, push };
 
 async function handle(request) {
   const url = new URL(request.url);

@@ -77,3 +77,7 @@ On an iPad wall mount, also turn on **Settings → Accessibility → Guided Acce
 ## Wyze cameras (Menu, Cameras)
 
 The dashboard stores only addresses: each camera has a **picture address** (a still image, refreshed every 5 seconds in the tile) and a **live address** (opened when you tap the tile; a web page such as a WebRTC player, or an `.m3u8` HLS stream). Wyze has no official live-video service, so the video comes from a helper running at home, such as [docker-wyze-bridge](https://github.com/mrlt8/docker-wyze-bridge), made reachable over **https** (for example with Tailscale Serve). Add cameras with Menu, Cameras, Edit. Nothing is added to Vercel and no new environment variables are needed. See the project notes `wyze-cameras-setup` for the home-side steps.
+
+## Push notifications
+
+Settings, Notifications (this device), turns on notifications for that phone or tablet. People get a notification when someone else adds to the shopping list, or taps **Ask for help** on the Meals tab. The person who did it is not notified. On iPhone and iPad the dashboard must first be added to the Home Screen (Share, Add to Home Screen) and opened from there. No keys to set up: the notification keys are created on first use and kept in Redis (`hd:vapid`); phones are listed in `hd:push`.

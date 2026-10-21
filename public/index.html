@@ -533,7 +533,7 @@ async function api(path,opts={}){
   return j;
 }
 async function write(body){
-  try{ const j=await api("/api/db",{method:"POST",body:JSON.stringify(body)}); setTimeout(pull,150); if(j&&j.appleError) toast(j.appleError); return j; }
+  try{ const j=await api("/api/db",{method:"POST",body:JSON.stringify({...body,by:meName(),ep:pushId()})}); setTimeout(pull,150); if(j&&j.appleError) toast(j.appleError); return j; }
   catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't save. Check the connection and try again."); VER=-1; pull(); return null; }
 }
 async function addDoc(c,data){ const id=uid(); S[c].push({...data,id}); renderAll(); return write({op:"add",coll:c,id,data}); }
@@ -799,6 +799,37 @@ async function offerFace(){
     h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ flag("hd_face_no","1"); closeSheet(); }},"Not now"),h("span",{class:"grow"}),h("button",{class:"pill primary",onclick:async()=>{ closeSheet(); await turnOnFace(); }},"Turn on Face ID"))]);
 }
 $("#faceBtn").addEventListener("click",faceSignIn);
+/* Push notifications (per device): shopping-list adds and "help with the dinner menu" requests from other people */
+const pushId=()=>{ try{ return localStorage.getItem("hd_push_id")||""; }catch(e){ return ""; } };
+const pushPrefs=()=>{ try{ return {shopping:true,help:true,...JSON.parse(localStorage.getItem("hd_push_prefs")||"{}")}; }catch(e){ return {shopping:true,help:true}; } };
+const pushCan=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const isInstalled=()=>navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
+const b64u=s=>{ const p="=".repeat((4-s.length%4)%4), r=atob((s+p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from(r,c=>c.charCodeAt(0)); };
+async function enablePush(){
+  const perm=await Notification.requestPermission();
+  if(perm!=="granted"){ toast("Notifications are blocked for this device. Allow them in the device's settings."); return false; }
+  const reg=await navigator.serviceWorker.ready;
+  const {publicKey}=await api("/api/push");
+  const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(publicKey)});
+  const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"subscribe",sub:sub.toJSON(),who:meName(),prefs:pushPrefs()})});
+  try{ localStorage.setItem("hd_push_id",j.id); }catch(e){}
+  return true;
+}
+function pushSection(){
+  const box=h("div",null,h("h3",null,"Notifications (this device)")), body=h("div",{style:"display:flex;flex-direction:column;gap:8px"}); box.append(body);
+  const draw=()=>{ body.replaceChildren();
+    if(!pushCan()||(isIOS()&&!isInstalled())){ body.append(h("p",{class:"hint",style:"margin:0"},isIOS()&&!isInstalled()?"On iPhone and iPad, first add the dashboard to your Home Screen (Share, then Add to Home Screen) and open it from there. Then come back here to turn notifications on.":"This browser can't show notifications.")); return; }
+    if(!pushId()){ body.append(h("p",{class:"hint",style:"margin:0"},"Get a notification when someone adds to the shopping list or asks for help with the dinner menu."),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:async()=>{ try{ if(await enablePush()){ toast("Notifications are on"); draw(); } }catch(e){ toast(e.message||"Couldn't turn on notifications."); } }},"Turn on notifications"))); return; }
+    const prefs=pushPrefs();
+    const row=(k,label)=>{ const c=h("input",{type:"checkbox"}); c.checked=prefs[k]!==false; c.addEventListener("change",async()=>{ prefs[k]=c.checked; try{ localStorage.setItem("hd_push_prefs",JSON.stringify(prefs)); await api("/api/push",{method:"POST",body:JSON.stringify({op:"prefs",id:pushId(),prefs})}); }catch(e){ toast(e.message||"Couldn't save."); } }); return h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},c,label); };
+    body.append(row("shopping","Someone adds to the shopping list"),row("help","Someone asks for help with the dinner menu"),
+      h("div",{class:"acts"},h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/push",{method:"POST",body:JSON.stringify({op:"test",id:pushId()})}); toast("Test sent"); }catch(e){ toast(e.message||"Couldn't send."); } }},"Send a test"),
+        h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/push",{method:"POST",body:JSON.stringify({op:"unsubscribe",id:pushId()})}); }catch(e){} try{ localStorage.removeItem("hd_push_id"); const reg=await navigator.serviceWorker.ready; const s=await reg.pushManager.getSubscription(); s&&await s.unsubscribe(); }catch(e){} draw(); }},"Turn off")));
+  };
+  draw(); return box;
+}
+if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(()=>{});
 function faceSection(){
   const box=h("div",null,h("h3",null,"Face ID"));
   const body=h("div",{style:"display:flex;flex-direction:column;gap:8px"}); box.append(body);
@@ -1073,7 +1104,7 @@ function renderMeals(){
     h("div",{style:"min-width:0"},h("div",{class:"lbl"},"Tonight"),h("div",{class:"dinner-title"},r?r.title:"Nothing picked"),h("div",{class:"meta"},r?(r.minutes?r.minutes+" minutes":""):"Give a dish on the dinner list a day, or open it and choose “Make tonight”.")),
     r?h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>openRecipe(r.id)},"Open recipe"),h("button",{class:"pill",onclick:()=>cookedTonight(r)},"We had it")):null));
   const dl=[...S.dinnerlist].sort((a,b)=>(a.date&&!b.date?-1:!a.date&&b.date?1:(a.date||"").localeCompare(b.date||""))||((a.addedAt||0)-(b.addedAt||0))).map(d=>({d,r:S.recipes.find(x=>x.id===d.recipeId)})).filter(x=>x.r);
-  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner list"),h("span",{class:"meta",style:"margin-top:8px"},dl.length?`${dl.length} planned`:""),h("span",{class:"grow"}),budgetChip(/dining|restaurant|eating out|take ?out/i)));
+  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner list"),h("span",{class:"meta",style:"margin-top:8px"},dl.length?`${dl.length} planned`:""),h("span",{class:"grow"}),h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"help",by:meName()||"Someone",ep:pushId()})}); toast(j.already?"You asked a few minutes ago":"Asked the family for help with the menu"); }catch(e){ toast(e.message||"Couldn't send the request."); } }},"Ask for help"),budgetChip(/dining|restaurant|eating out|take ?out/i)));
   if(dl.length){ const st=h("div",{class:"strip"}); dl.forEach(({d,r})=>st.append(dishTile(r,false,d))); m.append(st); }
   else m.append(h("p",{class:"hint",style:"margin:0 4px"},"Nothing planned yet. Tap a dish below and choose “Add to dinner list”."));
   m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Our dishes"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"link")},"Import a recipe"),h("button",{class:"pill",onclick:()=>recipeSheet(null,null,"paste")},"Paste a recipe"),h("button",{class:"pill primary",onclick:snapDish},svg(IC.cam),"Snap a dish")));
@@ -1492,7 +1523,7 @@ function settingsSheet(){
   const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); closeSheet(); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value)}); idle(); toast("Settings saved"); };
   openSheet([h("h2",null,"Settings"),field("Household name",hh),
     h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),faceSection(),
+    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),faceSection(),pushSection(),
     exCount?h("div",{class:"acts"},h("span",{class:"meta grow"},`${exCount} example items are on the board.`),h("button",{class:"pill danger",onclick:()=>confirmSheet("Remove the examples?","Events, tasks, groceries and recipes marked “example” will be deleted.","Remove examples",async()=>{ for(const c of COLLS) for(const r of S[c].filter(r=>r.example)) await delDoc(c,r.id); toast("Examples removed"); })},"Remove examples")):null,
     h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ closeSheet(); try{ await api("/api/login",{method:"DELETE"}); }catch(e){} showLogin(); }},"Sign out this screen"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]);
 }

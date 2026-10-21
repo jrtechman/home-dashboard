@@ -1372,7 +1372,7 @@ function shrink(file){ return new Promise(res=>{ const img=new Image(); const u=
 
 let frameImgs=null;
 function renderFrame(){
-  const F=$("#frame");
+  const F=$("#frame"); if(!mod("photoframe")){ if(F) F.replaceChildren(); frameImgs=null; return; }
   if(!ROT.length){ frameImgs=null; F.replaceChildren(h("div",{class:"frame-empty"},h("strong",null,"Recent photos"),h("span",null,FEAT.album?"Add photos to your shared album in the Photos app and they show up here.":"Photos you add show up here and rotate on their own."),h("button",{class:"pill",style:"background:var(--card)",onclick:()=>setView("photos")},"Add photos"))); return; }
   if(!frameImgs){ const a=h("img",{alt:"Family photo"}),b=h("img",{alt:"",style:"opacity:0"}); frameImgs=[a,b]; F.replaceChildren(a,b,h("div",{class:"cap"},h("button",{class:"pill",onclick:()=>openSaver()},"Slideshow"))); a.src=photoUrl(curPhoto()); }
 }
@@ -1843,7 +1843,7 @@ function prayerSheet(showAnswered){
 }
 $("#famBtn").addEventListener("click",famSheet);
 const MODULES=[
-  ["Home page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"],["photoframe","Photo frame"]]],
+  ["Home page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"]]],
   ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"]]],
   ["Family",[["reminders","Recurring reminders"],["countdowns","Countdowns"],["notes","Family notes"],["prayer","Prayer list"]]],
   ["Menu and extras",[["budget","Budget screen"],["history","Meal history"],["cameras","Cameras"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
@@ -1851,7 +1851,7 @@ const MODULES=[
 const GUEST_HIDES=new Set(["budget_card","budget","reminders","countdowns","notes","prayer","cameras","history"]);
 function guestOn(){ return !!(S.settings&&S.settings.guest); }
 function rawMod(id){ return ((S.settings&&S.settings.modules)||{})[id]!==false; }
-function mod(id){ if(guestOn()&&GUEST_HIDES.has(id)) return false; return rawMod(id); }
+function mod(id){ if(id==="photoframe") return false; if(guestOn()&&GUEST_HIDES.has(id)) return false; return rawMod(id); }
 function setGuest(on){ saveSettings({guest:!!on}); toast(on?"Guest mode on. Private cards are hidden.":"Guest mode off"); }
 function guestToggle(){ if(!guestOn()) return setGuest(true); guestUnlockSheet(); }
 function guestUnlockSheet(){

@@ -161,8 +161,8 @@ button{cursor:pointer;border:0;background:none}
 .card{border-radius:var(--r-col);background:var(--tint);padding:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0 0 12px;text-wrap:balance}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
-.stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.card{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack>.todaycard .scroll{flex:1 1 0;overflow-y:auto}.pray{cursor:pointer}.pray .py{padding:3px 0;font-size:16px}.pray .py small{color:var(--muted);margin-left:6px}
-.stack.left{display:flex;flex-direction:column}.stack.left>.card{flex:none}.stack.left>.todaycard{flex:1 1 0;min-height:140px}
+.stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.card{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack>.todaycard .scroll{flex:0 1 auto;overflow-y:auto}.todaycard .tapnote{margin-top:8px;font-size:13px;color:var(--muted);font-weight:600}.pray{cursor:pointer}.pray .py{padding:3px 0;font-size:16px}.pray .py small{color:var(--muted);margin-left:6px}
+.stack.left{display:flex;flex-direction:column}.stack.left>.card{flex:none}.stack.left>.todaycard{flex:none;max-height:340px;cursor:pointer}
 .wx{cursor:pointer}
 .wx .wxtop{display:flex;align-items:center;gap:14px}
 .wx .wxt{font-family:var(--display);font-size:46px;line-height:1;font-variant-numeric:tabular-nums}
@@ -1045,8 +1045,7 @@ function renderHome(){
   const box=$("#homeToday"); box.replaceChildren();
   if(!evs.length) box.append(h("div",{class:"empty-day"},S.loaded.events||!live?"Nothing on the calendar today. Tap + to add something.":"Loading…"));
   evs.forEach(e=>box.append(evCard(e)));
-  const up=[...(calShown(LOCAL_CAL)?S.events:[]),...S.ext.filter(e=>calShown(e.cal)).map(e=>({...e,ext:true}))].filter(e=>e.date>k).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||""))).slice(0,4);
-  if(up.length){ box.append(h("div",{class:"sec"},"Coming up")); up.forEach(e=>{ const d=parseKey(e.date); const days=Math.round((d-parseKey(k))/864e5); box.append(evCard(e,`${days===1?"Tomorrow":WD[d.getDay()].slice(0,3)+" "+d.getDate()}`)); }); }
+  box.append(h("div",{class:"tapnote"},"Tap for upcoming events"));
 
   const dn=$("#homeDinner"); dn.replaceChildren();
   const r=tonightRecipe();
@@ -1061,6 +1060,18 @@ function renderHome(){
   renderWx(); renderVerse();
   renderFrame();
 }
+/* Tap the Today card: everything coming up over the next month, grouped by day. */
+function upcomingSheet(){
+  const k=today(), end=keyOf(addDays(parseKey(k),30)), days=[];
+  for(let i=0;i<=30;i++){ const dk=keyOf(addDays(parseKey(k),i)); const evs=eventsOn(dk); if(evs.length) days.push([dk,evs]); }
+  const list=h("div",{style:"display:flex;flex-direction:column;gap:8px"});
+  if(!days.length) list.append(h("p",{class:"hint"},"Nothing on the calendar for the next 30 days."));
+  days.forEach(([dk,evs])=>{ const d=parseKey(dk), diff=Math.round((d-parseKey(k))/864e5);
+    list.append(h("h3",{style:"margin:10px 2px 0"},(diff===0?"Today":diff===1?"Tomorrow":WD[d.getDay()])+" · "+MO[d.getMonth()]+" "+d.getDate()));
+    evs.forEach(e=>list.append(evCard(e))); });
+  openSheet([h("h2",null,"Upcoming events"),list,h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ closeSheet(); setView("calendar"); }},"Open calendar"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+}
+document.addEventListener("click",ev=>{ const c=ev.target.closest&&ev.target.closest(".todaycard"); if(c&&!ev.target.closest("button")&&!$("#sheetHost").firstChild) upcomingSheet(); });
 function evCard(e,whenLabel){
   if(e.ext){
     const col=members().some(m=>m.name===e.cal)?colorOf(e.cal):"teal";

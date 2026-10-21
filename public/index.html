@@ -1097,7 +1097,7 @@ function renderTools(){
   }
   const fs=t.querySelector('[aria-label="Full screen"]');
   const tb=[h("button",{class:"pill icon"+(guestOn()?" on":""),id:"guestTop","aria-label":guestOn()?"Guest mode is on. Tap to turn off":"Guests are here",title:"Guests are here",onclick:guestToggle},svg(document.querySelector("#guestBtn svg").innerHTML)),
-    h("button",{class:"pill icon",id:"themeTop","aria-label":isDark()?"Switch to light mode":"Switch to dark mode",title:isDark()?"Light mode":"Dark mode",onclick:()=>setTheme(isDark()?"light":"dark")},svg(isDark()?'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>':'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>')),
+    h("button",{class:"pill icon",id:"themeTop","aria-label":isDark()?"Switch to light mode":"Switch to dark mode",title:isDark()?"Light mode":"Dark mode",onclick:()=>setTheme(isDark()?"light":"dark")},svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>')),
     mod("sleep")?h("button",{class:"pill icon","aria-label":"Sleep (photo screensaver)",title:"Sleep",onclick:openSaver},svg(document.querySelector("#sleepBtn svg").innerHTML)):null].filter(Boolean);
   tb.forEach(b=>fs?t.insertBefore(b,fs):t.append(b));
 }

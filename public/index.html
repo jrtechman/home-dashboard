@@ -718,15 +718,15 @@ function budgetSheet(){
     const b=S.budget; if(!b){ body.append(h("p",{class:"hint"},"Loading…")); return; }
     if(b.error){ body.append(h("p",{class:"hint"},b.error)); return; }
     const all=b.all||[]; const chosen=new Set(budgetChosen().map(c=>bnorm(c.name)));
-    body.append(h("p",{class:"hint",style:"margin:0 0 8px"},"Tick a category to show it on the Home page, with its amount and progress bar."));
+    body.append(h("p",{class:"hint",style:"margin:0 0 8px"},"Tick a category to show it on the Home page."));
     const list=h("div",{class:"bud all"});
-    /* A ticked category shows its amount and bar (as on Home); an unticked one is just its name. */
+    /* Just names and ticks here; amounts and bars show on the Home card. */
     const makeRow=c=>{
       const on=chosen.has(bnorm(c.name));
       const t=h("input",{type:"checkbox","aria-label":"Show "+c.name+" on Home"}); t.checked=on;
       t.addEventListener("change",()=>{ t.checked?chosen.add(bnorm(c.name)):chosen.delete(bnorm(c.name));
         saveSettings({budgetCats:all.filter(x=>chosen.has(bnorm(x.name))).map(x=>x.name)}); const nr=makeRow(c); row.replaceWith(nr); row=nr; nr.querySelector("input").focus(); });
-      let row=on?budgetRow(c,t):h("label",{class:"brow plain"},t,h("span",null,c.name));
+      let row=h("label",{class:"brow plain"},t,h("span",null,c.name));
       return row; };
     all.forEach(c=>list.append(makeRow(c)));
     if(!all.length) list.append(h("p",{class:"hint"},"No categories found in this budget."));

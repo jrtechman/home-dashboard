@@ -962,7 +962,6 @@ function applyTheme(){
 function setTheme(p){ try{ localStorage.setItem("hd_theme",p); }catch(e){} applyTheme(); renderTools(); }
 if(darkMQ.addEventListener) darkMQ.addEventListener("change",()=>{ if(themePref()==="auto"){ applyTheme(); renderTools(); } });
 applyTheme();
-function themeBtn(){ const dark=applyTheme(); return h("button",{class:"pill icon","aria-label":dark?"Switch to light mode":"Switch to dark mode",onclick:()=>setTheme(dark?"light":"dark")},svg(dark?IC.sun:IC.moon)); }
 function renderTools(){
   const t=$("#tools"); t.replaceChildren();
   if((S.view==="calendar"||S.view==="home")&&FEAT.calendar){
@@ -979,7 +978,6 @@ function renderTools(){
   } else if(S.view==="photos" || S.view==="home"){
     t.append(h("button",{class:"pill icon","aria-label":"Full screen",onclick:goFull},svg(IC.full)));
   }
-  t.append(themeBtn());
 }
 function goFull(){ try{ const p=document.documentElement.requestFullscreen?.(); p&&p.catch(()=>toast("Full screen isn't available here.")); }catch(e){ toast("Full screen isn't available here."); } }
 
@@ -1323,7 +1321,6 @@ $("#sleepBtn").addEventListener("click",openSaver);
 /* Phones: the bottom bar ends in a Menu button that holds Photos, Sleep, appearance and Settings. */
 function menuSheet(){
   const ico=sel=>{ const e=document.querySelector(sel+" svg"); return svg(e?e.innerHTML:""); };
-  const dark=applyTheme();
   const row=(icon,label,fn,sub)=>h("button",{class:"mrow",onclick:()=>{ closeSheet(); fn(); }},icon,label,sub?h("span",{class:"sub"},sub):null);
   openSheet([h("h2",null,"Menu"),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
@@ -1333,7 +1330,6 @@ function menuSheet(){
       row(ico("#camBtn"),"Cameras",()=>camsSheet(false)),
       row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)),
       row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver),
-      row(svg('<circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M12 4a8 8 0 010 16z" fill="currentColor"/>'),dark?"Switch to light mode":"Switch to dark mode",()=>setTheme(dark?"light":"dark")),
       row(ico("#settingsBtn"),"Settings",settingsSheet)),
     h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
 }

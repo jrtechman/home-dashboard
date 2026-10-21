@@ -171,6 +171,17 @@ button{cursor:pointer;border:0;background:none}
 .wx .wear{margin-top:12px;padding:12px 14px;border-radius:16px;background:var(--glass);font-weight:600;font-size:15px;line-height:1.35}
 .wx .wear small{display:block;font-weight:500;font-size:13px;color:var(--muted);margin-top:3px}
 .verse{cursor:default}
+.wxbody{display:flex;flex-direction:column;gap:12px;cursor:default}
+.wxbody>*{flex:none}
+.wx .wxmore{margin-top:8px;font-size:12px;color:var(--muted);font-weight:500}
+.hourly{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+.hr{flex:none;min-width:58px;text-align:center;padding:8px 6px;border-radius:14px;background:var(--chip)}
+.hr .hl{font-size:12px;color:var(--muted);font-weight:600}.hr .hi{font-size:22px;margin:2px 0}.hr .ht{font-weight:700;font-variant-numeric:tabular-nums}.hr .hp{font-size:11px;color:var(--muted);min-height:14px}
+.wdays{display:flex;flex-direction:column;gap:4px}
+.wd{display:grid;grid-template-columns:minmax(0,1fr) 30px 44px auto;align-items:center;gap:8px;padding:8px 12px;border-radius:14px;background:var(--chip);font-weight:600;font-size:15px}
+.wd .dp{font-size:12px;color:var(--muted);text-align:right}.wd .dt{font-variant-numeric:tabular-nums;text-align:right}
+.wstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.wstat{padding:10px 12px;border-radius:14px;background:var(--chip)}.wstat .sl{font-size:12px;color:var(--muted);font-weight:600}.wstat .sv{font-weight:700;margin-top:2px}
 .verse .vt{font-family:var(--display);font-size:19px;line-height:1.4;text-wrap:pretty}
 .verse .vr{margin-top:8px;font-weight:600;font-size:14px;color:var(--muted)}
 .verse .vr a{color:inherit}
@@ -634,7 +645,7 @@ async function pullVerse(){
 function renderWx(){
   const B=$("#homeWx"); if(!B) return; B.replaceChildren();
   const p=S.settings.place, w=S.weather;
-  B.onclick=()=>placeSheet();
+  B.onclick=()=>{ if(S.settings.place&&S.weather&&!S.weather.error) weatherSheet(); else placeSheet(); };
   if(!p){ B.append(h("h2",null,"Weather"),h("p",{class:"hint",style:"margin:0 0 10px"},"Show the weather and what to wear for your location."),h("div",null,h("button",{class:"pill primary",onclick:e=>{ e.stopPropagation(); placeSheet(); }},"Set location"))); return; }
   if(!w){ B.append(h("h2",null,p.name||"Weather"),h("p",{class:"hint"},"Loading…")); return; }
   if(w.error){ B.append(h("h2",null,p.name||"Weather"),h("p",{class:"hint"},w.error)); return; }
@@ -642,6 +653,24 @@ function renderWx(){
   B.append(h("div",{class:"wxtop"},h("div",{class:"wxi"},icon),h("div",{class:"wxt"},`${Math.round(w.now.temp)}°`),
     h("div",null,h("div",{class:"wxd"},desc),h("div",{class:"wxs"},`${p.name||"Here"} · High ${Math.round(t.hi)}° / Low ${Math.round(t.lo)}°`),h("div",{class:"wxs"},`Feels like ${Math.round(w.now.feels)}° · ${t.rain}% chance of rain`))));
   if(cl) B.append(h("div",{class:"wear"},"Wear: "+cl.main,cl.extra.length?h("small",null,"Also: "+cl.extra.join(", ")):null));
+  B.append(h("div",{class:"wxmore"},"Tap for hourly and 7-day forecast"));
+}
+const hourLabel=(iso,first)=>{ if(first) return "Now"; const hh=Number(String(iso).slice(11,13)); return (hh%12||12)+(hh<12?" AM":" PM"); };
+const clockOf=iso=>{ const m=/T(\d\d):(\d\d)/.exec(iso||""); if(!m) return ""; const hh=Number(m[1]); return (hh%12||12)+":"+m[2]+(hh<12?" AM":" PM"); };
+const uvWord=u=>u==null?"":u>=11?"Extreme":u>=8?"Very high":u>=6?"High":u>=3?"Moderate":"Low";
+function weatherSheet(){
+  const w=S.weather, p=S.settings.place; if(!w||w.error){ placeSheet(); return; }
+  const [desc,icon]=wxInfo(w.now.code), t=w.today, cl=clothing(w), r=x=>Math.round(x);
+  const hourly=h("div",{class:"hourly"},(w.hourly||[]).map((x,i)=>h("div",{class:"hr"},h("div",{class:"hl"},hourLabel(x.time,i===0)),h("div",{class:"hi"},wxInfo(x.code)[1]),h("div",{class:"ht"},r(x.temp)+"°"),h("div",{class:"hp"},(x.rain>=10?x.rain+"%":"")))));
+  const days=h("div",{class:"wdays"},(w.days||[]).map((d,i)=>{ const dt=parseKey(d.date); return h("div",{class:"wd"},h("span",{class:"dn2"},i===0?"Today":i===1?"Tomorrow":WD[dt.getDay()]),h("span",{class:"di"},wxInfo(d.code)[1]),h("span",{class:"dp"},d.rain>=10?d.rain+"%":""),h("span",{class:"dt"},r(d.lo)+"° / "+r(d.hi)+"°")); }));
+  const stat=(l,v)=>v==null||v===""?null:h("div",{class:"wstat"},h("div",{class:"sl"},l),h("div",{class:"sv"},v));
+  openSheet([h("h2",null,p.name||"Weather"),h("div",{class:"wx wxbody"},
+    h("div",{class:"wxtop"},h("div",{class:"wxi"},icon),h("div",{class:"wxt"},r(w.now.temp)+"°"),h("div",null,h("div",{class:"wxd"},desc),h("div",{class:"wxs"},`High ${r(t.hi)}° / Low ${r(t.lo)}°`))),
+    cl?h("div",{class:"wear",style:"margin:0"},"Wear: "+cl.main,cl.extra.length?h("small",null,"Also: "+cl.extra.join(", ")):null):null,
+    h("h3",{style:"margin:6px 0 0"},"Next 12 hours"),hourly,
+    h("h3",{style:"margin:6px 0 0"},"This week"),days,
+    h("div",{class:"wstats"},stat("Feels like",r(w.now.feels)+"°"),stat("Humidity",w.now.humidity!=null?r(w.now.humidity)+"%":""),stat("Wind",`${r(w.now.wind)} mph`+(t.wind?` (gusts to ${r(t.wind)})`:"")),stat("Rain chance today",t.rain+"%"),stat("UV today",t.uv!=null?`${r(t.uv)} · ${uvWord(t.uv)}`:""),stat("Sunrise",clockOf(t.sunrise)),stat("Sunset",clockOf(t.sunset))),
+    ),h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>placeSheet()},"Change location"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
 function renderVerse(){
   const B=$("#homeVerse"); if(!B) return; B.replaceChildren(h("h2",null,"Verse of the day"));

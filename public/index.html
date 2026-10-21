@@ -519,7 +519,7 @@ button{cursor:pointer;border:0;background:none}
 <button id="guestBar" hidden>Guest mode on · tap to end</button>
 <div id="moreBtns" hidden>
     <button class="nav" id="guestBtn"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5M10 20v-5h4v5"/></svg>Guests</button>
-    <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
+    <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M3 8h6l-6 8h6M13 3h5l-5 6h5M15 14h4l-4 5h4"/></svg>Sleep</button>
     <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
     <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>Meal history</button>
     <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
@@ -1092,9 +1092,8 @@ function renderTools(){
       h("button",{class:"pill icon","aria-label":"Previous week",onclick:()=>{S.weekOffset--;renderCal();renderTools();}},svg(IC.left)),
       h("button",{class:"pill",onclick:()=>{S.weekOffset=0;renderCal();renderTools();}},"Today"),
       h("button",{class:"pill icon","aria-label":"Next week",onclick:()=>{S.weekOffset++;renderCal();renderTools();}},svg(IC.right)));
-  } else if(S.view==="photos" || S.view==="home"){
-    t.append(h("button",{class:"pill icon","aria-label":"Full screen",onclick:goFull},svg(IC.full)));
   }
+  t.append(h("button",{class:"pill icon","aria-label":"Full screen",title:"Full screen",onclick:goFull},svg(IC.full)));
   const fs=t.querySelector('[aria-label="Full screen"]');
   const tb=[h("button",{class:"pill icon"+(guestOn()?" on":""),id:"guestTop","aria-label":guestOn()?"Guest mode is on. Tap to turn off":"Guests are here",title:"Guests are here",onclick:guestToggle},svg(document.querySelector("#guestBtn svg").innerHTML)),
     h("button",{class:"pill icon",id:"themeTop","aria-label":isDark()?"Switch to light mode":"Switch to dark mode",title:isDark()?"Light mode":"Dark mode",onclick:()=>setTheme(isDark()?"light":"dark")},svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>')),

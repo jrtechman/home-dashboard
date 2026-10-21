@@ -298,6 +298,8 @@ button{cursor:pointer;border:0;background:none}
 /* settings page */
 .settingspage{flex:1;min-height:0;overflow-y:auto;padding:4px 2px 110px;-webkit-overflow-scrolling:touch}.sheet.spage{width:min(760px,100%);max-height:none;overflow:visible;margin:0 auto;box-shadow:none}
 .nav.cur{background:var(--chip)}
+.pnav{display:flex;gap:8px;align-items:center}
+@media (max-width:640px){.pnav{flex:1 0 100%;gap:6px}.pnav .pill:not(.icon){flex:1 1 auto;min-width:0;justify-content:center;white-space:nowrap;padding-left:10px;padding-right:10px}.pnav .pill.icon{flex:0 0 auto}}
 .dacts{display:flex;gap:8px}.dacts .sm{display:none}
 @media (max-width:640px){.dacts{flex:1 0 100%;gap:6px}.dacts .pill{flex:1 1 0;min-width:0;justify-content:center;padding-left:8px;padding-right:8px;white-space:nowrap}.dacts .lg{display:none}.dacts .sm{display:inline}.fchips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -4px;padding:0 4px}.fchips::-webkit-scrollbar{display:none}.fchips .chip{flex:0 0 auto;white-space:nowrap}}
 #guestTop{margin-left:18px}
@@ -1328,10 +1330,10 @@ function renderMeals(){
   /* week planner */
   const start=addDays(new Date(),MEAL.week*7), end=addDays(start,6), dl=S.dinnerlist.map(d=>({d,r:S.recipes.find(x=>x.id===d.recipeId)})).filter(x=>x.r);
   m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner plan"),h("span",{class:"meta",style:"margin-top:8px"},`${MO[start.getMonth()]} ${start.getDate()} – ${MO[end.getMonth()]} ${end.getDate()}`),h("span",{class:"grow"}),
-    h("button",{class:"pill icon","aria-label":"Previous week",disabled:MEAL.week<=0,onclick:()=>{ MEAL.week=Math.max(0,MEAL.week-1); renderMeals(); }},svg(IC.left)),
+    h("div",{class:"pnav"},h("button",{class:"pill icon","aria-label":"Previous week",disabled:MEAL.week<=0,onclick:()=>{ MEAL.week=Math.max(0,MEAL.week-1); renderMeals(); }},svg(IC.left)),
     h("button",{class:"pill",onclick:()=>{ MEAL.week=0; renderMeals(); }},"This week"),
     h("button",{class:"pill icon","aria-label":"Next week",onclick:()=>{ MEAL.week++; renderMeals(); }},svg(IC.right)),
-    mod("askhelp")?h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"help",by:meName()||"Someone",ep:pushId()})}); toast(j.already?"You asked a few minutes ago.":"Asked the family for help"); }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't send the request."); } }},"Ask for help"):null));
+    mod("askhelp")?h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"help",by:meName()||"Someone",ep:pushId()})}); toast(j.already?"You asked a few minutes ago.":"Asked the family for help"); }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't send the request."); } }},"Ask for help"):null)));
   const plan=h("div",{class:"mplan"});
   for(let i=0;i<7;i++){
     const d=addDays(start,i), k=keyOf(d), items=dl.filter(x=>x.d.date===k);

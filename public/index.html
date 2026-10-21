@@ -335,7 +335,7 @@ button{cursor:pointer;border:0;background:none}
 .saver .nx{font-size:18px;margin-top:10px;opacity:.9}
 .saver .noimg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,#2C4A63,#1F2A33 70%)}
 
-#guestBar{position:fixed;top:calc(18px + env(safe-area-inset-top,0px));right:84px;z-index:60;background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:9px 18px;font:700 14px inherit;font-family:inherit;box-shadow:0 6px 20px rgba(0,0,0,.2);cursor:pointer;max-width:92vw}#guestBar[hidden]{display:none}@media(max-width:700px){#guestBar{right:auto;left:50%;transform:translateX(-50%);top:calc(6px + env(safe-area-inset-top,0px));font-size:13px;padding:7px 14px}}
+#guestBar{position:fixed;top:calc(18px + env(safe-area-inset-top,0px));right:84px;z-index:60;background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:9px 18px;font:700 14px inherit;font-family:inherit;box-shadow:0 6px 20px rgba(0,0,0,.2);cursor:pointer;max-width:92vw}#guestBar[hidden]{display:none}@media(max-width:700px){#guestBar{top:auto;right:auto;left:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));font-size:13px;padding:8px 14px;white-space:nowrap}}
 .nav.on{background:var(--chip)}
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:999px;font-weight:600;z-index:40;max-width:calc(100% - 32px)}
 .banner{margin:0 18px 8px;padding:10px 16px;border-radius:16px;background:var(--banner);color:var(--banner-ink);font-size:14px}
@@ -490,7 +490,7 @@ button{cursor:pointer;border:0;background:none}
 </div>
 
 <button class="fab" id="fab" aria-label="Add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-<button id="guestBar" hidden>Guest mode is on · tap to turn off</button>
+<button id="guestBar" hidden>Guest mode on · tap to end</button>
 <div id="sheetHost"></div>
 <div id="saver" class="saver" hidden></div>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>

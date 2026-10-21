@@ -320,6 +320,24 @@ button{cursor:pointer;border:0;background:none}
   .dgrid .snap{display:flex;align-items:center;justify-content:center;gap:10px;aspect-ratio:auto;min-height:60px;padding:12px;border-radius:20px}
   .dgrid .snap svg{width:26px;height:26px}
 }
+/* Phones: tighter lists */
+@media (max-width:640px){
+  .lists{padding-inline:12px}
+  .addbar{margin-bottom:8px;gap:6px}
+  .addbar input{min-height:48px;font-size:16px;padding:0 18px}
+  .addbar .pill{min-height:48px;padding:0 20px}
+  .listfoot{margin:0 0 8px;gap:6px}
+  .listfoot .pill{min-height:38px;font-size:13px;padding:0 14px}
+  .ltabs{margin-bottom:8px}
+  .ltab{min-height:40px;padding:0 14px;font-size:14px}
+  .aisles{column-gap:8px}
+  .aisle{margin-bottom:8px;padding:10px 10px 8px;gap:4px;border-radius:22px}
+  .aisle h3{font-size:17px;margin:0 4px 2px}
+  .aisle h3 span{font-size:12px}
+  .aisle .item{min-height:42px;padding:6px 8px 6px 14px;border-radius:14px;font-size:15px;gap:8px}
+  .aisle .item .check{width:26px;height:26px}
+  .aisle .item .check svg{width:14px;height:14px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* sign-in */
@@ -882,7 +900,7 @@ function renderLists(){
 }
 function customView(L,list,keepVal){
   const inp=h("input",{id:"shopIn",placeholder:"Add to "+list.name+"…",autocomplete:"off","aria-label":"New item for "+list.name}); inp.value=keepVal;
-  const add=()=>{ const v=inp.value.trim(); if(!v) return; addDoc("listitems",{listId:list.id,text:v,done:false,createdAt:Date.now()}); inp.value=""; inp.focus(); };
+  const add=()=>{ const v=inp.value.trim(); if(!v) return; inp.value=""; addDoc("listitems",{listId:list.id,text:v,done:false,createdAt:Date.now()}); $("#shopIn")?.focus(); };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter") add(); });
   L.append(h("div",{class:"addbar"},inp,h("button",{class:"pill",onclick:add},"Add")));
   const items=S.listitems.filter(i=>i.listId===list.id).sort((x,y)=>(!!x.done-!!y.done)||((x.createdAt||0)-(y.createdAt||0)));
@@ -902,7 +920,7 @@ function customView(L,list,keepVal){
 function groceriesView(L,keepVal){
   const inp=h("input",{id:"shopIn",placeholder:"Add to the shopping list…",autocomplete:"off","aria-label":"New shopping item"});
   inp.value=keepVal;
-  const add=()=>{ const v=inp.value.trim(); if(!v) return; addDoc("shopping",{text:v,aisle:guessAisle(v),got:false,createdAt:Date.now()}); inp.value=""; inp.focus(); };
+  const add=()=>{ const v=inp.value.trim(); if(!v) return; inp.value=""; addDoc("shopping",{text:v,aisle:guessAisle(v),got:false,createdAt:Date.now()}); $("#shopIn")?.focus(); };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter") add(); });
   L.append(h("div",{class:"addbar"},inp,h("button",{class:"pill",onclick:add},"Add")));
   const got=S.shopping.filter(s=>s.got).length, left=S.shopping.length-got;

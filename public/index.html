@@ -133,6 +133,8 @@ button{cursor:pointer;border:0;background:none}
 .check{width:30px;height:30px;border-radius:50%;background:var(--card);border:2px solid var(--card);flex:none;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(31,42,51,.06)}
 .check svg{width:16px;height:16px;stroke:var(--on-strong);fill:none;stroke-width:3;opacity:0}
 .item.done{opacity:.55}
+.item.tk{box-sizing:border-box;cursor:pointer;user-select:none}.item .sub.over{color:#B4443C;font-weight:700}
+.tkedit{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.7);display:grid;place-items:center;cursor:pointer;color:var(--muted)}.tkedit svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .item.done .txt{text-decoration:line-through}
 .item.done .check{background:var(--strong);border-color:var(--strong)}
 .item.done .check svg{opacity:1}
@@ -1081,7 +1083,7 @@ function renderHome(){
   else dn.append(h("div",{class:"dinner-title"},"Not picked yet"), h("div",{class:"meta"},S.dinnerlist.length?`${S.dinnerlist.length} on the dinner list`:"The dinner list is empty"), h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>setView("meals")},"Open the dinner list")));
 
   const tb=$("#homeTasks"); tb.replaceChildren();
-  const open=S.todos.filter(t=>!t.done).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(0,6);
+  const open=S.todos.filter(t=>!t.done).sort(taskOrder).slice(0,6);
   if(!open.length) tb.append(h("div",{class:"empty-day"},"All caught up."));
   open.forEach(t=>tb.append(todoItem(t,true)));
   renderWx(); renderVerse();
@@ -1149,15 +1151,20 @@ function renderCal(){
 
 /* tasks */
 function todoItem(t,showWho){
-  return h("button",{class:"item c-"+colorOf(t.who)+(t.done?" done":""),onclick:()=>updDoc("todos",t.id,{done:!t.done,doneAt:!t.done?Date.now():null}),"aria-pressed":t.done?"true":"false"},
-    h("span",{class:"txt"},t.text,exTag(t),showWho?h("span",{class:"sub"},t.who||"Everyone"):null),
+  const due=taskDue(t), toggle=()=>updDoc("todos",t.id,{done:!t.done,doneAt:!t.done?Date.now():null});
+  const subs=[showWho?(t.who||"Everyone"):null,due?due.text:null].filter(Boolean).join(" · ");
+  const el=h("div",{class:"item tk c-"+colorOf(t.who)+(t.done?" done":""),role:"button",tabindex:"0",onclick:toggle,"aria-pressed":t.done?"true":"false"},
+    h("span",{class:"txt"},t.text,exTag(t),subs?h("span",{class:"sub"+(due&&due.over?" over":"")},subs):null),
+    h("button",{class:"tkedit","aria-label":"Edit or schedule task",title:"Edit or schedule",onclick:ev=>{ ev.stopPropagation(); todoSheet(t.who||"",t); }},svg('<path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/>')),
     h("span",{class:"check"},svg(IC.check)));
+  el.addEventListener("keydown",ev=>{ if((ev.key==="Enter"||ev.key===" ")&&ev.target===el){ ev.preventDefault(); toggle(); } });
+  return el;
 }
 function renderTasks(){
   const b=$("#taskBoard"); b.replaceChildren();
   const people=[...members().map(m=>({name:m.name,color:m.color})),{name:"",label:"Everyone",color:"none"}];
   people.forEach(p=>{
-    const list=S.todos.filter(t=>(t.who||"")===p.name).sort((a,b)=>(a.done-b.done)||((a.createdAt||0)-(b.createdAt||0)));
+    const list=S.todos.filter(t=>(t.who||"")===p.name).sort(taskOrder);
     const done=list.filter(t=>t.done).length;
     const label=p.label||p.name;
     const body=h("div",{class:"col-body"});
@@ -1476,12 +1483,24 @@ function eventSheet(e){
   openSheet([h("h2",null,editing?"Edit event":"New event"),field("What",t),h("div",{class:"row"},field("Day",d),field("Time (leave blank for all day)",tm)),field("Who",w),ap?field("Also save to Apple Calendar",ap):null,
     h("div",{class:"acts"},editing?h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this event?",e.title,"Delete",()=>delDoc("events",e.id))},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},editing?"Save":"Add event"))]);
 }
-function todoSheet(who){
-  const t=h("input",{id:"tdText",placeholder:"Take out the recycling"}); const w=whoSelect("tdWho",who);
-  const save=async()=>{ const v=t.value.trim(); if(!v){ t.focus(); return; } closeSheet(); await addDoc("todos",{text:v,who:w.value,done:false,createdAt:Date.now()}); toast("Task added"); };
+function todoSheet(who,existing){
+  const editing=!!(existing&&existing.id), e=existing||{};
+  const t=h("input",{id:"tdText",placeholder:"Take out the recycling",value:e.text||""}); const w=whoSelect("tdWho",editing?(e.who||""):who);
+  const d=h("input",{id:"tdDate",type:"date",value:e.date||""}), tm=h("input",{id:"tdTime",type:"time",value:e.time||""});
+  const quick=(label,k)=>h("button",{class:"pill",type:"button",onclick:()=>{ d.value=k; }},label);
+  const save=async()=>{ const v=t.value.trim(); if(!v){ t.focus(); return; } const date=d.value||"", time=date?(tm.value||""):"";
+    closeSheet();
+    if(editing){ await updDoc("todos",e.id,{text:v,who:w.value,date,time}); toast("Task updated"); }
+    else{ await addDoc("todos",{text:v,who:w.value,done:false,date,time,createdAt:Date.now()}); toast("Task added"); } };
   t.addEventListener("keydown",ev=>{ if(ev.key==="Enter") save(); });
-  openSheet([h("h2",null,"New task"),field("Task",t),field("For",w),h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},"Add task"))]);
+  openSheet([h("h2",null,editing?"Edit task":"New task"),field("Task",t),field("For",w),
+    field("Due day (optional)",d),h("div",{style:"display:flex;gap:8px;flex-wrap:wrap"},quick("Today",today()),quick("Tomorrow",keyOf(addDays(new Date(),1))),quick("Next week",keyOf(addDays(new Date(),7))),h("button",{class:"pill",type:"button",onclick:()=>{ d.value=""; tm.value=""; }},"No date")),
+    field("Time (optional)",tm),
+    h("div",{class:"acts"},editing?h("button",{class:"pill danger",onclick:()=>{ closeSheet(); delDoc("todos",e.id); toast("Task removed"); }},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},editing?"Save":"Add task"))]);
 }
+function taskDue(t){ if(!t.date) return null; const over=!t.done&&(t.date<today()||(t.date===today()&&t.time&&t.time<new Date().toTimeString().slice(0,5)));
+  return {over,text:(t.date<today()&&!t.done?"Overdue · ":"")+dayLabel(t.date)+(t.time?" · "+fmtTime(t.time):"")}; }
+const taskOrder=(a,b)=>(a.done-b.done)||((a.date?0:1)-(b.date?0:1))||String(a.date||"").localeCompare(String(b.date||""))||String(a.time||"99").localeCompare(String(b.time||"99"))||((a.createdAt||0)-(b.createdAt||0));
 /* Reads recipe text pasted from the Claude app, a website or a note. */
 function tidyIng(raw){
   let s=String(raw||"").replace(/\s+/g," ").trim(), lead="";
@@ -1729,7 +1748,7 @@ function renderFam(){
     }
   }
   if(mod("countdowns")){
-    const list=S.countdowns.filter(c=>c.date&&cdDays(c)>=0).sort((a,b)=>cdDays(a)-cdDays(b)).slice(0,3);
+    const list=S.countdowns.filter(c=>c.date&&cdDays(c)>=0).sort((a,b)=>cdDays(a)-cdDays(b));
     if(list.length){
       B.append(h("h2",{style:bits.length?"margin-top:10px":""},"Countdowns")); bits.push(1);
       list.forEach(c=>B.append(h("div",{class:"cdrow"},h("span",{class:"grow"},c.title),h("b",null,cdWord(c)))));

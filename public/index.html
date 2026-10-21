@@ -160,7 +160,24 @@ button{cursor:pointer;border:0;background:none}
 .card{border-radius:var(--r-col);background:var(--tint);padding:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0 0 12px;text-wrap:balance}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
-.stack{display:grid;grid-template-rows:auto 1fr auto;gap:12px;min-height:0}
+.stack{display:grid;grid-template-rows:auto 1fr auto auto;gap:12px;min-height:0}
+.stack.left{grid-template-rows:auto 1fr}
+.wx{cursor:pointer}
+.wx .wxtop{display:flex;align-items:center;gap:14px}
+.wx .wxt{font-family:var(--display);font-size:46px;line-height:1;font-variant-numeric:tabular-nums}
+.wx .wxi{font-size:40px;line-height:1}
+.wx .wxd{font-weight:600;font-size:16px}
+.wx .wxs{color:var(--muted);font-weight:500;font-size:14px;margin-top:2px}
+.wx .wear{margin-top:12px;padding:12px 14px;border-radius:16px;background:var(--glass);font-weight:600;font-size:15px;line-height:1.35}
+.wx .wear small{display:block;font-weight:500;font-size:13px;color:var(--muted);margin-top:3px}
+.verse{cursor:default}
+.verse .vt{font-family:var(--display);font-size:19px;line-height:1.4;text-wrap:pretty}
+.verse .vr{margin-top:8px;font-weight:600;font-size:14px;color:var(--muted)}
+.verse .vr a{color:inherit}
+.lrow{display:flex;align-items:center;gap:10px}
+.lrow .lk{flex:1;min-width:0;display:flex;align-items:center;min-height:56px;padding:0 18px;border-radius:18px;background:var(--chip);font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcs{display:flex;flex-direction:column;gap:8px}
+
 .dinner-title{font-family:var(--display);font-size:30px;line-height:1.15;margin:4px 0 6px;text-wrap:balance}
 .meta{color:var(--muted);font-weight:500;font-size:14px}
 .frame{position:relative;border-radius:var(--r-col);overflow:hidden;background:var(--chip);min-height:0}
@@ -300,7 +317,7 @@ button{cursor:pointer;border:0;background:none}
   body{overflow:auto}
   .menu-btn{display:flex}
   .rail{gap:0}
-  .nav[data-view=photos],#sleepBtn,#settingsBtn{display:none}
+  .nav[data-view=photos],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn{display:none}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
@@ -387,6 +404,8 @@ button{cursor:pointer;border:0;background:none}
     <button class="nav" data-view="photos"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8.5"/></svg>Photos</button>
     <button class="nav menu-btn" id="menuBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
     <div class="spacer"></div>
+    <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
+    <button class="nav" id="linksBtn"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>Links</button>
     <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
     <button class="nav" id="settingsBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>Settings</button>
   </nav>
@@ -402,11 +421,15 @@ button{cursor:pointer;border:0;background:none}
 
     <section class="view" data-name="home">
       <div class="home">
-        <div class="card c-blue"><h2 id="todayTitle">Today</h2><div class="scroll" id="homeToday"></div></div>
+        <div class="stack left">
+          <div class="card c-sage wx" id="homeWx"></div>
+          <div class="card c-blue"><h2 id="todayTitle">Today</h2><div class="scroll" id="homeToday"></div></div>
+        </div>
         <div class="stack">
           <div class="card c-amber" id="homeDinner"></div>
           <div class="card c-sage"><h2>Open tasks</h2><div class="scroll" id="homeTasks"></div></div>
           <div class="card c-teal" id="homeBudget" hidden></div>
+          <div class="card c-amber verse" id="homeVerse"></div>
         </div>
         <div class="frame" id="frame"></div>
       </div>
@@ -476,7 +499,7 @@ const AISLE_ORDER=["Produce","Bakery","Meat & Seafood","Dairy & Eggs","Pantry","
 function guessAisle(t){ const s=" "+t.toLowerCase(); for(const [a,kws] of AISLES){ if(kws.some(k=>s.includes(" "+k))) return a; } return "Other"; }
 
 /* ---------- state ---------- */
-const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null};
+const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null,place:null,links:[]};
 const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
 let VER=-1, FEAT={}, live=true, pulling=false, photoSig="";
 let BUILD=null, reloadT=null, ROT=[];
@@ -524,7 +547,10 @@ async function pull(){
     if(!j.unchanged){
       VER=j.version;
       for(const c of COLLS){ S[c]=j.data[c]||[]; S.loaded[c]=true; }
+      const oldPl=JSON.stringify(S.settings.place||null);
       S.settings={...DEFAULTS,...(j.data.settings||{})};
+      if(oldPl!==JSON.stringify(S.settings.place||null)||(S.settings.place&&!S.weather)){ if(!S.wxBusy){ S.wxBusy=true; pullWeather().finally(()=>{S.wxBusy=false;}); } }
+      if(!S.verse&&!S.verseBusy){ S.verseBusy=true; pullVerse().finally(()=>{S.verseBusy=false;}); }
       rebuildRot();
       renderAll(); idle(); setTimeout(askWho,1500);
     }
@@ -558,6 +584,120 @@ async function pullApple(){
   try{ const j=await api("/api/apple"); S.appleCals=j.calendars||[]; S.appleDefault=j.default||""; S.appleErr=""; }
   catch(e){ S.appleCals=[]; S.appleErr=e.message||"Couldn't reach Apple Calendar."; }
 }
+const WXC={0:["Clear","☀️"],1:["Mostly clear","🌤️"],2:["Partly cloudy","⛅"],3:["Cloudy","☁️"],45:["Fog","🌫️"],48:["Fog","🌫️"],51:["Light drizzle","🌦️"],53:["Drizzle","🌦️"],55:["Drizzle","🌦️"],56:["Freezing drizzle","🌧️"],57:["Freezing drizzle","🌧️"],61:["Light rain","🌧️"],63:["Rain","🌧️"],65:["Heavy rain","🌧️"],66:["Freezing rain","🌧️"],67:["Freezing rain","🌧️"],71:["Light snow","🌨️"],73:["Snow","🌨️"],75:["Heavy snow","❄️"],77:["Snow grains","🌨️"],80:["Showers","🌦️"],81:["Showers","🌧️"],82:["Heavy showers","🌧️"],85:["Snow showers","🌨️"],86:["Snow showers","🌨️"],95:["Thunderstorms","⛈️"],96:["Thunderstorms","⛈️"],99:["Thunderstorms","⛈️"]};
+const wxInfo=c=>WXC[c]||["Weather","🌡️"];
+/* what to wear: from feels-like temps, chance of rain/snow and wind */
+function clothing(w){
+  const t=w.today||{}, n=w.now||{};
+  const hi=Number.isFinite(t.feelsHi)?t.feelsHi:t.hi, lo=Number.isFinite(t.feelsLo)?t.feelsLo:t.lo;
+  const cur=Number.isFinite(n.feels)?n.feels:n.temp;
+  const code=t.code, snow=[71,73,75,77,85,86].includes(code), storm=[95,96,99].includes(code);
+  const wet=[51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)||storm;
+  const rain=t.rain||0;
+  const ref=Number.isFinite(cur)&&Number.isFinite(hi)?(cur+hi)/2:(Number.isFinite(cur)?cur:hi);
+  let main, extra=[];
+  if(!Number.isFinite(ref)) return null;
+  if(ref<=20) main="Heavy winter coat, hat and gloves";
+  else if(ref<=35) main="Winter coat, hat and gloves";
+  else if(ref<=48) main="Warm jacket";
+  else if(ref<=60) main="Light jacket or a sweater";
+  else if(ref<=70) main="Long sleeves, maybe a light layer";
+  else if(ref<=82) main="T-shirt weather";
+  else main="Light, breathable clothes";
+  if(snow){ extra.push("snow boots"); if(ref>35) main="Warm coat"; }
+  else if(wet||rain>=50){ main=ref<=48?"Warm rain jacket":"Rain jacket"; extra.push(rain>=70||storm?"umbrella and waterproof shoes":"umbrella"); }
+  else if(rain>=30) extra.push("a rain jacket in the bag, just in case");
+  if(!snow&&Number.isFinite(lo)&&Number.isFinite(hi)&&hi-lo>=20&&ref>35&&ref<=75) extra.push(`layers (${Math.round(lo)}° early, ${Math.round(hi)}° later)`);
+  if((t.wind||0)>=20&&ref<=65) extra.push("windy, so a wind-blocking layer");
+  if(ref>=85&&!wet) extra.push("sunscreen and water");
+  return {main, extra};
+}
+async function pullWeather(){
+  const p=S.settings.place; if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon)){ S.weather=null; renderWx(); return; }
+  try{ S.weather=await api(`/api/weather?lat=${p.lat}&lon=${p.lon}`); }catch(e){ S.weather={error:e.message||"Couldn't get the weather."}; }
+  renderWx();
+}
+async function pullVerse(){
+  try{ S.verse=await api("/api/verse"); }catch(e){ S.verse={error:"Couldn't load the verse."}; }
+  renderVerse();
+}
+function renderWx(){
+  const B=$("#homeWx"); if(!B) return; B.replaceChildren();
+  const p=S.settings.place, w=S.weather;
+  B.onclick=()=>placeSheet();
+  if(!p){ B.append(h("h2",null,"Weather"),h("p",{class:"hint",style:"margin:0 0 10px"},"Show the weather and what to wear for your location."),h("div",null,h("button",{class:"pill primary",onclick:e=>{ e.stopPropagation(); placeSheet(); }},"Set location"))); return; }
+  if(!w){ B.append(h("h2",null,p.name||"Weather"),h("p",{class:"hint"},"Loading…")); return; }
+  if(w.error){ B.append(h("h2",null,p.name||"Weather"),h("p",{class:"hint"},w.error)); return; }
+  const [desc,icon]=wxInfo(w.now.code), t=w.today, cl=clothing(w);
+  B.append(h("div",{class:"wxtop"},h("div",{class:"wxi"},icon),h("div",{class:"wxt"},`${Math.round(w.now.temp)}°`),
+    h("div",null,h("div",{class:"wxd"},desc),h("div",{class:"wxs"},`${p.name||"Here"} · High ${Math.round(t.hi)}° / Low ${Math.round(t.lo)}°`),h("div",{class:"wxs"},`Feels like ${Math.round(w.now.feels)}° · ${t.rain}% chance of rain`))));
+  if(cl) B.append(h("div",{class:"wear"},"Wear: "+cl.main,cl.extra.length?h("small",null,"Also: "+cl.extra.join(", ")):null));
+}
+function renderVerse(){
+  const B=$("#homeVerse"); if(!B) return; B.replaceChildren(h("h2",null,"Verse of the day"));
+  const v=S.verse; if(!v){ B.append(h("p",{class:"hint"},"Loading…")); return; }
+  if(v.error&&!v.ref){ B.append(h("p",{class:"hint"},v.error)); return; }
+  const a=h("a",{href:v.link,target:"_blank",rel:"noopener"},v.ref+" (ESV)");
+  if(v.text) B.append(h("div",{class:"vt"},"“"+v.text+"”"),h("div",{class:"vr"},a));
+  else B.append(h("div",{class:"vt"},v.ref),h("div",{class:"vr"},a),h("p",{class:"hint",style:"margin:6px 0 0"},v.needsKey?"Add ESV_API_KEY in Vercel to show the verse text here.":v.error));
+}
+function placeSheet(){
+  const q=h("input",{id:"plQ",placeholder:"City, e.g. Columbus, OH",value:""});
+  const res=h("div",{class:"pcs"}), msg=h("div",{class:"err"});
+  const choose=async pl=>{ closeSheet(); S.weather=null; await saveSettings({place:pl}); pullWeather(); toast("Weather location saved"); };
+  const search=async()=>{ msg.textContent=""; res.replaceChildren(); if(!q.value.trim()) return;
+    try{ const j=await api("/api/weather?q="+encodeURIComponent(q.value.trim()));
+      if(!j.places.length) msg.textContent="No place found. Try the city name only.";
+      j.places.forEach(pl=>res.append(h("button",{class:"mrow",onclick:()=>choose({name:pl.name,lat:pl.lat,lon:pl.lon})},pl.name)));
+    }catch(e){ msg.textContent=e.message||"Couldn't search."; } };
+  q.addEventListener("keydown",e=>{ if(e.key==="Enter") search(); });
+  const here=()=>{ if(!navigator.geolocation){ msg.textContent="This device can't share its location."; return; }
+    msg.textContent="Asking this device…";
+    navigator.geolocation.getCurrentPosition(pos=>choose({name:"Current location",lat:Math.round(pos.coords.latitude*1e4)/1e4,lon:Math.round(pos.coords.longitude*1e4)/1e4}),()=>{ msg.textContent="Location was blocked. Search for your city instead."; },{timeout:10000,maximumAge:600000}); };
+  openSheet([h("h2",null,"Weather location"),
+    h("p",{class:"hint",style:"margin:0"},"Shared by every screen. A wall display should use a city; a phone can use its own location."),
+    h("button",{class:"mrow",onclick:here},"Use this device's location"),
+    field("Or search for a city",q),h("div",{class:"acts"},h("button",{class:"pill",onclick:search},"Search")),res,msg,
+    h("div",{class:"acts"},S.settings.place?h("button",{class:"pill danger",onclick:async()=>{ closeSheet(); await saveSettings({place:null}); S.weather=null; renderWx(); }},"Remove"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
+}
+function budgetSheet(){
+  const body=h("div");
+  const draw=()=>{ body.replaceChildren();
+    if(!FEAT.budget){ body.append(h("p",{class:"hint"},"YNAB isn't connected yet. Add YNAB_TOKEN (and YNAB_CATEGORIES) in Vercel, then redeploy.")); return; }
+    const b=S.budget; if(!b){ body.append(h("p",{class:"hint"},"Loading…")); return; }
+    if(b.error){ body.append(h("p",{class:"hint"},b.error)); return; }
+    if(b.needsSetup){ body.append(h("p",{class:"hint"},"Choose which categories show by setting YNAB_CATEGORIES in Vercel. Your categories:"),h("p",{class:"meta"},(b.available||[]).join(", "))); return; }
+    const list=h("div",{class:"bud"});
+    b.categories.forEach(c=>{ const over=c.balance<0, pct=c.assigned>0?Math.max(0,Math.min(1,c.balance/c.assigned)):(over?0:1);
+      list.append(h("div",{class:"brow"+(over?" over":"")},h("div",{class:"bh"},h("span",null,c.name),h("span",{class:"amt"},over?`Over ${money(-c.balance)}`:`${money(c.balance)} left`)),h("div",{class:"bar"},h("i",{style:`width:${Math.round(pct*100)}%`})),h("div",{class:"sub"},`Spent ${money(Math.max(0,c.spent))} of ${money(c.assigned)}`))); });
+    if(!b.categories.length) list.append(h("p",{class:"hint"},"None of the YNAB_CATEGORIES names matched your budget. Check the spelling."));
+    if(b.overspent) list.append(h("div",{class:"meta"},`${b.overspent} categor${b.overspent===1?"y is":"ies are"} overspent in YNAB`));
+    if(b.fetchedAt) list.append(h("div",{class:"meta"},"Updated "+new Date(b.fetchedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})));
+    body.append(list); };
+  draw(); if(FEAT.budget) pullBudget().then(()=>{ if($("#sheetHost").contains(body)) draw(); });
+  openSheet([h("h2",null,"Budget this month"),body,h("div",{class:"acts"},h("a",{class:"pill",href:"https://app.ynab.com/",target:"_blank",rel:"noopener"},"Open YNAB"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
+}
+const fixUrl=u=>{ u=String(u||"").trim(); if(!u) return ""; if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u="https://"+u; return /^https?:\/\//i.test(u)?u:""; };
+function linksSheet(editing){
+  const links=(S.settings.links||[]).map(l=>({...l}));
+  const body=h("div",{class:"pcs"});
+  const draw=()=>{ body.replaceChildren();
+    if(!editing){
+      if(!links.length) body.append(h("p",{class:"hint"},"No links yet. Tap Edit to add the ones your family uses."));
+      links.forEach(l=>body.append(h("div",{class:"lrow"},h("a",{class:"lk",href:l.url,target:"_blank",rel:"noopener"},l.title||l.url))));
+    } else {
+      links.forEach((l,i)=>{ const t=h("input",{value:l.title,placeholder:"Name","aria-label":"Name"}), u=h("input",{value:l.url,placeholder:"https://…","aria-label":"Web address",inputmode:"url",autocapitalize:"off"});
+        t.addEventListener("input",()=>{l.title=t.value;}); u.addEventListener("input",()=>{l.url=u.value;});
+        body.append(h("div",{class:"mem"},t,u,h("button",{class:"pill icon","aria-label":"Remove",style:"background:var(--card)",onclick:()=>{links.splice(i,1);draw();}},svg(IC.x)))); });
+      body.append(h("div",null,h("button",{class:"pill",onclick:()=>{links.push({title:"",url:""});draw();setTimeout(()=>body.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add link")));
+    } };
+  draw();
+  const save=async()=>{ const clean=links.map(l=>({title:l.title.trim(),url:fixUrl(l.url)})).filter(l=>l.url).map(l=>({title:l.title||l.url.replace(/^https?:\/\/(www\.)?/,"").split("/")[0],url:l.url})); closeSheet(); await saveSettings({links:clean}); toast("Links saved"); };
+  openSheet([h("h2",null,"Helpful links"),body,
+    h("div",{class:"acts"},editing?h("button",{class:"pill",onclick:()=>linksSheet(false)},"Cancel"):h("button",{class:"pill",onclick:()=>linksSheet(true)},"Edit"),h("span",{class:"grow"}),editing?h("button",{class:"pill primary",onclick:save},"Save"):h("button",{class:"pill",onclick:closeSheet},"Close"))]);
+}
+$("#budgetBtn").addEventListener("click",budgetSheet);
+$("#linksBtn").addEventListener("click",()=>linksSheet(false));
 async function pullBudget(){
   if(!FEAT.budget) return;
   try{ S.budget=await api("/api/budget"); }catch(e){ S.budget={error:e.message||"Couldn't reach YNAB."}; }
@@ -782,6 +922,7 @@ function renderHome(){
   const open=S.todos.filter(t=>!t.done).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(0,6);
   if(!open.length) tb.append(h("div",{class:"empty-day"},"All caught up."));
   open.forEach(t=>tb.append(todoItem(t,true)));
+  renderWx(); renderVerse();
   renderFrame();
 }
 function evCard(e,whenLabel){
@@ -1071,6 +1212,8 @@ function menuSheet(){
   openSheet([h("h2",null,"Menu"),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
       row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")),
+      row(ico("#budgetBtn"),"Budget",budgetSheet),
+      row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)),
       row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver),
       row(svg('<circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M12 4a8 8 0 010 16z" fill="currentColor"/>'),dark?"Switch to light mode":"Switch to dark mode",()=>setTheme(dark?"light":"dark")),
       row(ico("#settingsBtn"),"Settings",settingsSheet)),
@@ -1333,6 +1476,8 @@ pull();
 setInterval(()=>{ if(document.visibilityState==="visible") pull(); },4000);
 setInterval(()=>{ if(document.visibilityState==="visible") pullCalendar(); },5*60000);
 setInterval(()=>{ if(document.visibilityState==="visible") pullBudget(); },10*60000);
+setInterval(()=>{ if(document.visibilityState==="visible") pullWeather(); },15*60000);
+setInterval(()=>{ if(document.visibilityState==="visible"&&S.verse&&S.verse.day&&S.verse.day!==today()) pullVerse(); },30*60000);
 setInterval(()=>{ if(document.visibilityState==="visible") pullAlbum(); },15*60000);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") pull(); });
 })();

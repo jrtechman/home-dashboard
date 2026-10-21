@@ -331,6 +331,7 @@ button{cursor:pointer;border:0;background:none}
 .scrim{position:fixed;inset:0;background:rgba(31,42,51,.28);display:grid;grid-template-columns:minmax(0,1fr);place-items:center;z-index:20;padding:20px}
 .sheet{box-sizing:border-box;background:var(--card);border-radius:30px;width:min(560px,100%);max-height:calc(100% - 20px);overflow-y:auto;padding:26px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(31,42,51,.18)}
 .sheet.wide{width:min(760px,100%)}
+.xwrap{position:sticky;top:-10px;height:0;align-self:flex-end;z-index:5;margin:0}.xbtn{position:absolute;right:-14px;top:-14px;width:40px;height:40px;border-radius:50%;border:0;background:var(--chip);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}.xbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}.sheet h2{padding-right:34px}
 .sheet h2{font-family:var(--display);font-weight:500;font-size:30px;margin:0;text-wrap:balance}
 .field{display:flex;flex-direction:column;gap:6px}
 .field label{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.03em}
@@ -1555,7 +1556,7 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 /* ---------- sheets ---------- */
 function openSheet(content,wide){
   const host=$("#sheetHost");
-  const scrim=h("div",{class:"scrim",onclick:e=>{ if(e.target===scrim) closeSheet(); }},h("div",{class:"sheet"+(wide?" wide":""),role:"dialog","aria-modal":"true"},content));
+  const scrim=h("div",{class:"scrim",onclick:e=>{ if(e.target===scrim) closeSheet(); }},h("div",{class:"sheet"+(wide?" wide":""),role:"dialog","aria-modal":"true"},h("div",{class:"xwrap"},h("button",{type:"button",class:"xbtn","aria-label":"Close",title:"Close",onclick:closeSheet},svg('<path d="M6 6l12 12M18 6L6 18"/>'))),content));
   host.replaceChildren(scrim);
   setTimeout(()=>{ const f=host.querySelector("input,textarea"); f&&f.focus(); },30);
 }

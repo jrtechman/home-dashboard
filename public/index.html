@@ -490,7 +490,7 @@ button{cursor:pointer;border:0;background:none}
 <div id="sheetHost"></div>
 <div id="saver" class="saver" hidden></div>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
-<input type="file" id="dishIn" accept="image/*" capture="environment" hidden>
+<input type="file" id="dishIn" accept="image/*" hidden>
 <div class="login" id="login" hidden>
   <form id="loginForm">
     <h1>Home Dashboard</h1>
@@ -1510,7 +1510,7 @@ function recipeSheet(r,file,mode){
   const mn=h("input",{id:"rcMin",type:"number",min:"0",inputmode:"numeric",placeholder:"45",value:r.minutes||""});
   const ing=h("textarea",{id:"rcIng",placeholder:"One per line, e.g.\n2 lb ground beef\n1 onion"}); ing.value=(r.ingredients||[]).join("\n");
   const st=h("textarea",{id:"rcSteps",placeholder:"One step per line"}); st.value=(r.steps||[]).join("\n");
-  const pick=h("input",{type:"file",accept:"image/*",capture:"environment",hidden:true,id:"rcPhotoIn"});
+  const pick=h("input",{type:"file",accept:"image/*",hidden:true,id:"rcPhotoIn"});
   const draftBtn=h("button",{class:"pill"},"Fill in from the photo");
   const photoBtn=h("button",{class:"pill",onclick:()=>pick.click()},svg(IC.cam),"");
   const syncBtns=()=>{ const has=!!(blob||r.photoUrl); photoBtn.lastChild.textContent=has?"Retake photo":"Add a photo"; draftBtn.hidden=!(FEAT.claude&&has); };

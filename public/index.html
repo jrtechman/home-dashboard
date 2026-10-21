@@ -293,6 +293,9 @@ button{cursor:pointer;border:0;background:none}
 .fab{position:fixed;right:calc(24px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:68px;height:68px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 8px 24px rgba(44,120,181,.35);z-index:5}
 .fab svg{width:30px;height:30px;stroke:var(--accent-ink);stroke-width:2.4;fill:none;stroke-linecap:round}
 
+/* settings page */
+.settingspage{flex:1;min-height:0;overflow-y:auto;padding:4px 2px 110px;-webkit-overflow-scrolling:touch}.sheet.spage{width:min(760px,100%);max-height:none;overflow:visible;margin:0 auto;box-shadow:none}
+.nav.cur{background:var(--chip)}
 /* sheet */
 .scrim{position:fixed;inset:0;background:rgba(31,42,51,.28);display:grid;grid-template-columns:minmax(0,1fr);place-items:center;z-index:20;padding:20px}
 .sheet{box-sizing:border-box;background:var(--card);border-radius:30px;width:min(560px,100%);max-height:calc(100% - 20px);overflow-y:auto;padding:26px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(31,42,51,.18)}
@@ -443,11 +446,8 @@ button{cursor:pointer;border:0;background:none}
     <button class="nav" data-view="photos"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8.5"/></svg>Photos</button>
     <button class="nav menu-btn" id="menuBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
     <div class="spacer"></div>
-    <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
-    <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>Meal history</button>
     <button class="nav" id="guestBtn"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5M10 20v-5h4v5"/></svg>Guests</button>
     <button class="nav" id="famBtn"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a2.6 2.6 0 010 5M17.5 14a5 5 0 013 5"/></svg>Family</button>
-    <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
     <button class="nav" id="linksBtn"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>Links</button>
     <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Sleep</button>
     <button class="nav" id="settingsBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>Settings</button>
@@ -486,11 +486,17 @@ button{cursor:pointer;border:0;background:none}
     <section class="view" data-name="meals"><div class="meals" id="meals"></div></section>
     <section class="view" data-name="lists"><div class="lists" id="lists"></div></section>
     <section class="view" data-name="photos"><div class="photos" id="photos"></div></section>
+    <section class="view" data-name="settings" hidden><div class="settingspage" id="settingsPage"></div></section>
   </main>
 </div>
 
 <button class="fab" id="fab" aria-label="Add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 <button id="guestBar" hidden>Guest mode on · tap to end</button>
+<div id="moreBtns" hidden>
+    <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
+    <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>Meal history</button>
+    <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
+</div>
 <div id="sheetHost"></div>
 <div id="saver" class="saver" hidden></div>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
@@ -1014,7 +1020,7 @@ function tick(){
 
 /* ---------- views ---------- */
 function setView(v){
-  S.view=v;
+  S.view=v; { const f=$("#fab"); if(f) f.style.display=v==="settings"?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"); }
   document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.name!==v);
   document.querySelectorAll(".nav[data-view]").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
   const mb=$("#menuBtn"); if(mb){ if(v==="photos") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
@@ -1417,7 +1423,7 @@ function menuSheet(){
       mod("cameras")?row(ico("#camBtn"),"Cameras",()=>camsSheet(false)):null,
       mod("links")?row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)):null,
       mod("sleep")?row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver):null,
-      row(ico("#settingsBtn"),"Settings",settingsSheet)),
+      row(ico("#settingsBtn"),"Settings",settingsPage)),
     h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
 }
 $("#menuBtn").addEventListener("click",menuSheet);
@@ -1634,7 +1640,9 @@ function openRecipe(id){
     h("div",{class:"acts"},h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this dish?",r.title+" and its photo will be removed.","Delete",async()=>{ if(isTonight) await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); await delDoc("recipes",r.id); deleteImage(r.photoUrl); })},"Delete"),h("button",{class:"pill",onclick:()=>recipeSheet(r)},"Edit"),h("span",{class:"grow"}),
       isTonight?h("span",{class:"meta"},"On for tonight"):h("button",{class:"pill",onclick:()=>{ saveSettings({tonight:{id:r.id,date:today()}}); closeSheet(); toast("Set as tonight's dinner"); }},"Make tonight"),dinBtn)],true);
 }
-function settingsSheet(){
+function settingsBack(){ setView(S.prevView&&S.prevView!=="settings"?S.prevView:"home"); }
+function settingsPage(){
+  if(S.view!=="settings") S.prevView=S.view; closeSheet();
   const draft=JSON.parse(JSON.stringify(members()));
   const hh=h("input",{id:"stHouse",value:S.settings.household||""});
   const idleSel=h("select",{id:"stIdle"},[["0","Never"],["2","After 2 minutes"],["5","After 5 minutes"],["10","After 10 minutes"],["30","After 30 minutes"]].map(([v,l])=>h("option",{value:v},l))); idleSel.value=String(S.settings.idleMin??5);
@@ -1645,14 +1653,15 @@ function settingsSheet(){
     list.append(h("div",{class:"mem"},inp,h("div",{class:"swatches"},COLORS.map(c=>h("button",{class:"sw c-"+c,"aria-label":c,"aria-pressed":m.color===c?"true":"false",onclick:()=>{m.color=c;draw();}}))),h("button",{class:"pill icon","aria-label":"Remove "+m.name,style:"background:var(--card)",onclick:()=>{draft.splice(i,1);draw();}},svg(IC.x)))); }); };
   draw();
   const exCount=COLLS.reduce((n,c)=>n+S[c].filter(r=>r.example).length,0);
-  const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); closeSheet(); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value)}); idle(); toast("Settings saved"); };
-  openSheet([h("h2",null,"Settings"),field("Household name",hh),
+  const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value)}); idle(); toast("Settings saved"); settingsBack(); };
+  const page=$("#settingsPage"); page.replaceChildren(h("div",{class:"sheet spage"},[h("h2",null,"Settings"),field("Household name",hh),
     h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),faceSection(),pushSection(),adminSection(),
+    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),moreSection(),guestSection(),faceSection(),pushSection(),adminSection(),
     exCount?h("div",{class:"acts"},h("span",{class:"meta grow"},`${exCount} example items are on the board.`),h("button",{class:"pill danger",onclick:()=>confirmSheet("Remove the examples?","Events, tasks, groceries and recipes marked “example” will be deleted.","Remove examples",async()=>{ for(const c of COLLS) for(const r of S[c].filter(r=>r.example)) await delDoc(c,r.id); toast("Examples removed"); })},"Remove examples")):null,
-    h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ closeSheet(); try{ await api("/api/login",{method:"DELETE"}); }catch(e){} showLogin(); }},"Sign out this screen"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]);
+    h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:settingsBack},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]));
+  setView("settings"); page.scrollTop=0;
 }
-$("#settingsBtn").addEventListener("click",settingsSheet);
+$("#settingsBtn").addEventListener("click",()=>{ if(S.view==="settings") settingsBack(); else settingsPage(); });
 $("#fab").addEventListener("click",()=>{
   if(S.view==="tasks") return todoSheet(meName()||members()[0]?.name||"");
   if(S.view==="meals") return snapDish();
@@ -1848,10 +1857,11 @@ const MODULES=[
   ["Family",[["reminders","Recurring reminders"],["countdowns","Countdowns"],["notes","Family notes"],["prayer","Prayer list"]]],
   ["Menu and extras",[["budget","Budget screen"],["history","Meal history"],["cameras","Cameras"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
 ];
-const GUEST_HIDES=new Set(["budget_card","budget","reminders","countdowns","notes","prayer","cameras","history"]);
+const GUEST_DEFAULT=["budget_card","budget","reminders","countdowns","notes","prayer","cameras","history"];
+function guestHides(){ const a=S.settings&&S.settings.guestHides; return new Set(Array.isArray(a)?a:GUEST_DEFAULT); }
 function guestOn(){ return !!(S.settings&&S.settings.guest); }
 function rawMod(id){ return ((S.settings&&S.settings.modules)||{})[id]!==false; }
-function mod(id){ if(id==="photoframe") return false; if(guestOn()&&GUEST_HIDES.has(id)) return false; return rawMod(id); }
+function mod(id){ if(id==="photoframe") return false; if(guestOn()&&guestHides().has(id)) return false; return rawMod(id); }
 function setGuest(on){ saveSettings({guest:!!on}); toast(on?"Guest mode on. Private cards are hidden.":"Guest mode off"); }
 function guestToggle(){ if(!guestOn()) return setGuest(true); guestUnlockSheet(); }
 function guestUnlockSheet(){
@@ -1874,6 +1884,27 @@ function applyModules(){
   if(["calendar","tasks","meals","lists","photos"].includes(S.view)&&!mod(S.view)) setView("home");
   if(mod("weather")&&S.settings.place&&!S.weather&&!S.wxBusy&&Date.now()-(S.wxAt||0)>60000){ S.wxBusy=true; pullWeather().finally(()=>{S.wxBusy=false;}); }
   if(mod("verse")&&!S.verse&&!S.verseBusy&&Date.now()-(S.verseAt||0)>60000){ S.verseBusy=true; pullVerse().finally(()=>{S.verseBusy=false;}); }
+}
+function moreSection(){
+  const items=[mod("budget")?["Budget",budgetSheet,"#budgetBtn"]:null,mod("history")?["Meal history",histSheet,"#histBtn"]:null,mod("cameras")?["Cameras",()=>camsSheet(false),"#camBtn"]:null].filter(Boolean);
+  if(!items.length) return h("div");
+  const ico=sel=>{ const e=document.querySelector(sel+" svg"); return svg(e?e.innerHTML:""); };
+  return h("div",null,h("h3",null,"Budget, meals and cameras"),h("div",{style:"display:flex;flex-wrap:wrap;gap:8px"},items.map(([l,fn,sel])=>h("button",{class:"pill",onclick:fn},ico(sel),l))));
+}
+function guestSection(){
+  const box=h("div",null,h("h3",null,"Guest mode: what it hides"));
+  if(guestOn()){ box.append(h("p",{class:"hint",style:"margin:0"},"Guest mode is on. Turn it off (it asks for the passcode) to change what it hides.")); return box; }
+  box.append(h("p",{class:"hint",style:"margin:0 0 8px"},"Ticked items are hidden on every screen while \"Guests are here\" is on."));
+  const cur=guestHides(), grid=h("div",{style:"display:flex;flex-direction:column;gap:8px"});
+  MODULES.forEach(([group,items])=>{
+    grid.append(h("h3",{style:"margin:6px 0 0;font-size:15px"},group));
+    items.forEach(([id,label])=>{
+      const c=h("input",{type:"checkbox"}); c.checked=cur.has(id);
+      c.addEventListener("change",async()=>{ const n=guestHides(); if(c.checked) n.add(id); else n.delete(id); await saveSettings({guestHides:[...n]}); });
+      grid.append(h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},c,label));
+    });
+  });
+  box.append(grid); return box;
 }
 function adminSection(){
   const box=h("div",null,h("h3",null,"Admin")), body=h("div",{style:"display:flex;flex-direction:column;gap:8px"}); box.append(body);

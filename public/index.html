@@ -181,8 +181,8 @@ button{cursor:pointer;border:0;background:none}
 .hr{flex:none;min-width:58px;text-align:center;padding:8px 6px;border-radius:14px;background:var(--chip)}
 .hr .hl{font-size:12px;color:var(--muted);font-weight:600}.hr .hi{font-size:22px;margin:2px 0}.hr .ht{font-weight:700;font-variant-numeric:tabular-nums}.hr .hp{font-size:11px;color:var(--muted);min-height:14px}
 .wdays{display:flex;flex-direction:column;gap:4px}
-.wd{display:grid;grid-template-columns:minmax(0,1fr) 30px 44px auto;align-items:center;gap:8px;padding:8px 12px;border-radius:14px;background:var(--chip);font-weight:600;font-size:15px}
-.wd .dp{font-size:12px;color:var(--muted);text-align:right}.wd .dt{font-variant-numeric:tabular-nums;text-align:right}
+.wd{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(44px,auto) auto;align-items:center;gap:8px;padding:8px 12px;border-radius:14px;background:var(--chip);font-weight:600;font-size:15px}
+.wd .dp{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}.wd .dt{font-variant-numeric:tabular-nums;text-align:right}
 .wstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .wstat{padding:10px 12px;border-radius:14px;background:var(--chip)}.wstat .sl{font-size:12px;color:var(--muted);font-weight:600}.wstat .sv{font-weight:700;margin-top:2px}
 .verse .vt{font-family:var(--display);font-size:15px;line-height:1.4;text-wrap:pretty}
@@ -694,19 +694,31 @@ function renderWx(){
 }
 const hourLabel=(iso,first)=>{ if(first) return "Now"; const hh=Number(String(iso).slice(11,13)); return (hh%12||12)+(hh<12?" AM":" PM"); };
 const clockOf=iso=>{ const m=/T(\d\d):(\d\d)/.exec(iso||""); if(!m) return ""; const hh=Number(m[1]); return (hh%12||12)+":"+m[2]+(hh<12?" AM":" PM"); };
+const inchTxt=v=>v==null||v<0.005?"0 in":(v<0.1?v.toFixed(2):v.toFixed(1))+" in";
+function precipSummary(w){
+  const hr=w.hourly||[], wet=hr.findIndex(x=>x.rain>=40||x.amt>=0.01), t=w.today||{};
+  const tot=hr.reduce((n,x)=>n+(x.amt||0),0), snowTot=hr.reduce((n,x)=>n+(x.snow||0),0);
+  let line;
+  if(w.now&&w.now.precip>0) line=wxInfo(w.now.code)[0]+" falling now"+(wet>=0&&hr[wet]&&wet>0?"":"");
+  else if(wet>=0) line=wxInfo(hr[wet].code)[0]+(hr[wet].rain>=40?" likely":" possible")+" around "+hourLabel(hr[wet].time,wet===0).replace("Now","now");
+  else line="No rain or snow expected in the next 12 hours";
+  const more=[]; if(tot>=0.005) more.push("about "+inchTxt(tot)+" in the next 12 hours"); if(snowTot>=0.05) more.push(inchTxt(snowTot)+" of it snow");
+  return line+(more.length?" · "+more.join(", "):"");
+}
 const uvWord=u=>u==null?"":u>=11?"Extreme":u>=8?"Very high":u>=6?"High":u>=3?"Moderate":"Low";
 function weatherSheet(){
   const w=S.weather, p=S.settings.place; if(!w||w.error){ placeSheet(); return; }
   const [desc,icon]=wxInfo(w.now.code), t=w.today, cl=clothing(w), r=x=>Math.round(x);
-  const hourly=h("div",{class:"hourly"},(w.hourly||[]).map((x,i)=>h("div",{class:"hr"},h("div",{class:"hl"},hourLabel(x.time,i===0)),h("div",{class:"hi"},wxInfo(x.code)[1]),h("div",{class:"ht"},r(x.temp)+"°"),h("div",{class:"hp"},(x.rain>=10?x.rain+"%":"")))));
-  const days=h("div",{class:"wdays"},(w.days||[]).map((d,i)=>{ const dt=parseKey(d.date); return h("div",{class:"wd"},h("span",{class:"dn2"},i===0?"Today":i===1?"Tomorrow":WD[dt.getDay()]),h("span",{class:"di"},wxInfo(d.code)[1]),h("span",{class:"dp"},d.rain>=10?d.rain+"%":""),h("span",{class:"dt"},r(d.lo)+"° / "+r(d.hi)+"°")); }));
+  const hourly=h("div",{class:"hourly"},(w.hourly||[]).map((x,i)=>h("div",{class:"hr"},h("div",{class:"hl"},hourLabel(x.time,i===0)),h("div",{class:"hi"},wxInfo(x.code)[1]),h("div",{class:"ht"},r(x.temp)+"°"),h("div",{class:"hp"},(x.rain>=10?x.rain+"%":"")),h("div",{class:"hp"},(x.amt>=0.005?inchTxt(x.amt).replace(" in","\""):"")))));
+  const days=h("div",{class:"wdays"},(w.days||[]).map((d,i)=>{ const dt=parseKey(d.date); return h("div",{class:"wd"},h("span",{class:"dn2"},i===0?"Today":i===1?"Tomorrow":WD[dt.getDay()]),h("span",{class:"di"},wxInfo(d.code)[1]),h("span",{class:"dp"},(d.rain>=10?d.rain+"%":"")+(d.amt>=0.005?(d.rain>=10?" · ":"")+inchTxt(d.amt):"")),h("span",{class:"dt"},r(d.lo)+"° / "+r(d.hi)+"°")); }));
   const stat=(l,v)=>v==null||v===""?null:h("div",{class:"wstat"},h("div",{class:"sl"},l),h("div",{class:"sv"},v));
   openSheet([h("h2",null,p.name||"Weather"),h("div",{class:"wx wxbody"},
     h("div",{class:"wxtop"},h("div",{class:"wxi"},icon),h("div",{class:"wxt"},r(w.now.temp)+"°"),h("div",null,h("div",{class:"wxd"},desc),h("div",{class:"wxs"},`High ${r(t.hi)}° / Low ${r(t.lo)}°`))),
     cl?h("div",{class:"wear",style:"margin:0"},"Wear: "+cl.main,cl.extra.length?h("small",null,"Also: "+cl.extra.join(", ")):null):null,
     h("h3",{style:"margin:6px 0 0"},"Next 12 hours"),hourly,
+    h("h3",{style:"margin:6px 0 0"},"Rain and snow"),h("div",{class:"wxs",style:"font-weight:600"},precipSummary(w)),
     h("h3",{style:"margin:6px 0 0"},"This week"),days,
-    h("div",{class:"wstats"},stat("Feels like",r(w.now.feels)+"°"),stat("Humidity",w.now.humidity!=null?r(w.now.humidity)+"%":""),stat("Wind",`${r(w.now.wind)} mph`+(t.wind?` (gusts to ${r(t.wind)})`:"")),stat("Rain chance today",t.rain+"%"),stat("UV today",t.uv!=null?`${r(t.uv)} · ${uvWord(t.uv)}`:""),stat("Sunrise",clockOf(t.sunrise)),stat("Sunset",clockOf(t.sunset))),
+    h("div",{class:"wstats"},stat("Feels like",r(w.now.feels)+"°"),stat("Humidity",w.now.humidity!=null?r(w.now.humidity)+"%":""),stat("Wind",`${r(w.now.wind)} mph`+(t.wind?` (gusts to ${r(t.wind)})`:"")),stat("Rain chance today",t.rain+"%"),stat("Precipitation today",t.amt>=0.005?inchTxt(t.amt)+(t.hours?` over ~${r(t.hours)} hr`:""):"None expected"),t.snow>=0.05?stat("Snow today",inchTxt(t.snow)):null,w.now.precip>0?stat("Falling now",inchTxt(w.now.precip)+"/hr"):null,stat("Tomorrow",(w.days&&w.days[1]?w.days[1].rain+"% chance"+(w.days[1].amt>=0.005?" · "+inchTxt(w.days[1].amt):""):"")),stat("UV today",t.uv!=null?`${r(t.uv)} · ${uvWord(t.uv)}`:""),stat("Sunrise",clockOf(t.sunrise)),stat("Sunset",clockOf(t.sunset))),
     ),h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>placeSheet()},"Change location"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
 function renderVerse(){

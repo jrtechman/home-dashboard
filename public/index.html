@@ -1343,7 +1343,7 @@ function openSaver(){
 function renderSaverClock(){
   const c=$("#saverClock"); if(!c) return; const n=new Date(); const hh=n.getHours();
   const nx=eventsOn(today()).filter(e=>(!e.time||e.time>=pad(hh)+":"+pad(n.getMinutes())))[0];
-  c.replaceChildren(h("div",{class:"big"},`${hh%12||12}:${pad(n.getMinutes())}`),h("div",{class:"sd"},`${WD[n.getDay()]}, ${MO[n.getMonth()]} ${n.getDate()}`),nx?h("div",{class:"nx"},`Next: ${nx.title} · ${fmtTime(nx.time)}`):null);
+  c.replaceChildren(...[h("div",{class:"big"},`${hh%12||12}:${pad(n.getMinutes())}`),h("div",{class:"sd"},`${WD[n.getDay()]}, ${MO[n.getMonth()]} ${n.getDate()}`),nx?h("div",{class:"nx"},`Next: ${nx.title} · ${fmtTime(nx.time)}`):null].filter(Boolean));
 }
 $("#saver").addEventListener("click",()=>{ $("#saver").hidden=true; saverImgs=null; idle(); });
 $("#sleepBtn").addEventListener("click",openSaver);

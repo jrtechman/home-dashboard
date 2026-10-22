@@ -410,6 +410,8 @@ body.arranging #fab{display:none!important}
 .saver img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity 1.6s ease}
 .saver .veil{position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(transparent,rgba(15,20,25,.65))}
 .saver .clock{position:absolute;left:calc(40px + env(safe-area-inset-left,0px));bottom:calc(36px + env(safe-area-inset-bottom,0px));right:40px}
+.blackout{position:fixed;inset:0;z-index:50;background:#000;cursor:none}.blackout[hidden]{display:none}
+.nosel{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
 .saver .st{font-family:var(--display);font-size:clamp(24px,3.4vw,40px);margin-bottom:10px;opacity:.95;text-shadow:0 2px 12px rgba(0,0,0,.35)}
 .saver .big{font-family:var(--display);font-size:clamp(64px,11vw,140px);line-height:.95;font-variant-numeric:tabular-nums}
 .saver .sd{font-family:var(--display);font-size:clamp(22px,3vw,34px);margin-top:6px}
@@ -586,6 +588,7 @@ body.arranging #fab{display:none!important}
     <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
 </div>
 <div id="sheetHost"></div>
+<div id="blackout" class="blackout" hidden></div>
 <div id="saver" class="saver" hidden></div>
 <input type="file" id="fileIn" accept="image/*" multiple hidden>
 <input type="file" id="dishIn" accept="image/*" hidden>
@@ -1336,7 +1339,7 @@ function renderTools(){
   const fs=t.querySelector('[aria-label="Full screen"]');
   const tb=[h("button",{class:"pill icon"+(guestOn()?" on":""),id:"guestTop","aria-label":guestOn()?"Guest mode is on. Tap to turn off":"Guests are here",title:"Guests are here",onclick:guestToggle},svg(document.querySelector("#guestBtn svg").innerHTML)),
     h("button",{class:"pill icon",id:"themeTop","aria-label":isDark()?"Switch to light mode":"Switch to dark mode",title:isDark()?"Light mode":"Dark mode",onclick:()=>setTheme(isDark()?"light":"dark")},svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>')),
-    mod("sleep")?h("button",{class:"pill icon","aria-label":"Sleep (photo screensaver)",title:"Sleep",onclick:openSaver},svg(document.querySelector("#sleepBtn svg").innerHTML)):null].filter(Boolean);
+    mod("sleep")?holdSleep(h("button",{class:"pill icon nosel","aria-label":"Sleep (photo screensaver). Hold to black out the screen",title:"Sleep (hold to black out)"},svg(document.querySelector("#sleepBtn svg").innerHTML)),openSaver):null].filter(Boolean);
   if(S.view==="home") tb.unshift(h("button",{class:"pill icon"+(S.editLayout?" on":""),id:"layoutTop","aria-label":"Arrange this page",title:"Arrange this page",onclick:()=>{ S.editLayout=!S.editLayout; applyLayout(); renderTools(); }},svg('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="4" rx="1.5"/><rect x="13" y="11" width="7" height="9" rx="1.5"/><rect x="4" y="14" width="7" height="6" rx="1.5"/>')));
   tb.forEach(b=>fs?t.insertBefore(b,fs):t.append(b));
 }
@@ -1871,7 +1874,18 @@ function renderSaverClock(){
   c.replaceChildren(...[ttl?h("div",{class:"st"},ttl):null,h("div",{class:"big"},`${hh%12||12}:${pad(n.getMinutes())}`),h("div",{class:"sd"},`${WD[n.getDay()]}, ${MO[n.getMonth()]} ${n.getDate()}`),nx?h("div",{class:"nx"},`Next: ${nx.title} · ${fmtTime(nx.time)}`):null].filter(Boolean));
 }
 $("#saver").addEventListener("click",()=>{ $("#saver").hidden=true; saverImgs=null; idle(); });
-$("#sleepBtn").addEventListener("click",openSaver);
+/* Blackout: press and hold Sleep for a fully black screen. A tap brings back the screensaver. */
+function openBlackout(){ const b=$("#blackout"); b.dataset.at=String(Date.now()); b.hidden=false; $("#saver").hidden=true; saverImgs=null; }
+$("#blackout").addEventListener("click",()=>{ const b=$("#blackout"); if(Date.now()-Number(b.dataset.at||0)<500) return; b.hidden=true; openSaver(); });
+function holdSleep(btn,tap){
+  let t=0,fired=false; const clear=()=>{ clearTimeout(t); t=0; };
+  btn.addEventListener("pointerdown",()=>{ fired=false; clear(); t=setTimeout(()=>{ t=0; fired=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(e){} openBlackout(); },650); });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,clear));
+  btn.addEventListener("click",e=>{ if(fired){ fired=false; e.preventDefault(); e.stopPropagation(); return; } tap(); });
+  btn.addEventListener("contextmenu",e=>e.preventDefault());
+  return btn;
+}
+holdSleep($("#sleepBtn"),openSaver); $("#sleepBtn").classList.add("nosel"); $("#sleepBtn").title="Sleep (hold to black out)";
 /* Phones: the bottom bar ends in a Menu button that holds Photos, Sleep, appearance and Settings. */
 function menuSheet(){
   const ico=sel=>{ const e=document.querySelector(sel+" svg"); return svg(e?e.innerHTML:""); };
@@ -1889,11 +1903,12 @@ function menuSheet(){
       mod("house")?row(ico('.nav[data-view="house"]'),"Home (cameras, lights, thermostat)",()=>setView("house")):null,
       mod("links")?row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)):null,
       mod("sleep")?row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver):null,
+      mod("sleep")?row(ico("#sleepBtn"),"Black out the screen",openBlackout):null,
       row(ico("#settingsBtn"),"Settings",settingsPage)),
     h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
 }
 $("#menuBtn").addEventListener("click",menuSheet);
-let idleT; function idle(){ clearTimeout(idleT); const m=Number(S.settings.idleMin)||0; if(m>0) idleT=setTimeout(()=>{ if($("#sheetHost").firstChild) return idle(); openSaver(); },m*60000); }
+let idleT; function idle(){ clearTimeout(idleT); const m=Number(S.settings.idleMin)||0; if(m>0) idleT=setTimeout(()=>{ if($("#sheetHost").firstChild||!$("#blackout").hidden) return idle(); openSaver(); },m*60000); }
 ["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{ idle(); lockWake(); },{passive:true}));
 
 /* wake lock */
@@ -2219,7 +2234,7 @@ function settingsPage(){
   const panes={
     general:h("div",{class:"spane",style:col},field("Household name",hh),
       h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-      field("Photo screensaver",idleSel),field("Name shown on the screensaver (leave blank for none)",stTitle),field("This device is used by",meSel),field("Appearance (this device)",themeSel),
+      field("Photo screensaver",idleSel),h("p",{class:"hint",style:"margin:-6px 0 0"},"Tip: press and hold the Sleep button to black out the screen at night. Tap anywhere to bring back the slideshow."),field("Name shown on the screensaver (leave blank for none)",stTitle),field("This device is used by",meSel),field("Appearance (this device)",themeSel),
       h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ S.editLayout=true; setView("home"); }},"Arrange the Main page"),h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"))),
     alerts:h("div",{class:"spane",style:col},pushSection(),briefingSection()),
     privacy:h("div",{class:"spane",style:col},guestSection(),faceSection()),

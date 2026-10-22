@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Blackout mode",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Press and hold the Sleep button to turn the screen fully black. Tap anywhere to bring back the screensaver, and tap again to get back to the dashboard. On phones, Menu has a “Black out the screen” row."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Screensaver name",
     "items": [
       {

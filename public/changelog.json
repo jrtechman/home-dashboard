@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Preview recipes from the web search",
+    "items": [
+      {
+        "tag": "Improved",
+        "text": "In Search the web, tap a recipe’s title to read it right inside the dashboard (photo, ingredients and steps) instead of opening a browser. Back to results, Import, and Open the site buttons sit at the top."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Settings bottom bar fix",
     "items": [
       {

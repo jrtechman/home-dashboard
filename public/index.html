@@ -225,6 +225,10 @@ button{cursor:pointer;border:0;background:none}
 .tset{display:flex;align-items:center;gap:10px}.tset .meta{min-width:64px}.tnum{font-weight:700;font-size:22px;min-width:52px;text-align:center}
 .hscenes{display:flex;flex-wrap:wrap;gap:8px}
 .hsteps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;line-height:1.4}
+.cl{display:flex;flex-direction:column;gap:18px}.clitem h3{margin:2px 0 8px}.cldate{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.clitem ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.clitem li{display:flex;gap:10px;align-items:flex-start;line-height:1.4}
+.cltag{flex:none;min-width:70px;text-align:center;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}.cltag.new{background:#D6EAF5;color:#1D5A85}.cltag.improved{background:#E3EFD9;color:#3F6B2C}.cltag.fixed{background:#F7E4CC;color:#8A5A1E}
+:root[data-theme="dark"] .cltag.new{background:#1C2A38;color:#8FC4EC}:root[data-theme="dark"] .cltag.improved{background:#222D20;color:#A7D08F}:root[data-theme="dark"] .cltag.fixed{background:#36291A;color:#E8B878}
 .camgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px}
 .camtile{position:relative;display:block;width:100%;padding:0;border:0;border-radius:18px;overflow:hidden;background:var(--chip);aspect-ratio:16/9;cursor:pointer}
 .camtile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -540,6 +544,7 @@ button{cursor:pointer;border:0;background:none}
     <section class="view" data-name="lists"><div class="lists" id="lists"></div></section>
     <section class="view" data-name="photos"><div class="photos" id="photos"></div></section>
     <section class="view" data-name="house" hidden><div class="settingspage" id="housePage"></div></section>
+    <section class="view" data-name="changelog" hidden><div class="settingspage" id="changelogPage"></div></section>
     <section class="view" data-name="history" hidden><div class="settingspage" id="historyPage"></div></section>
     <section class="view" data-name="settings" hidden><div class="settingspage" id="settingsPage"></div></section>
   </main>
@@ -1091,7 +1096,7 @@ function tick(){
 
 /* ---------- views ---------- */
 function setView(v){
-  S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history"||v==="house")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"); }
+  S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history"||v==="changelog"||v==="house")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"||v==="changelog"); }
   document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.name!==v);
   document.querySelectorAll(".nav[data-view]").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
   const mb=$("#menuBtn"); if(mb){ if(v==="photos"||v==="house") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
@@ -1193,6 +1198,22 @@ function renderHouse(){
     h("li",null,"Redeploy. Your Hue lights, thermostat, scenes and switches then appear here.")),
     h("p",{class:"hint",style:"margin:8px 0 0"},"Hue lights and thermostats (Resideo, Ecobee, Nest and others) show up once they are added to Home Assistant.")));
   page.replaceChildren(h("div",{class:"housegrid"},cards));
+}
+
+/* Change log: what has been updated on the dashboard. Entries live in public/changelog.json, newest first. */
+function changelogPage(){
+  if(S.view!=="changelog"&&S.view!=="settings") S.prevView=S.view; closeSheet(); setView("changelog");
+  const page=$("#changelogPage"), build=(typeof BUILD!=="undefined"&&BUILD)?String(BUILD).slice(0,7):"";
+  page.replaceChildren(h("div",{class:"sheet spage"},h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>settingsPage()},svg(IC.left),"Settings"),h("span",{class:"grow"})),
+    h("h2",null,"Change log"),h("p",{class:"hint",style:"margin:0"},"What has been added or fixed on the dashboard, newest first."+(build?" Current version: "+build+".":"")),h("div",{id:"clList",class:"cl"},h("p",{class:"hint"},"Loading…"))));
+  page.scrollTop=0;
+  fetch("/changelog.json?v="+encodeURIComponent(build||"1"),{cache:"no-cache"}).then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(list=>{
+    const box=$("#clList"); if(!box) return; box.replaceChildren();
+    list.forEach(e=>{ const d=parseKey(e.date);
+      box.append(h("section",{class:"clitem"},h("div",{class:"cldate"},`${MO[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`),h("h3",null,e.title),
+        h("ul",null,(e.items||[]).map(i=>h("li",null,h("span",{class:"cltag "+String(i.tag||"").toLowerCase()},i.tag||""),i.text))))); });
+    if(!list.length) box.append(h("p",{class:"hint"},"Nothing here yet."));
+  }).catch(()=>{ const box=$("#clList"); if(box) box.replaceChildren(h("p",{class:"hint"},"Couldn't load the change log.")); });
 }
 
 /* ---------- light / dark ---------- */
@@ -1445,7 +1466,7 @@ function histRows(){
 }
 function histDay(k){ const d=parseKey(k); return `${DOWS[d.getDay()]}, ${MO[d.getMonth()]} ${d.getDate()}`; }
 function histPage(){
-  if(S.view!=="history"&&S.view!=="settings") S.prevView=S.view; closeSheet();
+  if(S.view!=="history"&&S.view!=="settings"&&S.view!=="changelog") S.prevView=S.view; closeSheet();
   S.histTab=S.histTab||"all"; setView("history"); renderHistory(); $("#historyPage").scrollTop=0;
 }
 function renderHistory(){
@@ -2085,9 +2106,9 @@ function openRecipe(id){
     h("div",{class:"acts"},h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this dish?",r.title+" and its photo will be removed.","Delete",async()=>{ if(isTonight) await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); await delDoc("recipes",r.id); deleteImage(r.photoUrl); })},"Delete"),h("button",{class:"pill",onclick:()=>recipeSheet(r)},"Edit"),h("span",{class:"grow"}),
       isTonight?h("button",{class:"pill",onclick:async()=>{ await offTonight(r); closeSheet(); }},"Take off tonight"):h("button",{class:"pill",onclick:()=>{ saveSettings({tonight:{id:r.id,date:today()}}); closeSheet(); toast("Set as tonight's dinner"); }},"Make tonight"),dinBtn)],true);
 }
-function settingsBack(){ setView(S.prevView&&S.prevView!=="settings"&&S.prevView!=="history"?S.prevView:"home"); }
+function settingsBack(){ setView(S.prevView&&S.prevView!=="settings"&&S.prevView!=="history"&&S.prevView!=="changelog"?S.prevView:"home"); }
 function settingsPage(){
-  if(S.view!=="settings"&&S.view!=="history") S.prevView=S.view; closeSheet();
+  if(S.view!=="settings"&&S.view!=="history"&&S.view!=="changelog") S.prevView=S.view; closeSheet();
   const draft=JSON.parse(JSON.stringify(members()));
   const hh=h("input",{id:"stHouse",value:S.settings.household||""});
   const idleSel=h("select",{id:"stIdle"},[["0","Never"],["2","After 2 minutes"],["5","After 5 minutes"],["10","After 10 minutes"],["30","After 30 minutes"]].map(([v,l])=>h("option",{value:v},l))); idleSel.value=String(S.settings.idleMin??5);
@@ -2101,12 +2122,12 @@ function settingsPage(){
   const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value)}); idle(); toast("Settings saved"); settingsBack(); };
   const page=$("#settingsPage"); page.replaceChildren(h("div",{class:"sheet spage"},[h("h2",null,"Settings"),field("Household name",hh),
     h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),moreSection(),guestSection(),faceSection(),pushSection(),adminSection(),
+    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),moreSection(),h("div",null,h("h3",null,"Change log"),h("p",{class:"hint",style:"margin:0 0 8px"},"See what has been added or fixed on the dashboard."),h("button",{class:"pill",onclick:changelogPage},"View change log")),guestSection(),faceSection(),pushSection(),adminSection(),
     exCount?h("div",{class:"acts"},h("span",{class:"meta grow"},`${exCount} example items are on the board.`),h("button",{class:"pill danger",onclick:()=>confirmSheet("Remove the examples?","Events, tasks, groceries and recipes marked “example” will be deleted.","Remove examples",async()=>{ for(const c of COLLS) for(const r of S[c].filter(r=>r.example)) await delDoc(c,r.id); toast("Examples removed"); })},"Remove examples")):null,
     h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:settingsBack},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]));
   setView("settings"); page.scrollTop=0;
 }
-$("#settingsBtn").addEventListener("click",()=>{ if(S.view==="settings"||S.view==="history") settingsBack(); else settingsPage(); });
+$("#settingsBtn").addEventListener("click",()=>{ if(S.view==="settings"||S.view==="history"||S.view==="changelog") settingsBack(); else settingsPage(); });
 $("#fab").addEventListener("click",()=>{
   if(S.view==="tasks") return todoSheet(meName()||members()[0]?.name||"");
   if(S.view==="meals") return snapDish();

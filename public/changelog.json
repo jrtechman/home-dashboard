@@ -1,154 +1,172 @@
 [
- {
-  "date": "2026-10-21",
-  "title": "Morning briefing text",
-  "items": [
-   {
-    "tag": "New",
-    "text": "Settings has a Morning briefing text section: a preview of a daily summary (weather, calendar, tasks due, reminders, tonight's dinner and the verse) and a private link an iPhone Shortcut can fetch each morning to text it to you."
-   }
-  ]
- },
- {
-  "date": "2026-10-21",
-  "title": "Spotify on the Home page",
-  "items": [
-   {
-    "tag": "New",
-    "text": "A Spotify card on the Home page shows what is playing, with play/pause, next, previous, shuffle, a volume slider and a choice of device to play on."
-   },
-   {
-    "tag": "New",
-    "text": "Connect it once with a free Spotify developer app (needs SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in Vercel). Controls need Spotify Premium."
-   }
-  ]
- },
- {
-  "date": "2026-10-21",
-  "title": "Home page for cameras, lights and thermostat",
-  "items": [
-   {
-    "tag": "New",
-    "text": "The old Home page is now called Main. A new Home page holds Cameras, Philips Hue lights, the thermostat and other Home Assistant devices."
-   },
-   {
-    "tag": "New",
-    "text": "Lights have on/off switches and brightness sliders; the thermostat has temperature and mode controls; scenes, switches and blinds are one tap. Needs Home Assistant connected (see the setup card on the page)."
-   },
-   {
-    "tag": "Improved",
-    "text": "Cameras moved from Settings and the Menu onto the Home page. Guest mode hides the Home page by default."
-   },
-   {
-    "tag": "Improved",
-    "text": "The Full screen button is hidden on phones. The Guests button has a new person icon."
-   }
-  ]
- },
- {
-  "date": "2026-10-21",
-  "title": "Tasks: repeating section and drag to reorder",
-  "items": [
-   {
-    "tag": "New",
-    "text": "Repeating tasks now sit in a collapsible Repeating bar below each person's list."
-   },
-   {
-    "tag": "New",
-    "text": "Drag a task by its grip to reorder it, or drop it in another person's list to reassign it. Arrow keys work too."
-   }
-  ]
- },
- {
-  "date": "2026-10-21",
-  "title": "History page and recipe web search",
-  "items": [
-   {
-    "tag": "New",
-    "text": "History page inside Settings: meals, finished tasks, finished reminders and grocery trips, with tabs and counts."
-   },
-   {
-    "tag": "New",
-    "text": "Search the web for recipes from the Meals search box and import a result in one tap (add a free BRAVE_SEARCH_KEY in Vercel for steady results)."
-   },
-   {
-    "tag": "New",
-    "text": "Take off tonight button removes a dinner from tonight's card."
-   },
-   {
-    "tag": "New",
-    "text": "Change log in Settings (this page)."
-   }
-  ]
- },
- {
-  "date": "2026-10-21",
-  "title": "Notifications and phone polish",
-  "items": [
-   {
-    "tag": "Fixed",
-    "text": "Morning reminders and task-due notifications are working now that the cron secret is set."
-   },
-   {
-    "tag": "New",
-    "text": "Every pop-up has an X button in its corner."
-   },
-   {
-    "tag": "Improved",
-    "text": "Meals on phones: Import, Paste and Snap fit on one line, filter chips scroll sideways, and the dinner plan controls fit on one row."
-   },
-   {
-    "tag": "Improved",
-    "text": "The meal search box has a subtle border so it is easy to spot."
-   },
-   {
-    "tag": "Fixed",
-    "text": "The light/dark button is back in the top-right with its own icon; Sleep now shows Zzz; Full screen shows on every page; more space beside the calendar arrows."
-   }
-  ]
- },
- {
-  "date": "2026-10-21",
-  "title": "Meals revamp",
-  "items": [
-   {
-    "tag": "New",
-    "text": "Weekly dinner planner, search, favorites and tags (presets plus your own), and compact dish tiles."
-   },
-   {
-    "tag": "New",
-    "text": "Cooking mode: full-screen steps with an ingredient checklist and timers that read times from the steps."
-   },
-   {
-    "tag": "Improved",
-    "text": "Recipe names are tidied up (no stray parentheses)."
-   }
-  ]
- },
- {
-  "date": "2026-10-21",
-  "title": "Tasks, weather, guests and settings",
-  "items": [
-   {
-    "tag": "New",
-    "text": "Tasks can have a due day and time, an edit button, repeating schedules (including every 4th Sunday) and a notify-when-due option."
-   },
-   {
-    "tag": "New",
-    "text": "Weather pop-up shows rain and snow amounts by day and hour."
-   },
-   {
-    "tag": "New",
-    "text": "Guests are here mode: hides what you choose, unlocks with a 4-digit PIN."
-   },
-   {
-    "tag": "Improved",
-    "text": "Settings is a full page. Budget, History and Cameras moved into Settings; Guests and Sleep are top-right buttons; the Countdowns card shows every upcoming countdown."
-   },
-   {
-    "tag": "Improved",
-    "text": "The scrolling photo strip was removed from the main page."
-   }
-  ]
- }
+  {
+    "date": "2026-10-21",
+    "title": "More calendar details",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Apple Calendar events now show their notes, link and who's invited when you tap them."
+      },
+      {
+        "tag": "New",
+        "text": "Locations show under the event name and open in Maps when tapped."
+      },
+      {
+        "tag": "New",
+        "text": "The morning briefing text adds the location after each event."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
+    "title": "Morning briefing text",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Settings has a Morning briefing text section: a preview of a daily summary (weather, calendar, tasks due, reminders, tonight's dinner and the verse) and a private link an iPhone Shortcut can fetch each morning to text it to you."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
+    "title": "Spotify on the Home page",
+    "items": [
+      {
+        "tag": "New",
+        "text": "A Spotify card on the Home page shows what is playing, with play/pause, next, previous, shuffle, a volume slider and a choice of device to play on."
+      },
+      {
+        "tag": "New",
+        "text": "Connect it once with a free Spotify developer app (needs SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in Vercel). Controls need Spotify Premium."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
+    "title": "Home page for cameras, lights and thermostat",
+    "items": [
+      {
+        "tag": "New",
+        "text": "The old Home page is now called Main. A new Home page holds Cameras, Philips Hue lights, the thermostat and other Home Assistant devices."
+      },
+      {
+        "tag": "New",
+        "text": "Lights have on/off switches and brightness sliders; the thermostat has temperature and mode controls; scenes, switches and blinds are one tap. Needs Home Assistant connected (see the setup card on the page)."
+      },
+      {
+        "tag": "Improved",
+        "text": "Cameras moved from Settings and the Menu onto the Home page. Guest mode hides the Home page by default."
+      },
+      {
+        "tag": "Improved",
+        "text": "The Full screen button is hidden on phones. The Guests button has a new person icon."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
+    "title": "Tasks: repeating section and drag to reorder",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Repeating tasks now sit in a collapsible Repeating bar below each person's list."
+      },
+      {
+        "tag": "New",
+        "text": "Drag a task by its grip to reorder it, or drop it in another person's list to reassign it. Arrow keys work too."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
+    "title": "History page and recipe web search",
+    "items": [
+      {
+        "tag": "New",
+        "text": "History page inside Settings: meals, finished tasks, finished reminders and grocery trips, with tabs and counts."
+      },
+      {
+        "tag": "New",
+        "text": "Search the web for recipes from the Meals search box and import a result in one tap (add a free BRAVE_SEARCH_KEY in Vercel for steady results)."
+      },
+      {
+        "tag": "New",
+        "text": "Take off tonight button removes a dinner from tonight's card."
+      },
+      {
+        "tag": "New",
+        "text": "Change log in Settings (this page)."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
+    "title": "Notifications and phone polish",
+    "items": [
+      {
+        "tag": "Fixed",
+        "text": "Morning reminders and task-due notifications are working now that the cron secret is set."
+      },
+      {
+        "tag": "New",
+        "text": "Every pop-up has an X button in its corner."
+      },
+      {
+        "tag": "Improved",
+        "text": "Meals on phones: Import, Paste and Snap fit on one line, filter chips scroll sideways, and the dinner plan controls fit on one row."
+      },
+      {
+        "tag": "Improved",
+        "text": "The meal search box has a subtle border so it is easy to spot."
+      },
+      {
+        "tag": "Fixed",
+        "text": "The light/dark button is back in the top-right with its own icon; Sleep now shows Zzz; Full screen shows on every page; more space beside the calendar arrows."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
+    "title": "Meals revamp",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Weekly dinner planner, search, favorites and tags (presets plus your own), and compact dish tiles."
+      },
+      {
+        "tag": "New",
+        "text": "Cooking mode: full-screen steps with an ingredient checklist and timers that read times from the steps."
+      },
+      {
+        "tag": "Improved",
+        "text": "Recipe names are tidied up (no stray parentheses)."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
+    "title": "Tasks, weather, guests and settings",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Tasks can have a due day and time, an edit button, repeating schedules (including every 4th Sunday) and a notify-when-due option."
+      },
+      {
+        "tag": "New",
+        "text": "Weather pop-up shows rain and snow amounts by day and hour."
+      },
+      {
+        "tag": "New",
+        "text": "Guests are here mode: hides what you choose, unlocks with a 4-digit PIN."
+      },
+      {
+        "tag": "Improved",
+        "text": "Settings is a full page. Budget, History and Cameras moved into Settings; Guests and Sleep are top-right buttons; the Countdowns card shows every upcoming countdown."
+      },
+      {
+        "tag": "Improved",
+        "text": "The scrolling photo strip was removed from the main page."
+      }
+    ]
+  }
 ]

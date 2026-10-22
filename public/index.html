@@ -168,8 +168,21 @@ button{cursor:pointer;border:0;background:none}
 .card{border-radius:var(--r-col);background:var(--tint);padding:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0 0 12px;text-wrap:balance}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
-.stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.card{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack>.todaycard .scroll{flex:0 1 auto;overflow-y:auto}.todaycard .tapnote{margin-top:8px;font-size:13px;color:var(--muted);font-weight:600}.pray{cursor:pointer}.pray .py{padding:3px 0;font-size:16px}.pray .py small{color:var(--muted);margin-left:6px}
-.stack.left{display:flex;flex-direction:column}.stack.left>.card{flex:none}.stack.left>.todaycard{flex:none;max-height:340px;cursor:pointer}
+.stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.cw{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack .todaycard .scroll{flex:0 1 auto;overflow-y:auto}.todaycard .tapnote{margin-top:8px;font-size:13px;color:var(--muted);font-weight:600}.pray{cursor:pointer}.pray .py{padding:3px 0;font-size:16px}.pray .py small{color:var(--muted);margin-left:6px}
+.stack.left{display:flex;flex-direction:column}.stack .todaycard{flex:none;max-height:340px;cursor:pointer}
+.cw{position:relative;display:flex;flex-direction:column;min-height:0;flex:none}.cw>.card{flex:none}
+.cw:has(>.card[hidden]),.cw:has(>.card[style*="display:none"]),.cw:has(>.card[style*="display: none"]){display:none}
+.cw.lhide{display:none!important}
+.lctl{position:absolute;top:8px;right:8px;z-index:6;display:flex;gap:6px}
+.lctl button{width:38px;height:38px;border-radius:50%;background:var(--card);color:var(--ink);box-shadow:0 2px 8px rgba(31,42,51,.22);display:inline-flex;align-items:center;justify-content:center}
+.lctl button[disabled]{opacity:.35}
+.lctl svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.home.editing .card{pointer-events:none;outline:2px dashed color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:-2px}
+.home.editing .frame{display:none}
+body.arranging #fab{display:none!important}
+.layoutbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 18px 8px;padding:10px 14px;border-radius:18px;background:var(--chip)}
+.layoutbar[hidden]{display:none}.layoutbar .lt{font-weight:700}.layoutbar .grow{flex:1;min-width:8px}.layoutbar .hint{margin:0;flex:1 0 100%}
+@media (max-width:900px){.layoutbar{margin-inline:16px}}
 .wx{cursor:pointer}
 .wx .wxtop{display:flex;align-items:center;gap:14px}
 .wx .wxt{font-family:var(--display);font-size:46px;line-height:1;font-variant-numeric:tabular-nums}
@@ -532,11 +545,12 @@ button{cursor:pointer;border:0;background:none}
 
     <section class="view" data-name="home">
       <div id="noteLayer" class="notelayer"></div>
+      <div id="layoutBar" class="layoutbar" hidden></div>
       <div class="home">
         <div class="stack left">
           <div class="card c-sage wx" id="homeWx"></div>
           <div class="card c-teal fam" id="homeFam" style="display:none"></div>
-          <div class="card c-blue todaycard"><h2 id="todayTitle">Today</h2><div class="scroll" id="homeToday"></div></div>
+          <div class="card c-blue todaycard" id="homeTodayCard"><h2 id="todayTitle">Today</h2><div class="scroll" id="homeToday"></div></div>
         </div>
         <div class="stack">
           <div class="card c-amber" id="homeDinner"></div>
@@ -1084,7 +1098,7 @@ const today=()=>keyOf(new Date());
 /* ---------- clock & header ---------- */
 /* who is using this device (chosen once per device; the passcode is shared by the whole household) */
 function meName(){ try{ const n=localStorage.getItem("hd_me")||""; return members().some(m=>m.name===n)?n:""; }catch(e){ return ""; } }
-function setMe(n){ try{ localStorage.setItem("hd_me",n); localStorage.setItem("hd_me_asked","1"); }catch(e){} updateGreet(); }
+function setMe(n){ try{ localStorage.setItem("hd_me",n); localStorage.setItem("hd_me_asked","1"); }catch(e){} updateGreet(); try{ applyLayout(); }catch(e){} }
 function updateGreet(){
   const hh=new Date().getHours(), me=meName();
   $("#greet").textContent=S.view==="home"?(me?"Welcome, "+me:"Welcome home"):(hh<12?"Good morning":hh<17?"Good afternoon":"Good evening");
@@ -1113,6 +1127,7 @@ function setView(v){
   const mb=$("#menuBtn"); if(mb){ if(v==="photos"||v==="house") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
   try{ history.replaceState(null,"","#"+v); }catch(e){}
   renderTools(); updateGreet();
+  if(v==="home") applyLayout();
   if(v==="house") houseEnter();
 }
 /* ---------- Home page: cameras, Philips Hue lights, thermostat and other Home Assistant devices ---------- */
@@ -1321,6 +1336,7 @@ function renderTools(){
   const tb=[h("button",{class:"pill icon"+(guestOn()?" on":""),id:"guestTop","aria-label":guestOn()?"Guest mode is on. Tap to turn off":"Guests are here",title:"Guests are here",onclick:guestToggle},svg(document.querySelector("#guestBtn svg").innerHTML)),
     h("button",{class:"pill icon",id:"themeTop","aria-label":isDark()?"Switch to light mode":"Switch to dark mode",title:isDark()?"Light mode":"Dark mode",onclick:()=>setTheme(isDark()?"light":"dark")},svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>')),
     mod("sleep")?h("button",{class:"pill icon","aria-label":"Sleep (photo screensaver)",title:"Sleep",onclick:openSaver},svg(document.querySelector("#sleepBtn svg").innerHTML)):null].filter(Boolean);
+  if(S.view==="home") tb.unshift(h("button",{class:"pill icon"+(S.editLayout?" on":""),id:"layoutTop","aria-label":"Arrange this page",title:"Arrange this page",onclick:()=>{ S.editLayout=!S.editLayout; applyLayout(); renderTools(); }},svg('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="4" rx="1.5"/><rect x="13" y="11" width="7" height="9" rx="1.5"/><rect x="4" y="14" width="7" height="6" rx="1.5"/>')));
   tb.forEach(b=>fs?t.insertBefore(b,fs):t.append(b));
 }
 function goFull(){ try{ const p=document.documentElement.requestFullscreen?.(); p&&p.catch(()=>toast("Full screen isn't available here.")); }catch(e){ toast("Full screen isn't available here."); } }
@@ -2201,7 +2217,7 @@ function settingsPage(){
     general:h("div",{class:"spane",style:col},field("Household name",hh),
       h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
       field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),
-      h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"))),
+      h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ S.editLayout=true; setView("home"); }},"Arrange the Main page"),h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"))),
     alerts:h("div",{class:"spane",style:col},pushSection(),briefingSection()),
     privacy:h("div",{class:"spane",style:col},guestSection(),faceSection()),
     features:h("div",{class:"spane",style:col},adminSection()),
@@ -2462,8 +2478,67 @@ function guestUnlockSheet(){
 }
 $("#guestBtn").addEventListener("click",guestToggle);
 $("#guestBar").addEventListener("click",guestToggle);
+/* ---------- Main page layout: each person can arrange the cards; saved per person so it follows them to any device ---------- */
+const LCARDS=[["homeWx","Weather"],["homeFam","Reminders and countdowns"],["homeTodayCard","Today"],["homeDinner","Dinner"],["homeTasksCard","Open tasks"],["homePrayer","Prayer list"],["homeBudget","Budget"],["homeVerse","Verse of the day"]];
+const LDEF={left:["homeWx","homeFam","homeTodayCard"],right:["homeDinner","homeTasksCard","homePrayer","homeBudget","homeVerse"],hidden:[]};
+const layoutKey=()=>meName()||"_shared";
+function getLayout(){
+  const raw=((S.settings&&S.settings.layouts)||{})[layoutKey()]||LDEF, known=new Set(LCARDS.map(c=>c[0])), seen=new Set();
+  const clean=a=>(Array.isArray(a)?a:[]).filter(k=>known.has(k)&&!seen.has(k)&&seen.add(k));
+  const L={left:clean(raw.left),right:clean(raw.right),hidden:clean(raw.hidden)};
+  LDEF.left.concat(LDEF.right).forEach(k=>{ if(!seen.has(k)){ seen.add(k); (LDEF.left.includes(k)?L.left:L.right).push(k); } });
+  return L;
+}
+const cwOf=k=>document.querySelector('.cw[data-k="'+k+'"]');
+function wrapCards(){ LCARDS.forEach(([k])=>{ const el=document.getElementById(k); if(!el||el.parentNode.classList.contains("cw")) return; const w=h("div",{class:"cw","data-k":k}); el.parentNode.insertBefore(w,el); w.append(el); }); }
+async function saveLayout(L){ const layouts={...((S.settings&&S.settings.layouts)||{})}; if(L) layouts[layoutKey()]=L; else delete layouts[layoutKey()]; await saveSettings({layouts}); }
+function moveCard(k,dir){
+  const L=JSON.parse(JSON.stringify(getLayout())), narrow=matchMedia("(max-width:900px)").matches;
+  const col=L.left.includes(k)?"left":"right", vis=x=>{ const w=cwOf(x); return !!(w&&w.offsetHeight>0); };
+  if(dir==="up"||dir==="down"){
+    const step=dir==="up"?-1:1;
+    if(narrow){ const all=[...L.left,...L.right], n=L.left.length, i=all.indexOf(k); let j=i+step; while(j>=0&&j<all.length&&!vis(all[j])) j+=step; if(j<0||j>=all.length) return; [all[i],all[j]]=[all[j],all[i]]; L.left=all.slice(0,n); L.right=all.slice(n); }
+    else{ const a=L[col], i=a.indexOf(k); let j=i+step; while(j>=0&&j<a.length&&!vis(a[j])) j+=step; if(j<0||j>=a.length) return; [a[i],a[j]]=[a[j],a[i]]; }
+  }else{
+    const to=dir==="left"?"left":"right"; if(to===col) return; const i=L[col].indexOf(k); L[col].splice(i,1); L[to].splice(Math.min(i,L[to].length),0,k);
+  }
+  saveLayout(L);
+}
+function hideCard(k){ const L=JSON.parse(JSON.stringify(getLayout())); L.left=L.left.filter(x=>x!==k); L.right=L.right.filter(x=>x!==k); if(!L.hidden.includes(k)) L.hidden.push(k); saveLayout(L); }
+function showCard(k){ const L=JSON.parse(JSON.stringify(getLayout())); L.hidden=L.hidden.filter(x=>x!==k); L.left.unshift(k); saveLayout(L); }
+function applyLayout(){
+  const stacks=document.querySelectorAll(".home .stack"); if(stacks.length<2||!cwOf("homeWx")) return;
+  const L=getLayout(), narrow=matchMedia("(max-width:900px)").matches, edit=!!S.editLayout&&S.view==="home", who=meName();
+  const sig=JSON.stringify([L,edit,narrow,who]); if(applyLayout.sig===sig) return; applyLayout.sig=sig;
+  const home=document.querySelector(".home"); home.classList.toggle("editing",edit);
+  document.body.classList.toggle("arranging",edit);
+  document.querySelectorAll(".cw>.lctl").forEach(e=>e.remove());
+  L.left.forEach(k=>stacks[0].append(cwOf(k))); L.right.forEach(k=>stacks[1].append(cwOf(k)));
+  L.hidden.forEach(k=>{ const w=cwOf(k); w.classList.add("lhide"); stacks[1].append(w); });
+  [...L.left,...L.right].forEach(k=>cwOf(k).classList.remove("lhide"));
+  const bar=$("#layoutBar"); bar.hidden=!edit; bar.replaceChildren(); if(!edit) return;
+  const btn=(label,icon,fn,dis)=>h("button",{type:"button","aria-label":label,title:label,disabled:!!dis,onclick:fn},svg(icon));
+  const flat=narrow?[...L.left,...L.right]:null;
+  [...L.left,...L.right].forEach(k=>{
+    const col=L.left.includes(k)?L.left:L.right, i=col.indexOf(k), fi=flat?flat.indexOf(k):0;
+    const ctl=h("div",{class:"lctl"},
+      btn("Move up",IC.up,()=>moveCard(k,"up"),narrow?fi===0:i===0), btn("Move down",'<path d="M12 5v13M6 13l6 6 6-6"/>',()=>moveCard(k,"down"),narrow?fi===flat.length-1:i===col.length-1),
+      narrow?null:btn(col===L.left?"Move to the right column":"Move to the left column",col===L.left?IC.right:IC.left,()=>moveCard(k,col===L.left?"right":"left")),
+      btn("Hide this card",'<path d="M3 3l18 18M10.6 6.2A9.8 9.8 0 0112 6c5 0 8.5 4.2 9.5 6a14 14 0 01-3.2 3.8M6.5 7.5A14 14 0 002.5 12C3.5 13.8 7 18 12 18c1.5 0 2.8-.4 4-.9"/>',()=>hideCard(k)));
+    cwOf(k).append(ctl);
+  });
+  const hid=L.hidden.map(k=>h("button",{class:"pill",onclick:()=>showCard(k)},"+ "+(LCARDS.find(c=>c[0]===k)||[,k])[1]));
+  const custom=!!((S.settings.layouts||{})[layoutKey()]);
+  bar.append(h("span",{class:"lt"},"Arranging the page for "+(who||"this shared screen")),h("span",{class:"grow"}),
+    custom?h("button",{class:"pill",onclick:()=>confirmSheet("Reset the layout?","The cards go back to the standard order for "+(who||"this shared screen")+".","Reset",()=>saveLayout(null))},"Reset"):null,
+    h("button",{class:"pill primary",onclick:()=>{ S.editLayout=false; applyLayout(); renderTools(); }},"Done"),
+    hid.length?h("div",{class:"acts",style:"flex:1 0 100%"},h("span",{class:"hint",style:"flex:none"},"Hidden, tap to bring back:"),...hid):null,
+    h("span",{class:"hint"},"Each person's layout is saved under their name, so it follows them to any device. To arrange it for someone else, choose their name under Settings, General, “This device is used by”."));
+}
+try{ matchMedia("(max-width:900px)").addEventListener("change",()=>{ applyLayout.sig=""; applyLayout(); }); }catch(e){}
 function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
+  applyLayout();
   $("#guestBar").hidden=!guestOn(); $("#guestBtn").classList.toggle("on",guestOn()); { const g=$("#guestTop"); if(g){ g.classList.toggle("on",guestOn()); g.setAttribute("aria-label",guestOn()?"Guest mode is on. Tap to turn off":"Guests are here"); } } $("#guestBtn").lastChild.textContent=guestOn()?"Guests here":"Guests";
   ["calendar","tasks","meals","lists","photos","house"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
   show($("#famBtn"),mod("reminders")||mod("countdowns")||mod("notes")||mod("prayer")); show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));
@@ -2563,7 +2638,7 @@ function toB64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader();
 /* ---------- boot ---------- */
 const startView=(location.hash||"").slice(1);
 setView(["home","calendar","tasks","meals","lists","photos","house"].includes(startView)?startView:"home");
-tick(); setInterval(tick,1000); renderAll(); idle();
+wrapCards(); tick(); setInterval(tick,1000); renderAll(); idle();
 
 pull();
 setInterval(()=>{ if(document.visibilityState==="visible") pull(); },4000);

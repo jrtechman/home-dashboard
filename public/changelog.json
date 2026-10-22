@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-10-22",
+    "title": "Arrange your own Main page",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Tap the arrange icon at the top of the Main page (or Settings, General, Arrange the Main page) to move cards up, down or between columns, and hide the ones you don't want."
+      },
+      {
+        "tag": "New",
+        "text": "Each person's layout is saved under their name, so it follows them to any phone, tablet or computer where they're picked under “This device is used by”. The shared screen keeps its own layout."
+      }
+    ]
+  },
+  {
     "date": "2026-10-21",
     "title": "Settings split into tabs",
     "items": [

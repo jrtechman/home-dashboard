@@ -212,15 +212,17 @@ body.arranging #fab{display:none!important}
 .notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.note{padding:14px;border-radius:16px}.note .nt{white-space:pre-wrap;word-break:break-word;font-size:16px}
 .view[data-name=home]{position:relative}
 .notelayer{position:absolute;inset:0;pointer-events:none;z-index:6;overflow:hidden}
-.sticky{position:absolute;width:176px;min-height:128px;padding:20px 14px 28px;box-sizing:border-box;pointer-events:auto;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;font-family:"Bradley Hand","Segoe Print","Chalkboard SE","Comic Sans MS",cursive;font-size:18px;line-height:1.3;color:#3a3320;background:var(--paper);box-shadow:0 1px 1px rgba(0,0,0,.12),0 10px 18px rgba(60,50,20,.22);transform:rotate(var(--rot,0deg));transition:box-shadow .15s,transform .15s}
+.sticky{--bw:176px;--bf:18px;position:absolute;width:calc(var(--bw)*var(--ns,1));min-height:calc(128px*var(--ns,1));padding:calc(20px*var(--ns,1)) calc(14px*var(--ns,1)) calc(28px*var(--ns,1));box-sizing:border-box;pointer-events:auto;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;font-family:"Bradley Hand","Segoe Print","Chalkboard SE","Comic Sans MS",cursive;font-size:calc(var(--bf)*var(--ns,1));line-height:1.3;color:#3a3320;background:var(--paper);box-shadow:0 1px 1px rgba(0,0,0,.12),0 10px 18px rgba(60,50,20,.22);transform:rotate(var(--rot,0deg));transition:box-shadow .15s,transform .15s}
 .sticky::before{content:"";position:absolute;top:-9px;left:50%;width:62px;height:20px;margin-left:-31px;background:rgba(255,255,255,.55);box-shadow:0 1px 2px rgba(0,0,0,.12);transform:rotate(-2deg)}
 .sticky::after{content:"";position:absolute;right:0;bottom:0;width:26px;height:26px;background:linear-gradient(135deg,rgba(0,0,0,0) 50%,rgba(0,0,0,.10) 50%);}
 .sticky.drag{cursor:grabbing;transform:rotate(0deg) scale(1.04);box-shadow:0 18px 30px rgba(60,50,20,.34);transition:none;z-index:50}
-.sticky .st{white-space:pre-wrap;word-break:break-word;max-height:190px;overflow:hidden}
-.sticky .sb{position:absolute;left:14px;bottom:8px;font-family:var(--body,system-ui);font-size:11px;font-weight:700;opacity:.55}
+.sticky .st{white-space:pre-wrap;word-break:break-word;max-height:calc(190px*var(--ns,1));overflow:hidden}
+.sticky .sb{position:absolute;left:calc(14px*var(--ns,1));bottom:calc(8px*var(--ns,1));font-family:var(--body,system-ui);font-size:calc(11px*var(--ns,1));font-weight:700;opacity:.55}
 .p-amber{--paper:#FFF1A8}.p-sage{--paper:#D9F0C8}.p-blue{--paper:#CFE6FA}.p-teal{--paper:#F9D3E0}.note.paper{background:var(--paper);color:#3a3320;border-radius:4px;box-shadow:0 4px 10px rgba(60,50,20,.18)}
 :root[data-theme="dark"] .sticky{color:#2c2616}
-@media (max-width:900px){.sticky{width:150px;min-height:108px;font-size:16px}}
+.sticky .rz{position:absolute;right:0;bottom:0;width:34px;height:34px;cursor:nwse-resize;touch-action:none;z-index:2}
+.sticky.rsz{transition:none;box-shadow:0 14px 26px rgba(60,50,20,.3)}
+@media (max-width:900px){.sticky{--bw:150px;--bf:16px;min-height:calc(108px*var(--ns,1))}}
 .lrow{display:flex;align-items:center;gap:10px}
 .lrow .lk{flex:1;min-width:0;display:flex;align-items:center;min-height:56px;padding:0 18px;border-radius:18px;background:var(--chip);font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pcs{display:flex;flex-direction:column;gap:8px}
@@ -2385,11 +2387,19 @@ const NOTE_COLORS=[["c-amber","Yellow"],["c-sage","Green"],["c-blue","Blue"],["c
 let noteDrag=false;
 const notePos=(n,i)=>({x:typeof n.x==="number"?n.x:58+((i*13)%30),y:typeof n.y==="number"?n.y:6+((i*23)%46)});
 const noteRot=n=>{ let h=0; for(const c of String(n.id)) h=(h*31+c.charCodeAt(0))|0; return ((Math.abs(h)%70)/10-3.5).toFixed(1)+"deg"; };
+const noteScale=n=>{ const v=Number(n&&n.s); return v>0?Math.max(0.6,Math.min(3,v)):1; };
 function renderNotes(){
   const L=$("#noteLayer"); if(!L||noteDrag) return; L.replaceChildren();
   if(!mod("notes")) return;
   [...S.notes].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(-10).forEach((n,i)=>{
-    const pos=notePos(n,i), el=h("div",{class:"sticky p-"+((n.color||"c-amber").replace("c-","")),style:`left:${pos.x}%;top:${pos.y}%;--rot:${noteRot(n)}`,"data-id":n.id},h("div",{class:"st"},n.text),n.by?h("div",{class:"sb"},n.by):null);
+    const pos=notePos(n,i), el=h("div",{class:"sticky p-"+((n.color||"c-amber").replace("c-","")),style:`left:${pos.x}%;top:${pos.y}%;--rot:${noteRot(n)};--ns:${noteScale(n)}`,"data-id":n.id},h("div",{class:"st"},n.text),n.by?h("div",{class:"sb"},n.by):null);
+    const rz=h("div",{class:"rz","aria-label":"Drag to resize the note",title:"Drag to resize"}); el.append(rz);
+    { let rid=null,sw=0,sx0=0,s0=1,cur=1;
+      rz.addEventListener("pointerdown",e=>{ if(e.button>0) return; e.stopPropagation(); e.preventDefault(); rid=e.pointerId; rz.setPointerCapture(rid); sw=el.offsetWidth; sx0=e.clientX; s0=noteScale(n); cur=s0; noteDrag=true; el.classList.add("rsz"); });
+      rz.addEventListener("pointermove",e=>{ if(rid!==e.pointerId) return; e.stopPropagation(); const base=sw/s0; cur=Math.max(0.6,Math.min(3,(sw+(e.clientX-sx0))/base)); el.style.setProperty("--ns",cur.toFixed(3)); });
+      const done=async e=>{ if(rid!==e.pointerId) return; e.stopPropagation(); rid=null; el.classList.remove("rsz"); noteDrag=false; cur=Math.round(cur*100)/100; if(cur!==s0) await updDoc("notes",n.id,{s:cur}); };
+      rz.addEventListener("pointerup",done); rz.addEventListener("pointercancel",done);
+      rz.addEventListener("click",e=>e.stopPropagation()); }
     let sx=0,sy=0,ox=0,oy=0,moved=false,pid=null;
     el.addEventListener("pointerdown",e=>{ if(e.button>0) return; pid=e.pointerId; el.setPointerCapture(pid); const r=L.getBoundingClientRect(), b=el.getBoundingClientRect(); sx=e.clientX; sy=e.clientY; ox=b.left-r.left; oy=b.top-r.top; moved=false; });
     el.addEventListener("pointermove",e=>{ if(pid!==e.pointerId) return; const dx=e.clientX-sx, dy=e.clientY-sy;
@@ -2406,7 +2416,7 @@ function renderNotes(){
 function editNote(n){
   const tx=h("textarea",{id:"enT",rows:"4",style:"width:100%"}); tx.value=n.text||"";
   const col=h("select",{id:"enC"},NOTE_COLORS.map(([v,l])=>h("option",{value:v},l))); col.value=n.color||"c-amber";
-  openSheet([h("h2",null,"Sticky note"),h("p",{class:"hint",style:"margin:0"},"Drag the note on Home to move it."),field("Note",tx),field("Color",col),
+  openSheet([h("h2",null,"Sticky note"),h("p",{class:"hint",style:"margin:0"},"Drag the note on Home to move it, or drag its bottom-right corner to resize it (the writing grows and shrinks with it)."),field("Note",tx),field("Color",col),
     h("div",{class:"acts"},h("button",{class:"pill primary",onclick:async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } closeSheet(); await updDoc("notes",n.id,{text:text.slice(0,600),color:col.value}); }},"Save"),
       h("button",{class:"pill danger",onclick:async()=>{ closeSheet(); await delDoc("notes",n.id); }},"Remove"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
 }

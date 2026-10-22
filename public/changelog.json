@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Resizable sticky notes",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Drag the bottom-right corner of a family sticky note to make it bigger or smaller. The writing grows and shrinks with it, and the size is saved for everyone."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Blackout mode",
     "items": [
       {

@@ -1879,7 +1879,7 @@ function openBlackout(){ const b=$("#blackout"); b.dataset.at=String(Date.now())
 $("#blackout").addEventListener("click",()=>{ const b=$("#blackout"); if(Date.now()-Number(b.dataset.at||0)<500) return; b.hidden=true; openSaver(); });
 function holdSleep(btn,tap){
   let t=0,fired=false; const clear=()=>{ clearTimeout(t); t=0; };
-  btn.addEventListener("pointerdown",()=>{ fired=false; clear(); t=setTimeout(()=>{ t=0; fired=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(e){} openBlackout(); },650); });
+  btn.addEventListener("pointerdown",()=>{ fired=false; clear(); t=setTimeout(()=>{ t=0; fired=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(e){} openBlackout(); },1000); });
   ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,clear));
   btn.addEventListener("click",e=>{ if(fired){ fired=false; e.preventDefault(); e.stopPropagation(); return; } tap(); });
   btn.addEventListener("contextmenu",e=>e.preventDefault());
@@ -2234,7 +2234,7 @@ function settingsPage(){
   const panes={
     general:h("div",{class:"spane",style:col},field("Household name",hh),
       h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-      field("Photo screensaver",idleSel),h("p",{class:"hint",style:"margin:-6px 0 0"},"Tip: press and hold the Sleep button to black out the screen at night. Tap anywhere to bring back the slideshow."),field("Name shown on the screensaver (leave blank for none)",stTitle),field("This device is used by",meSel),field("Appearance (this device)",themeSel),
+      field("Photo screensaver",idleSel),h("p",{class:"hint",style:"margin:-6px 0 0"},"Tip: press and hold the Sleep button for a second to black out the screen at night. Tap anywhere to bring back the slideshow."),field("Name shown on the screensaver (leave blank for none)",stTitle),field("This device is used by",meSel),field("Appearance (this device)",themeSel),
       h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ S.editLayout=true; setView("home"); }},"Arrange the Main page"),h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"))),
     alerts:h("div",{class:"spane",style:col},pushSection(),briefingSection()),
     privacy:h("div",{class:"spane",style:col},guestSection(),faceSection()),

@@ -10,6 +10,14 @@
       {
         "tag": "New",
         "text": "When adding a meal, besides picking a dish you can choose Eating out or On your own, with an optional note such as the restaurant. These show on the plan, on the Calendar, on the Main page’s dinner card and in the morning briefing."
+      },
+      {
+        "tag": "New",
+        "text": "Past and today’s planned meals get a ✓ (“We had it”) that saves them to History, for lunches and Eating out / On your own too. History marks each meal as Lunch or Dinner."
+      },
+      {
+        "tag": "Improved",
+        "text": "A dish planned for lunch now shows “Lunch” and its day on its tile."
       }
     ]
   },

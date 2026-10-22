@@ -410,6 +410,7 @@ body.arranging #fab{display:none!important}
 .saver img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity 1.6s ease}
 .saver .veil{position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(transparent,rgba(15,20,25,.65))}
 .saver .clock{position:absolute;left:calc(40px + env(safe-area-inset-left,0px));bottom:calc(36px + env(safe-area-inset-bottom,0px));right:40px}
+.saver .st{font-family:var(--display);font-size:clamp(24px,3.4vw,40px);margin-bottom:10px;opacity:.95;text-shadow:0 2px 12px rgba(0,0,0,.35)}
 .saver .big{font-family:var(--display);font-size:clamp(64px,11vw,140px);line-height:.95;font-variant-numeric:tabular-nums}
 .saver .sd{font-family:var(--display);font-size:clamp(22px,3vw,34px);margin-top:6px}
 .saver .nx{font-size:18px;margin-top:10px;opacity:.9}
@@ -1866,7 +1867,8 @@ function openSaver(){
 function renderSaverClock(){
   const c=$("#saverClock"); if(!c) return; const n=new Date(); const hh=n.getHours();
   const nx=eventsOn(today()).filter(e=>(!e.time||e.time>=pad(hh)+":"+pad(n.getMinutes())))[0];
-  c.replaceChildren(...[h("div",{class:"big"},`${hh%12||12}:${pad(n.getMinutes())}`),h("div",{class:"sd"},`${WD[n.getDay()]}, ${MO[n.getMonth()]} ${n.getDate()}`),nx?h("div",{class:"nx"},`Next: ${nx.title} · ${fmtTime(nx.time)}`):null].filter(Boolean));
+  const ttl=S.settings.saverTitle===undefined?"The Reiners":String(S.settings.saverTitle).trim();
+  c.replaceChildren(...[ttl?h("div",{class:"st"},ttl):null,h("div",{class:"big"},`${hh%12||12}:${pad(n.getMinutes())}`),h("div",{class:"sd"},`${WD[n.getDay()]}, ${MO[n.getMonth()]} ${n.getDate()}`),nx?h("div",{class:"nx"},`Next: ${nx.title} · ${fmtTime(nx.time)}`):null].filter(Boolean));
 }
 $("#saver").addEventListener("click",()=>{ $("#saver").hidden=true; saverImgs=null; idle(); });
 $("#sleepBtn").addEventListener("click",openSaver);
@@ -2203,6 +2205,7 @@ function settingsPage(){
   if(S.view!=="settings"&&S.view!=="history"&&S.view!=="changelog") S.prevView=S.view; closeSheet();
   const draft=JSON.parse(JSON.stringify(members()));
   const hh=h("input",{id:"stHouse",value:S.settings.household||""});
+  const stTitle=h("input",{id:"stSaverTitle",placeholder:"The Reiners",value:S.settings.saverTitle===undefined?"The Reiners":S.settings.saverTitle});
   const idleSel=h("select",{id:"stIdle"},[["0","Never"],["2","After 2 minutes"],["5","After 5 minutes"],["10","After 10 minutes"],["30","After 30 minutes"]].map(([v,l])=>h("option",{value:v},l))); idleSel.value=String(S.settings.idleMin??5);
   const themeSel=h("select",{id:"stTheme"},[["auto","Automatic (match this device)"],["light","Light"],["dark","Dark"]].map(([v,l])=>h("option",{value:v},l))); themeSel.value=themePref(); themeSel.addEventListener("change",()=>setTheme(themeSel.value));
   const meSel=h("select",{id:"stMe"},[h("option",{value:""},"Shared screen (no one in particular)"),...members().map(m=>h("option",{value:m.name},m.name))]); meSel.value=meName(); meSel.addEventListener("change",()=>setMe(meSel.value));
@@ -2211,12 +2214,12 @@ function settingsPage(){
     list.append(h("div",{class:"mem"},inp,h("div",{class:"swatches"},COLORS.map(c=>h("button",{class:"sw c-"+c,"aria-label":c,"aria-pressed":m.color===c?"true":"false",onclick:()=>{m.color=c;draw();}}))),h("button",{class:"pill icon","aria-label":"Remove "+m.name,style:"background:var(--card)",onclick:()=>{draft.splice(i,1);draw();}},svg(IC.x)))); }); };
   draw();
   const exCount=COLLS.reduce((n,c)=>n+S[c].filter(r=>r.example).length,0);
-  const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value)}); idle(); toast("Settings saved"); settingsBack(); };
+  const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value),saverTitle:stTitle.value.trim()}); idle(); toast("Settings saved"); settingsBack(); };
   const col="display:flex;flex-direction:column;gap:14px";
   const panes={
     general:h("div",{class:"spane",style:col},field("Household name",hh),
       h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-      field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),
+      field("Photo screensaver",idleSel),field("Name shown on the screensaver (leave blank for none)",stTitle),field("This device is used by",meSel),field("Appearance (this device)",themeSel),
       h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ S.editLayout=true; setView("home"); }},"Arrange the Main page"),h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"))),
     alerts:h("div",{class:"spane",style:col},pushSection(),briefingSection()),
     privacy:h("div",{class:"spane",style:col},guestSection(),faceSection()),

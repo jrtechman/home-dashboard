@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Screensaver name",
+    "items": [
+      {
+        "tag": "New",
+        "text": "The photo screensaver now shows “The Reiners” above the clock. Change or clear it in Settings, General."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Arrange your own Main page",
     "items": [
       {

@@ -6,6 +6,10 @@
       {
         "tag": "Fixed",
         "text": "On the Settings page the Save and Cancel bar no longer floats above the bottom of the screen with buttons peeking out underneath it."
+      },
+      {
+        "tag": "Fixed",
+        "text": "The Arrange bar on the Main page no longer shows the word “null” beside the Done button."
       }
     ]
   },

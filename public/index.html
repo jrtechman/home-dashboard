@@ -2585,11 +2585,11 @@ function applyLayout(){
   });
   const hid=L.hidden.map(k=>h("button",{class:"pill",onclick:()=>showCard(k)},"+ "+(LCARDS.find(c=>c[0]===k)||[,k])[1]));
   const custom=!!((S.settings.layouts||{})[layoutKey()]);
-  bar.append(h("span",{class:"lt"},"Arranging the page for "+(who||"this shared screen")),h("span",{class:"grow"}),
+  bar.append(...[h("span",{class:"lt"},"Arranging the page for "+(who||"this shared screen")),h("span",{class:"grow"}),
     custom?h("button",{class:"pill",onclick:()=>confirmSheet("Reset the layout?","The cards go back to the standard order for "+(who||"this shared screen")+".","Reset",()=>saveLayout(null))},"Reset"):null,
     h("button",{class:"pill primary",onclick:()=>{ S.editLayout=false; applyLayout(); renderTools(); }},"Done"),
     hid.length?h("div",{class:"acts",style:"flex:1 0 100%"},h("span",{class:"hint",style:"flex:none"},"Hidden, tap to bring back:"),...hid):null,
-    h("span",{class:"hint"},"Each person's layout is saved under their name, so it follows them to any device. To arrange it for someone else, choose their name under Settings, General, “This device is used by”."));
+    h("span",{class:"hint"},"Each person's layout is saved under their name, so it follows them to any device. To arrange it for someone else, choose their name under Settings, General, “This device is used by”.")].filter(Boolean));
 }
 try{ matchMedia("(max-width:900px)").addEventListener("change",()=>{ applyLayout.sig=""; applyLayout(); }); }catch(e){}
 function applyModules(){

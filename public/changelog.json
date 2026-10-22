@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Meals for Jason, for Abby, or both",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Each meal on the Meal plan can be marked for specific people. Pick names when you add a meal, or tap the person icon on a planned meal. Their initials (J, A) show on the meal, on the Calendar and in the morning briefing. Leave it empty for everyone."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "We had it keeps the meal on the plan",
     "items": [
       {

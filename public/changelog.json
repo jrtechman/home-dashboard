@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "History for each dish",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Open any dish in Our dishes and tap History to see every time you made it, how long ago the last time was, and add or remove past dates."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Lunch, eating out and on your own",
     "items": [
       {

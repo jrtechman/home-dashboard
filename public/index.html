@@ -2247,6 +2247,20 @@ function cookMode(id){
   const onKey=e=>{ if(e.key==="ArrowRight"&&i<steps.length-1){ i++; showIng=false; draw(); } else if(e.key==="ArrowLeft"&&i>0){ i--; draw(); } else if(e.key==="Escape") close(); };
   document.addEventListener("keydown",onKey); draw();
 }
+/* Per-dish history: every time this dish was made (from the History log), with a way to add a past date. */
+const madeList=r=>S.mealhistory.filter(m=>(m.recipeId&&m.recipeId===r.id)||(!m.recipeId&&m.title===r.title&&!m.kind)).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||(b.createdAt||0)-(a.createdAt||0));
+function ago(k){ const n=Math.round((parseKey(today())-parseKey(k))/864e5); if(n<=0) return "today"; if(n===1) return "yesterday"; if(n<14) return n+" days ago"; if(n<60) return Math.round(n/7)+" weeks ago"; if(n<730) return Math.round(n/30)+" months ago"; return Math.round(n/365)+" years ago"; }
+function dishHistorySheet(id){
+  const r=S.recipes.find(x=>x.id===id); if(!r) return;
+  const rows=madeList(r), dateIn=h("input",{id:"dhDay",type:"date",value:today(),max:today()}), list=h("div",{class:"pcs",style:"max-height:46vh;overflow-y:auto"});
+  rows.forEach(m=>list.append(h("div",{class:"lrow"},h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"},h("span",{style:"font-weight:600"},histDay(m.date||today())),h("span",{class:"meta"},[m.meal==="lunch"?"Lunch":"Dinner",m.date?ago(m.date):""].filter(Boolean).join(" · "))),
+    h("button",{class:"pill icon","aria-label":"Remove this date",style:"background:var(--card)",onclick:async()=>{ await delDoc("mealhistory",m.id); dishHistorySheet(id); }},svg(IC.x)))));
+  if(!rows.length) list.append(h("p",{class:"hint"},"Not recorded yet. Tap “We had it” after a meal, or add a past date below."));
+  const add=async()=>{ const k=dateIn.value; if(!k) return; if(rows.some(m=>m.date===k&&m.meal!=="lunch")) return toast("That day is already there."); await addDoc("mealhistory",{recipeId:r.id,title:r.title,date:k,createdAt:Date.now(),meal:"dinner"}); dishHistorySheet(id); };
+  openSheet([h("h2",null,r.title),h("p",{class:"meta",style:"margin:0"},rows.length?`Made ${rows.length} time${rows.length===1?"":"s"} · last ${ago(rows[0].date||today())}`:"Never made yet"),list,
+    field("Add a past date",h("div",{class:"dayrow"},dateIn,h("button",{class:"pill primary",onclick:add},"Add"))),
+    h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>openRecipe(id)},"Back to the dish"),h("span",{class:"grow"}))],true);
+}
 function openRecipe(id){
   const r=S.recipes.find(x=>x.id===id); if(!r) return;
   const onList=txt=>S.shopping.some(s=>!s.got&&s.text.toLowerCase()===txt.toLowerCase());
@@ -2269,8 +2283,9 @@ function openRecipe(id){
     h("div",{class:"dayrow"},dayInp,h("button",{class:"pill",onclick:()=>setDay(today())},"Today"),h("button",{class:"pill",onclick:()=>setDay(keyOf(addDays(new Date(),1)))},"Tomorrow"),inList&&inList.date?h("button",{class:"pill",onclick:()=>setDay("")},"Clear"):null));
   const favBtn=h("button",{class:"pill"+(r.fav?" on":""),onclick:async()=>{ await updDoc("recipes",r.id,{fav:!r.fav}); openRecipe(r.id); }},r.fav?"★ Favorite":"☆ Favorite");
   const cookBtn=h("button",{class:"pill primary",onclick:()=>{ closeSheet(); cookMode(r.id); }},"Start cooking");
-  openSheet([dishUrl(r)?h("img",{class:"hero",src:dishUrl(r),alt:r.title}):null,h("div",null,h("h2",null,r.title),h("div",{class:"meta"},r.minutes?`${r.minutes} minutes`:"",inList?(inList.date?" · dinner "+dayLabel(inList.date).toLowerCase():" · on the dinner list"):"",r.example?" · example recipe":""),r.source?h("div",{style:"margin-top:4px"},h("a",{class:"srclink",href:r.source,target:"_blank",rel:"noopener noreferrer"},"View original recipe · "+(()=>{ try{ return new URL(r.source).hostname.replace(/^www\./,""); }catch(e){ return "link"; } })())):null),
-    h("div",{class:"acts"},cookBtn,favBtn,...(r.tags||[]).map(t=>h("span",{class:"meta"},"#"+t))),
+  const made=madeList(r), histBtn=h("button",{class:"pill",onclick:()=>dishHistorySheet(r.id)},"History"+(made.length?" · "+made.length:""));
+  openSheet([dishUrl(r)?h("img",{class:"hero",src:dishUrl(r),alt:r.title}):null,h("div",null,h("h2",null,r.title),h("div",{class:"meta"},r.minutes?`${r.minutes} minutes`:"",inList?(inList.date?" · dinner "+dayLabel(inList.date).toLowerCase():" · on the dinner list"):"",r.example?" · example recipe":"",made.length?" · last made "+ago(made[0].date||today()):""),r.source?h("div",{style:"margin-top:4px"},h("a",{class:"srclink",href:r.source,target:"_blank",rel:"noopener noreferrer"},"View original recipe · "+(()=>{ try{ return new URL(r.source).hostname.replace(/^www\./,""); }catch(e){ return "link"; } })())):null),
+    h("div",{class:"acts"},cookBtn,favBtn,histBtn,...(r.tags||[]).map(t=>h("span",{class:"meta"},"#"+t))),
     dayRow,
     h("div",{class:"cols2"},h("div",null,h("h3",null,"Ingredients"),ingList,h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",onclick:addAll},"Add missing to list"))),
       h("div",{style:"min-width:0"},h("h3",null,"Steps"),(r.steps||[]).length?h("ol",{class:"steps"},(r.steps||[]).map(s=>h("li",null,s))):h("p",{class:"hint"},"No steps written yet."))),

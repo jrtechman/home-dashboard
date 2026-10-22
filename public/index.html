@@ -324,6 +324,9 @@ button{cursor:pointer;border:0;background:none}
 
 /* settings page */
 .settingspage{flex:1;min-height:0;overflow-y:auto;padding:4px 2px 110px;-webkit-overflow-scrolling:touch}.sheet.spage{width:min(760px,100%);max-height:none;overflow:visible;margin:0 auto;box-shadow:none}
+.stabs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:sticky;top:-4px;z-index:5;background:var(--card);padding:6px 0 8px;margin:0 -2px}.stabs::-webkit-scrollbar{display:none}.stabs .chip{flex:0 0 auto;white-space:nowrap}
+.spane[hidden]{display:none!important}
+.sfoot{position:sticky;bottom:0;z-index:5;background:var(--card);padding:10px 0 2px;border-top:1px solid var(--line)}
 .nav.cur{background:var(--chip)}
 .pnav{display:flex;gap:8px;align-items:center}
 @media (max-width:640px){.pnav{flex:1 0 100%;gap:6px}.pnav .pill:not(.icon){flex:1 1 auto;min-width:0;justify-content:center;white-space:nowrap;padding-left:10px;padding-right:10px}.pnav .pill.icon{flex:0 0 auto}}
@@ -2193,11 +2196,25 @@ function settingsPage(){
   draw();
   const exCount=COLLS.reduce((n,c)=>n+S[c].filter(r=>r.example).length,0);
   const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value)}); idle(); toast("Settings saved"); settingsBack(); };
-  const page=$("#settingsPage"); page.replaceChildren(h("div",{class:"sheet spage"},[h("h2",null,"Settings"),field("Household name",hh),
-    h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),moreSection(),briefingSection(),h("div",null,h("h3",null,"Change log"),h("p",{class:"hint",style:"margin:0 0 8px"},"See what has been added or fixed on the dashboard."),h("button",{class:"pill",onclick:changelogPage},"View change log")),guestSection(),faceSection(),pushSection(),adminSection(),
-    exCount?h("div",{class:"acts"},h("span",{class:"meta grow"},`${exCount} example items are on the board.`),h("button",{class:"pill danger",onclick:()=>confirmSheet("Remove the examples?","Events, tasks, groceries and recipes marked “example” will be deleted.","Remove examples",async()=>{ for(const c of COLLS) for(const r of S[c].filter(r=>r.example)) await delDoc(c,r.id); toast("Examples removed"); })},"Remove examples")):null,
-    h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:settingsBack},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]));
+  const col="display:flex;flex-direction:column;gap:14px";
+  const panes={
+    general:h("div",{class:"spane",style:col},field("Household name",hh),
+      h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
+      field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),
+      h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"))),
+    alerts:h("div",{class:"spane",style:col},pushSection(),briefingSection()),
+    privacy:h("div",{class:"spane",style:col},guestSection(),faceSection()),
+    features:h("div",{class:"spane",style:col},adminSection()),
+    data:h("div",{class:"spane",style:col},moreSection(),h("div",null,h("h3",null,"Change log"),h("p",{class:"hint",style:"margin:0 0 8px"},"See what has been added or fixed on the dashboard."),h("button",{class:"pill",onclick:changelogPage},"View change log")),
+      exCount?h("div",{class:"acts"},h("span",{class:"meta grow"},`${exCount} example items are on the board.`),h("button",{class:"pill danger",onclick:()=>confirmSheet("Remove the examples?","Events, tasks, groceries and recipes marked “example” will be deleted.","Remove examples",async()=>{ for(const c of COLLS) for(const r of S[c].filter(r=>r.example)) await delDoc(c,r.id); toast("Examples removed"); })},"Remove examples")):null)
+  };
+  const TABS=[["general","General"],["alerts","Alerts and texts"],["privacy","Guests and Face ID"],["features","Features"],["data","History and info"]];
+  const tabs=h("div",{class:"stabs",role:"tablist"});
+  const showTab=id=>{ if(!panes[id]) id="general"; S.setTab=id; Object.entries(panes).forEach(([k,el])=>{ el.hidden=k!==id; }); [...tabs.children].forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===id?"true":"false")); };
+  TABS.forEach(([id,label])=>tabs.append(h("button",{class:"chip","data-tab":id,role:"tab",onclick:()=>{ showTab(id); page.scrollTop=0; }},label)));
+  const page=$("#settingsPage"); page.replaceChildren(h("div",{class:"sheet spage"},[h("h2",null,"Settings"),tabs,...Object.values(panes),
+    h("div",{class:"acts sfoot"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:settingsBack},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]));
+  showTab(S.setTab||"general");
   setView("settings"); page.scrollTop=0;
 }
 $("#settingsBtn").addEventListener("click",()=>{ if(S.view==="settings"||S.view==="history"||S.view==="changelog") settingsBack(); else settingsPage(); });

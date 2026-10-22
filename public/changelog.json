@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-10-21",
+    "title": "Settings split into tabs",
+    "items": [
+      {
+        "tag": "Improved",
+        "text": "Settings is now five tabs instead of one long list: General, Alerts and texts, Guests and Face ID, Features, and History and info."
+      },
+      {
+        "tag": "Improved",
+        "text": "Save and Cancel stay at the bottom of the screen, and Settings reopens on the tab you were last on."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-21",
     "title": "More calendar details",
     "items": [
       {

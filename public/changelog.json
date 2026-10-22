@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Write on sticky notes",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Sticky notes can now be handwritten. In Family notes tap “Write with your finger” to post a new one, or tap an existing note and choose it to write on that note. There are four pen colors, plus Undo and Clear."
+      },
+      {
+        "tag": "Improved",
+        "text": "Handwriting scales with the note when you drag its corner to resize it."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Resizable sticky notes",
     "items": [
       {

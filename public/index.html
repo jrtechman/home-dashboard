@@ -1337,7 +1337,28 @@ function renderDishGrid(){
   if(!list.length&&live&&!S.loaded.recipes) g.append(h("div",{class:"hint"},"Loading…"));
   else if(!list.length) g.append(h("div",{class:"hint",style:"grid-column:1/-1"},S.recipes.length?"No dishes match. Clear the search or pick another filter.":"No dishes yet. Snap a photo, import a recipe from a link, or paste one."));
   list.forEach(x=>g.append(dishCard(x)));
+  { const q=(MEAL.q||"").trim(); if(q.length>=2) g.append(h("div",{style:"grid-column:1/-1"},h("button",{class:"pill"+(list.length?"":" primary"),onclick:()=>webSearchSheet(q)},svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'),list.length?`Search the web for “${q}”`:`Not in your dishes. Search the web for “${q}”`))); }
   const c=$("#dishCount"); if(c) c.textContent=list.length===S.recipes.length?`${list.length} dishes`:`${list.length} of ${S.recipes.length}`;
+}
+/* Web recipe search: results come from /api/recipe-search; Import opens the dish editor and reads the page. */
+function webSearchSheet(q0){
+  const qIn=h("input",{id:"webQ",type:"search",value:q0||"",placeholder:"What do you want to cook?",autocomplete:"off"}), box=h("div",{class:"pcs",style:"max-height:56vh;overflow-y:auto"});
+  const run=async()=>{ const q=qIn.value.trim(); if(q.length<2){ qIn.focus(); return; }
+    box.replaceChildren(h("p",{class:"hint"},"Searching the web…"));
+    try{
+      const out=await api("/api/recipe-search",{method:"POST",body:JSON.stringify({q})});
+      box.replaceChildren();
+      if(!out.results.length) box.append(h("p",{class:"hint"},"Nothing found. Try different words."));
+      out.results.forEach(x=>{ const have=S.recipes.some(r=>r.source&&r.source.replace(/\/+$/,"")===x.url.replace(/\/+$/,""));
+        box.append(h("div",{class:"lrow",style:"align-items:flex-start;gap:10px"},
+          h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"},h("a",{href:x.url,target:"_blank",rel:"noopener noreferrer",style:"font-weight:700;color:var(--ink);text-decoration:none"},x.title||x.site),h("span",{class:"meta"},x.site),x.snippet?h("span",{class:"meta",style:"white-space:normal"},x.snippet):null),
+          have?h("span",{class:"meta",style:"padding-top:6px"},"Saved"):h("button",{class:"pill primary",onclick:()=>{ closeSheet(); recipeSheet(null,null,"link",x.url); }},"Import"))); });
+    }catch(e){ box.replaceChildren(h("p",{class:"hint"},e.code==="auth"?"":(e.message||"The search didn't work."))); }
+  };
+  qIn.addEventListener("keydown",e=>{ if(e.key==="Enter") run(); });
+  openSheet([h("h2",null,"Search the web"),h("div",{class:"row"},qIn,h("button",{class:"pill primary",onclick:run},"Search")),box,
+    h("p",{class:"hint",style:"margin:0"},"Pick a result and tap Import. Some sites block importing; then open the page, copy the recipe and use Paste.")],true);
+  if(q0) run();
 }
 function pickDishSheet(k){
   const q=h("input",{id:"pdQ",placeholder:"Search dishes",type:"search",autocomplete:"off"}), list=h("div",{class:"pcs",style:"max-height:52vh;overflow-y:auto"});
@@ -1718,7 +1739,7 @@ function parseRecipeText(text){
   }
   return {title:title.slice(0,120),minutes,ingredients:ingredients.slice(0,60),steps:steps.slice(0,40)};
 }
-function recipeSheet(r,file,mode){
+function recipeSheet(r,file,mode,autoUrl){
   r=r||{};
   let blob=file||null, objUrl=null, remotePhoto="", source=r.source||"";
   const prev=h("img",{class:"hero",alt:"Dish photo"});
@@ -1792,7 +1813,8 @@ function recipeSheet(r,file,mode){
   const toggle=(show,hide,focusEl)=>{ hide.hidden=true; show.hidden=!show.hidden; if(!show.hidden) setTimeout(()=>focusEl.focus(),20); };
   const pasteBtn=h("button",{class:"pill",onclick:()=>toggle(pastePanel,linkPanel,pasteIn)},"Paste a recipe");
   const linkBtn=h("button",{class:"pill",onclick:()=>toggle(linkPanel,pastePanel,linkIn)},"From a link");
-  if(mode==="link") linkPanel.hidden=false;
+  if(mode==="link"||autoUrl) linkPanel.hidden=false;
+  if(autoUrl){ linkIn.value=autoUrl; setTimeout(doImport,80); }
   if(mode==="paste") pastePanel.hidden=false;
   const saveBtn=h("button",{class:"pill primary"},"Save dish");
   saveBtn.addEventListener("click",async()=>{

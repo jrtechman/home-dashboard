@@ -211,6 +211,20 @@ button{cursor:pointer;border:0;background:none}
 .lrow{display:flex;align-items:center;gap:10px}
 .lrow .lk{flex:1;min-width:0;display:flex;align-items:center;min-height:56px;padding:0 18px;border-radius:18px;background:var(--chip);font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pcs{display:flex;flex-direction:column;gap:8px}
+.housegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:16px;max-width:1200px;margin:0 auto;align-items:start}
+.hcard{background:var(--card);border-radius:var(--r-col);padding:20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.hcard:first-child:has(.camgrid){grid-column:1/-1}
+.hhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.hhead h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0}
+.hlist{display:flex;flex-direction:column;gap:8px}
+.hrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:12px 14px;border-radius:var(--r-item);background:var(--chip)}.hrow.on{background:var(--soft)}
+.hn{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-weight:700}
+.hsw{flex:none;width:54px;height:32px;border-radius:999px;border:0;background:var(--line);position:relative;cursor:pointer;padding:0;transition:background .15s}.hsw i{position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .15s}.hsw.on{background:#2B7AB5}.hsw.on i{transform:translateX(22px)}
+.hsr{flex:1 0 100%;display:flex;align-items:center;gap:12px}.hsl{flex:1;accent-color:#2B7AB5;height:28px}.hv{min-width:40px;text-align:right}
+.tcard{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:var(--r-item);background:var(--chip)}
+.tbig{display:flex;align-items:baseline;gap:8px;font-family:var(--display);font-size:48px;line-height:1}
+.tset{display:flex;align-items:center;gap:10px}.tset .meta{min-width:64px}.tnum{font-weight:700;font-size:22px;min-width:52px;text-align:center}
+.hscenes{display:flex;flex-wrap:wrap;gap:8px}
+.hsteps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;line-height:1.4}
 .camgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px}
 .camtile{position:relative;display:block;width:100%;padding:0;border:0;border-radius:18px;overflow:hidden;background:var(--chip);aspect-ratio:16/9;cursor:pointer}
 .camtile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -396,7 +410,7 @@ button{cursor:pointer;border:0;background:none}
   body{overflow:auto}
   .menu-btn{display:flex}
   .rail{gap:0}
-  .nav[data-view=photos],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn,#famBtn,#guestBtn{display:none}
+  .nav[data-view=photos],.nav[data-view=house],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn,#famBtn,#guestBtn{display:none}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
@@ -477,12 +491,13 @@ button{cursor:pointer;border:0;background:none}
 <div class="app">
   <nav class="rail" aria-label="Sections">
     <div class="mono" id="mono" aria-hidden="true">H</div>
-    <button class="nav" data-view="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</button>
+    <button class="nav" data-view="home"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Main</button>
     <button class="nav" data-view="calendar"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendar</button>
     <button class="nav" data-view="tasks"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Tasks</button>
     <button class="nav" data-view="meals"><svg viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 005 0V3M7 11v10M17 21V3c-2.5 1-3.5 4-3.5 7.5V13H17"/></svg>Meals</button>
     <button class="nav" data-view="lists"><svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/></svg>Lists</button>
     <button class="nav" data-view="photos"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8.5"/></svg>Photos</button>
+    <button class="nav" data-view="house"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</button>
     <button class="nav menu-btn" id="menuBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
     <div class="spacer"></div>
     <button class="nav" id="famBtn"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a2.6 2.6 0 010 5M17.5 14a5 5 0 013 5"/></svg>Family</button>
@@ -523,6 +538,7 @@ button{cursor:pointer;border:0;background:none}
     <section class="view" data-name="meals"><div class="meals" id="meals"></div></section>
     <section class="view" data-name="lists"><div class="lists" id="lists"></div></section>
     <section class="view" data-name="photos"><div class="photos" id="photos"></div></section>
+    <section class="view" data-name="house" hidden><div class="settingspage" id="housePage"></div></section>
     <section class="view" data-name="history" hidden><div class="settingspage" id="historyPage"></div></section>
     <section class="view" data-name="settings" hidden><div class="settingspage" id="settingsPage"></div></section>
   </main>
@@ -531,7 +547,7 @@ button{cursor:pointer;border:0;background:none}
 <button class="fab" id="fab" aria-label="Add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 <button id="guestBar" hidden>Guest mode on · tap to end</button>
 <div id="moreBtns" hidden>
-    <button class="nav" id="guestBtn"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5M10 20v-5h4v5"/></svg>Guests</button>
+    <button class="nav" id="guestBtn"><svg viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0113 0M19 8v6M16 11h6"/></svg>Guests</button>
     <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M3 8h6l-6 8h6M13 3h5l-5 6h5M15 14h4l-4 5h4"/></svg>Sleep</button>
     <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
     <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>History</button>
@@ -870,7 +886,7 @@ function camsSheet(editing){
   draw(); if(!editing) timer=setInterval(tick,5000);
   const save=async()=>{ const clean=cams.map(c=>({name:(c.name||"").trim(),snap:fixUrl(c.snap),live:fixUrl(c.live)})).filter(c=>c.snap||c.live).map(c=>({...c,name:c.name||"Camera"})); closeSheet(); await saveSettings({cameras:clean}); toast("Cameras saved"); };
   openSheet([h("h2",null,"Cameras"),body,
-    h("div",{class:"acts"},editing?h("button",{class:"pill",onclick:()=>camsSheet(false)},"Cancel"):h("button",{class:"pill",onclick:()=>camsSheet(true)},"Edit"),h("span",{class:"grow"}),editing?h("button",{class:"pill primary",onclick:save},"Save"):h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+    h("div",{class:"acts"},editing?h("button",{class:"pill",onclick:()=>S.view==="house"?closeSheet():camsSheet(false)},"Cancel"):h("button",{class:"pill",onclick:()=>camsSheet(true)},"Edit"),h("span",{class:"grow"}),editing?h("button",{class:"pill primary",onclick:save},"Save"):h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
 $("#camBtn").addEventListener("click",()=>camsSheet(false));
 $("#budgetBtn").addEventListener("click",budgetSheet);
@@ -1074,13 +1090,110 @@ function tick(){
 
 /* ---------- views ---------- */
 function setView(v){
-  S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"); }
+  S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history"||v==="house")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"); }
   document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.name!==v);
   document.querySelectorAll(".nav[data-view]").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
-  const mb=$("#menuBtn"); if(mb){ if(v==="photos") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
+  const mb=$("#menuBtn"); if(mb){ if(v==="photos"||v==="house") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
   try{ history.replaceState(null,"","#"+v); }catch(e){}
   renderTools(); updateGreet();
+  if(v==="house") houseEnter();
 }
+/* ---------- Home page: cameras, Philips Hue lights, thermostat and other Home Assistant devices ---------- */
+const HOUSE={ents:null,configured:null,err:"",busy:0,timer:0,snap:0};
+async function houseLoad(){
+  try{ const j=await api("/api/ha"); HOUSE.configured=j.configured; HOUSE.ents=j.entities||[]; HOUSE.err=""; }
+  catch(e){ if(e.code==="auth") return; HOUSE.err=e.code==="offline"?"No connection.":(e.message||"Couldn't reach Home Assistant."); }
+  renderHouse();
+}
+function houseEnter(){
+  renderHouse(); houseLoad(); clearInterval(HOUSE.timer);
+  HOUSE.timer=setInterval(()=>{ if(S.view!=="house"){ clearInterval(HOUSE.timer); HOUSE.timer=0; return; } if(!HOUSE.busy&&document.visibilityState==="visible") houseLoad(); },8000);
+  clearInterval(HOUSE.snap);
+  HOUSE.snap=setInterval(()=>{ if(S.view!=="house"){ clearInterval(HOUSE.snap); HOUSE.snap=0; return; } document.querySelectorAll("#housePage img[data-snap]").forEach(i=>{ const u=i.dataset.snap; i.src=u+(u.includes("?")?"&":"?")+"_t="+Date.now(); }); },6000);
+}
+async function haCall(domain,service,id,data){
+  try{ await api("/api/ha",{method:"POST",body:JSON.stringify({domain,service,entity_id:id,data:data||{}})}); }
+  catch(e){ if(e.code!=="auth") toast(e.message||"That didn't work."); }
+  setTimeout(houseLoad,500);
+}
+function houseCamLive(c){
+  const mixed=/^http:\/\//i.test(c.live||"")&&location.protocol==="https:";
+  const v=isHls(c.live)?h("video",{class:"camlive",src:c.live,autoplay:"",muted:"",playsinline:"",controls:""}):h("iframe",{class:"camlive",src:c.live,allow:"autoplay; fullscreen; picture-in-picture",allowfullscreen:""});
+  if(v.tagName==="VIDEO"){ v.muted=true; v.play&&v.play().catch(()=>{}); }
+  openSheet([h("h2",null,c.name||"Camera"),c.live?v:h("p",{class:"hint"},"No live address set for this camera. Tap Edit cameras to add one."),
+    mixed?h("p",{class:"err"},"This address starts with http://, so the browser will block it here. Use an https:// address."):null],true);
+}
+function houseCard(title,sub,...kids){ return h("section",{class:"hcard"},h("div",{class:"hhead"},h("h2",null,title),sub||null),...kids); }
+function houseSwitch(on,label,fn){ return h("button",{class:"hsw"+(on?" on":""),role:"switch","aria-checked":on?"true":"false","aria-label":label,onclick:fn},h("i")); }
+function renderHouse(){
+  const page=$("#housePage"); if(!page||S.view!=="house"||HOUSE.busy) return;
+  const cards=[];
+  if(mod("cameras")){
+    const cams=S.settings.cameras||[], g=h("div",{class:"camgrid"});
+    cams.forEach(c=>{
+      const nopic=h("div",{class:"nopic"},c.snap?"Loading…":"No picture address");
+      const img=c.snap?h("img",{alt:c.name,"data-snap":c.snap,onload:()=>{ nopic.hidden=true; },onerror:()=>{ nopic.hidden=false; nopic.textContent="Can't reach this camera"; }}):null;
+      if(img) img.src=c.snap+(c.snap.includes("?")?"&":"?")+"_t="+Date.now();
+      g.append(h("button",{class:"camtile",onclick:()=>houseCamLive(c)},nopic,img,h("span",{class:"cn"},c.name||"Camera")));
+    });
+    cards.push(houseCard("Cameras",h("button",{class:"pill",onclick:()=>camsSheet(true)},"Edit cameras"),
+      cams.length?g:h("p",{class:"hint"},"No cameras yet. Tap Edit cameras to add each camera's picture and live address."),
+      cams.length?h("p",{class:"hint",style:"margin:8px 0 0"},"Pictures refresh every few seconds. Tap a camera for live video."):null));
+  }
+  const ents=HOUSE.ents||[], notConn=HOUSE.configured===false;
+  const unsure=HOUSE.configured===null&&!HOUSE.err;
+  const msg=t=>h("p",{class:"hint",style:"margin:0"},t);
+  const empty=(what)=>notConn?msg("Connect Home Assistant below to see your "+what+" here."):HOUSE.err?msg(HOUSE.err):unsure?msg("Loading…"):msg("No "+what+" found in Home Assistant.");
+  // lights
+  const lights=ents.filter(e=>e.domain==="light").sort((a,b)=>(b.group-a.group)||a.name.localeCompare(b.name));
+  const lt=h("div",{class:"hlist"});
+  lights.forEach(l=>{
+    const on=l.state==="on", dim=l.modes.some(m=>m!=="onoff");
+    const row=h("div",{class:"hrow"+(on?" on":"")},h("div",{class:"hn"},h("span",null,l.name),l.group?h("span",{class:"meta"},"Room or group"):null),
+      houseSwitch(on,l.name+(on?": on":": off"),()=>haCall("light",on?"turn_off":"turn_on",l.id)));
+    if(on&&dim&&l.brightness!=null){
+      const pct=Math.max(1,Math.round(l.brightness/255*100));
+      const sl=h("input",{type:"range",min:"1",max:"100",value:String(pct),"aria-label":"Brightness for "+l.name,class:"hsl"});
+      const val=h("span",{class:"meta hv"},pct+"%");
+      sl.addEventListener("pointerdown",()=>{ HOUSE.busy++; }); sl.addEventListener("input",()=>{ val.textContent=sl.value+"%"; });
+      sl.addEventListener("change",()=>{ haCall("light","turn_on",l.id,{brightness_pct:Number(sl.value)}); });
+      const rel=()=>{ HOUSE.busy=Math.max(0,HOUSE.busy-1); }; sl.addEventListener("pointerup",rel); sl.addEventListener("pointercancel",rel);
+      row.append(h("div",{class:"hsr"},sl,val));
+    }
+    lt.append(row);
+  });
+  const anyOn=lights.some(l=>l.state==="on");
+  cards.push(houseCard("Philips Hue",lights.length?h("button",{class:"pill",onclick:()=>lights.filter(l=>!l.group).forEach(l=>haCall("light",anyOn?"turn_off":"turn_on",l.id))},anyOn?"All off":"All on"):null,lights.length?lt:empty("lights")));
+  // thermostat
+  const clim=ents.filter(e=>e.domain==="climate"), ct=h("div",{class:"hlist"});
+  clim.forEach(c=>{
+    const step=c.step||((c.max||90)>45?1:0.5), lo=c.min??(step===1?45:7), hi=c.max??(step===1?95:35);
+    const adj=(label,key,val0)=>{ let v=val0; const num=h("span",{class:"tnum"},String(v));
+      let tm=0; const go=d=>{ v=Math.min(hi,Math.max(lo,Math.round((v+d)/step)*step)); num.textContent=String(v); HOUSE.busy++; clearTimeout(tm); tm=setTimeout(()=>{ HOUSE.busy=Math.max(0,HOUSE.busy-1); haCall("climate","set_temperature",c.id,{[key]:v}); },800); };
+      return h("div",{class:"tset"},h("span",{class:"meta"},label),h("button",{class:"pill icon","aria-label":label+" down",onclick:()=>go(-step)},"−"),num,h("button",{class:"pill icon","aria-label":label+" up",onclick:()=>go(step)},"+")); };
+    const sets=c.target!=null?[adj("Set to","temperature",c.target)]:(c.low!=null&&c.high!=null?[adj("Heat to","target_temp_low",c.low),adj("Cool to","target_temp_high",c.high)]:[]);
+    const act={heating:"Heating",cooling:"Cooling",idle:"Idle",off:"Off",fan:"Fan",drying:"Drying"}[c.action]||"";
+    ct.append(h("div",{class:"tcard"},h("div",{class:"hn"},h("span",null,c.name),h("span",{class:"meta"},[act,c.state!=="off"?"Mode: "+c.state.replace("_"," "):"Off"].filter(Boolean).join(" · "))),
+      h("div",{class:"tbig"},c.current!=null?c.current+"°":"–",h("span",{class:"meta"},"now")),...sets,
+      c.hvacModes.length?h("div",{class:"fchips"},c.hvacModes.map(m=>h("button",{class:"chip"+(c.state===m?" on":""),onclick:()=>haCall("climate","set_hvac_mode",c.id,{hvac_mode:m})},m.replace("_"," ")))):null));
+  });
+  cards.push(houseCard("Thermostat",null,clim.length?ct:empty("thermostat")));
+  // other devices
+  const scenes=ents.filter(e=>e.domain==="scene"||e.domain==="script"), tg=ents.filter(e=>["switch","input_boolean","fan"].includes(e.domain)), cov=ents.filter(e=>e.domain==="cover");
+  const ot=h("div",{class:"hlist"});
+  if(scenes.length) ot.append(h("div",{class:"hscenes"},scenes.map(s=>h("button",{class:"pill",onclick:()=>{ haCall(s.domain,"turn_on",s.id); toast(s.name); }},s.name))));
+  tg.forEach(d=>{ const on=d.state==="on"; ot.append(h("div",{class:"hrow"+(on?" on":"")},h("div",{class:"hn"},h("span",null,d.name)),houseSwitch(on,d.name+(on?": on":": off"),()=>haCall(d.domain,on?"turn_off":"turn_on",d.id)))); });
+  cov.forEach(d=>ot.append(h("div",{class:"hrow"},h("div",{class:"hn"},h("span",null,d.name),h("span",{class:"meta"},d.state)),h("div",{class:"acts",style:"gap:6px"},h("button",{class:"pill",onclick:()=>haCall("cover","open_cover",d.id)},"Open"),h("button",{class:"pill",onclick:()=>haCall("cover","close_cover",d.id)},"Close")))));
+  cards.push(houseCard("Home Assistant",h("span",{class:"meta"},HOUSE.configured?"Connected":notConn?"Not connected":""),(scenes.length||tg.length||cov.length)?ot:empty("scenes and devices")));
+  if(notConn) cards.push(houseCard("Connect Home Assistant",null,h("ol",{class:"hsteps"},
+    h("li",null,"In Home Assistant, open your profile (bottom left), then Security, and create a long-lived access token. Copy it."),
+    h("li",null,"Make Home Assistant reachable from the internet over https, for example with Home Assistant Cloud (Nabu Casa) or a Tailscale Funnel address."),
+    h("li",null,"In Vercel, open Settings, then Environment Variables, and add HA_URL (the https address, no trailing slash) and HA_TOKEN (the token)."),
+    h("li",null,"Redeploy. Your Hue lights, thermostat, scenes and switches then appear here.")),
+    h("p",{class:"hint",style:"margin:8px 0 0"},"Hue lights and thermostats (Resideo, Ecobee, Nest and others) show up once they are added to Home Assistant.")));
+  page.replaceChildren(h("div",{class:"housegrid"},cards));
+}
+
 /* ---------- light / dark ---------- */
 const darkMQ=matchMedia("(prefers-color-scheme: dark)");
 function themePref(){ try{ return localStorage.getItem("hd_theme")||"auto"; }catch(e){ return "auto"; } }
@@ -1660,7 +1773,7 @@ function menuSheet(){
       mod("countdowns")?row(ico("#famBtn"),"Countdowns",()=>cdSheet()):null,
       mod("notes")?row(ico("#famBtn"),"Family notes",notesSheet):null,
       mod("prayer")?row(ico("#famBtn"),"Prayer list",prayerSheet):null,
-      mod("cameras")?row(ico("#camBtn"),"Cameras",()=>camsSheet(false)):null,
+      mod("house")?row(ico('.nav[data-view="house"]'),"Home (cameras, lights, thermostat)",()=>setView("house")):null,
       mod("links")?row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)):null,
       mod("sleep")?row(ico("#sleepBtn"),"Sleep (photo screensaver)",openSaver):null,
       row(ico("#settingsBtn"),"Settings",settingsPage)),
@@ -2183,12 +2296,12 @@ function prayerSheet(showAnswered){
 }
 $("#famBtn").addEventListener("click",famSheet);
 const MODULES=[
-  ["Home page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"]]],
-  ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"]]],
+  ["Main page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"]]],
+  ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"],["house","Home page (cameras, lights, thermostat)"]]],
   ["Family",[["reminders","Recurring reminders"],["countdowns","Countdowns"],["notes","Family notes"],["prayer","Prayer list"]]],
   ["Menu and extras",[["budget","Budget screen"],["history","History"],["cameras","Cameras"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
 ];
-const GUEST_DEFAULT=["budget_card","budget","reminders","countdowns","notes","prayer","cameras","history"];
+const GUEST_DEFAULT=["budget_card","budget","reminders","countdowns","notes","prayer","cameras","history","house"];
 function guestHides(){ const a=S.settings&&S.settings.guestHides; return new Set(Array.isArray(a)?a:GUEST_DEFAULT); }
 function guestOn(){ return !!(S.settings&&S.settings.guest); }
 function rawMod(id){ return ((S.settings&&S.settings.modules)||{})[id]!==false; }
@@ -2240,19 +2353,19 @@ $("#guestBar").addEventListener("click",guestToggle);
 function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
   $("#guestBar").hidden=!guestOn(); $("#guestBtn").classList.toggle("on",guestOn()); { const g=$("#guestTop"); if(g){ g.classList.toggle("on",guestOn()); g.setAttribute("aria-label",guestOn()?"Guest mode is on. Tap to turn off":"Guests are here"); } } $("#guestBtn").lastChild.textContent=guestOn()?"Guests here":"Guests";
-  ["calendar","tasks","meals","lists","photos"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
+  ["calendar","tasks","meals","lists","photos","house"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
   show($("#famBtn"),mod("reminders")||mod("countdowns")||mod("notes")||mod("prayer")); show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));
   show($("#homeWx"),mod("weather")); show($("#homeVerse"),mod("verse")); show($("#homeDinner"),mod("dinner")); show($("#homeTasksCard"),mod("tasks_card")); show($("#frame"),mod("photoframe"));
   const home=document.querySelector(".home"); if(home) home.classList.toggle("noframe",!mod("photoframe"));
-  if(["calendar","tasks","meals","lists","photos"].includes(S.view)&&!mod(S.view)) setView("home");
+  if(["calendar","tasks","meals","lists","photos","house"].includes(S.view)&&!mod(S.view)) setView("home");
   if(mod("weather")&&S.settings.place&&!S.weather&&!S.wxBusy&&Date.now()-(S.wxAt||0)>60000){ S.wxBusy=true; pullWeather().finally(()=>{S.wxBusy=false;}); }
   if(mod("verse")&&!S.verse&&!S.verseBusy&&Date.now()-(S.verseAt||0)>60000){ S.verseBusy=true; pullVerse().finally(()=>{S.verseBusy=false;}); }
 }
 function moreSection(){
-  const items=[mod("budget")?["Budget",budgetSheet,"#budgetBtn"]:null,mod("history")?["History",histPage,"#histBtn"]:null,mod("cameras")?["Cameras",()=>camsSheet(false),"#camBtn"]:null].filter(Boolean);
+  const items=[mod("budget")?["Budget",budgetSheet,"#budgetBtn"]:null,mod("history")?["History",histPage,"#histBtn"]:null].filter(Boolean);
   if(!items.length) return h("div");
   const ico=sel=>{ const e=document.querySelector(sel+" svg"); return svg(e?e.innerHTML:""); };
-  return h("div",null,h("h3",null,"Budget, history and cameras"),h("div",{style:"display:flex;flex-wrap:wrap;gap:8px"},items.map(([l,fn,sel])=>h("button",{class:"pill",onclick:fn},ico(sel),l))));
+  return h("div",null,h("h3",null,"Budget and history"),h("div",{style:"display:flex;flex-wrap:wrap;gap:8px"},items.map(([l,fn,sel])=>h("button",{class:"pill",onclick:fn},ico(sel),l))));
 }
 function guestSection(){
   const box=h("div",null,h("h3",null,"Guest mode: what it hides"));
@@ -2306,13 +2419,13 @@ function adminSection(){
 }
 function renderAll(){
   $("#mono").textContent=(S.settings.household||"H").trim()[0]?.toUpperCase()||"H";
-  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); renderPrayer(); renderNotes(); renderHistory(); applyModules();
+  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); renderPrayer(); renderNotes(); renderHistory(); renderHouse(); applyModules();
 }
 function toB64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(",")[1]); fr.onerror=rej; fr.readAsDataURL(blob); }); }
 
 /* ---------- boot ---------- */
 const startView=(location.hash||"").slice(1);
-setView(["home","calendar","tasks","meals","lists","photos"].includes(startView)?startView:"home");
+setView(["home","calendar","tasks","meals","lists","photos","house"].includes(startView)?startView:"home");
 tick(); setInterval(tick,1000); renderAll(); idle();
 
 pull();

@@ -410,6 +410,7 @@ button{cursor:pointer;border:0;background:none}
   body{overflow:auto}
   .menu-btn{display:flex}
   .rail{gap:0}
+  .fsbtn{display:none}
   .nav[data-view=photos],.nav[data-view=house],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn,#famBtn,#guestBtn{display:none}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
@@ -1221,7 +1222,7 @@ function renderTools(){
       h("button",{class:"pill",onclick:()=>{S.weekOffset=0;renderCal();renderTools();}},"Today"),
       h("button",{class:"pill icon","aria-label":"Next week",onclick:()=>{S.weekOffset++;renderCal();renderTools();}},svg(IC.right)));
   }
-  t.append(h("button",{class:"pill icon","aria-label":"Full screen",title:"Full screen",onclick:goFull},svg(IC.full)));
+  t.append(h("button",{class:"pill icon fsbtn","aria-label":"Full screen",title:"Full screen",onclick:goFull},svg(IC.full)));
   const fs=t.querySelector('[aria-label="Full screen"]');
   const tb=[h("button",{class:"pill icon"+(guestOn()?" on":""),id:"guestTop","aria-label":guestOn()?"Guest mode is on. Tap to turn off":"Guests are here",title:"Guests are here",onclick:guestToggle},svg(document.querySelector("#guestBtn svg").innerHTML)),
     h("button",{class:"pill icon",id:"themeTop","aria-label":isDark()?"Switch to light mode":"Switch to dark mode",title:isDark()?"Light mode":"Dark mode",onclick:()=>setTheme(isDark()?"light":"dark")},svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>')),

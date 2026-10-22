@@ -518,6 +518,7 @@ button{cursor:pointer;border:0;background:none}
     <section class="view" data-name="meals"><div class="meals" id="meals"></div></section>
     <section class="view" data-name="lists"><div class="lists" id="lists"></div></section>
     <section class="view" data-name="photos"><div class="photos" id="photos"></div></section>
+    <section class="view" data-name="history" hidden><div class="settingspage" id="historyPage"></div></section>
     <section class="view" data-name="settings" hidden><div class="settingspage" id="settingsPage"></div></section>
   </main>
 </div>
@@ -528,7 +529,7 @@ button{cursor:pointer;border:0;background:none}
     <button class="nav" id="guestBtn"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5M10 20v-5h4v5"/></svg>Guests</button>
     <button class="nav" id="sleepBtn"><svg viewBox="0 0 24 24"><path d="M3 8h6l-6 8h6M13 3h5l-5 6h5M15 14h4l-4 5h4"/></svg>Sleep</button>
     <button class="nav" id="budgetBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
-    <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>Meal history</button>
+    <button class="nav" id="histBtn"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 108.5-8.5A8.5 8.5 0 005.6 6.3L3.5 8.5"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></svg>History</button>
     <button class="nav" id="camBtn"><svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="M16 11l5-3v8l-5-3"/></svg>Cameras</button>
 </div>
 <div id="sheetHost"></div>
@@ -587,7 +588,7 @@ function guessAisle(t){ const s=" "+t.toLowerCase(); for(const [a,kws] of AISLES
 
 /* ---------- state ---------- */
 const DEFAULTS={household:"Our Home",members:[{name:"Jason",color:"blue"}],idleMin:5,tonight:null,place:null,links:[],cameras:[]};
-const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],mealhistory:[],reminders:[],countdowns:[],notes:[],prayers:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
+const S={events:[],todos:[],shopping:[],recipes:[],photos:[],dinnerlist:[],lists:[],listitems:[],mealhistory:[],history:[],reminders:[],countdowns:[],notes:[],prayers:[],listSel:(()=>{ try{ return localStorage.getItem("hd_list")||"groceries"; }catch(e){ return "groceries"; } })(),settings:{...DEFAULTS},loaded:{},weekOffset:0,view:"home",photoIdx:0};
 let VER=-1, FEAT={}, live=true, pulling=false, photoSig="";
 let BUILD=null, reloadT=null, ROT=[];
 S.album=[]; S.albumName="";
@@ -599,7 +600,7 @@ function reloadWhenIdle(){
   reloadT=setTimeout(tryIt,1500);
 }
 S.ext=[]; S.budget=null;
-const COLLS=["events","todos","shopping","recipes","photos","dinnerlist","lists","listitems","mealhistory","reminders","countdowns","notes","prayers"];
+const COLLS=["events","todos","shopping","recipes","photos","dinnerlist","lists","listitems","mealhistory","history","reminders","countdowns","notes","prayers"];
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
 
 async function api(path,opts={}){
@@ -614,6 +615,8 @@ async function write(body){
   try{ const j=await api("/api/db",{method:"POST",body:JSON.stringify({...body,by:meName(),ep:pushId()})}); setTimeout(pull,150); if(j&&j.appleError) toast(j.appleError); return j; }
   catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't save. Check the connection and try again."); VER=-1; pull(); return null; }
 }
+function logHist(kind,title,extra){ const d={kind,title,who:(typeof meName==="function"&&meName())||"",at:Date.now(),date:today(),...(extra||{})}; return addDoc("history",d); }
+function unlogHist(kind,key,val){ S.history.filter(x=>x.kind===kind&&x[key]===val&&x.date===today()).forEach(x=>delDoc("history",x.id)); }
 async function addDoc(c,data){ const id=uid(); S[c].push({...data,id}); renderAll(); return write({op:"add",coll:c,id,data}); }
 async function updDoc(c,id,patch){ const x=S[c].find(r=>r.id===id); if(x) Object.assign(x,patch); renderAll(); return write({op:"update",coll:c,id,data:patch}); }
 async function delDoc(c,id){ S[c]=S[c].filter(r=>r.id!==id); renderAll(); await write({op:"delete",coll:c,id}); }
@@ -1066,7 +1069,7 @@ function tick(){
 
 /* ---------- views ---------- */
 function setView(v){
-  S.view=v; { const f=$("#fab"); if(f) f.style.display=v==="settings"?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"); }
+  S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"); }
   document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.name!==v);
   document.querySelectorAll(".nav[data-view]").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
   const mb=$("#menuBtn"); if(mb){ if(v==="photos") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
@@ -1196,8 +1199,8 @@ function renderCal(){
 /* tasks */
 function todoItem(t,showWho){
   const due=taskDue(t), toggle=()=>{ const nx=!t.done&&taskNext(t);
-    if(nx){ updDoc("todos",t.id,{date:nx,done:false,lastDone:today(),doneAt:Date.now()}); toast("Done. Next: "+shortDay(nx)+(t.time?" · "+fmtTime(t.time):"")); return; }
-    updDoc("todos",t.id,{done:!t.done,doneAt:!t.done?Date.now():null}); };
+    if(nx){ updDoc("todos",t.id,{date:nx,done:false,lastDone:today(),doneAt:Date.now()}); logHist("task",t.text,{taskId:t.id,repeats:true}); toast("Done. Next: "+shortDay(nx)+(t.time?" · "+fmtTime(t.time):"")); return; }
+    updDoc("todos",t.id,{done:!t.done,doneAt:!t.done?Date.now():null}); if(t.done) logHist("task",t.text,{taskId:t.id}); else unlogHist("task","taskId",t.id); };
   const subs=[showWho?(t.who||"Everyone"):null,due?due.text:null,taskRepText(t)?"↻ "+taskRepText(t):null,t.notify&&t.date?"🔔":null].filter(Boolean).join(" · ");
   const el=h("div",{class:"item tk c-"+colorOf(t.who)+(t.done?" done":""),role:"button",tabindex:"0",onclick:toggle,"aria-pressed":t.done?"true":"false"},
     h("span",{class:"txt"},t.text,exTag(t),subs?h("span",{class:"sub"+(due&&due.over?" over":"")},subs):null),
@@ -1248,21 +1251,52 @@ async function cookedTonight(r){
   const planned=S.dinnerlist.find(d=>d.recipeId===r.id&&d.date), day=(planned&&planned.date<=today()&&planned.date)||today();
   if(!S.mealhistory.some(m=>m.recipeId===r.id&&m.date===day)) await addDoc("mealhistory",{recipeId:r.id,title:r.title,date:day,createdAt:Date.now()});
   await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); toast("Marked as made, saved to meal history and taken off the dinner list"); }
-/* Meal history: what we had on which day. "We had it" records here automatically; past meals can be added by hand. */
-function histSheet(){
-  const rows=[...S.mealhistory].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||((b.createdAt||0)-(a.createdAt||0)));
-  const counts={}; rows.forEach(m=>{ const k=m.recipeId||m.title; counts[k]=(counts[k]||0)+1; });
-  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
-  const topTitle=top&&rows.find(m=>(m.recipeId||m.title)===top[0]).title;
+/* History: a page inside Settings. Meals (what we had), plus tasks, reminders and groceries as they were finished. */
+const HIST_TABS=[["all","Everything"],["meal","Meals"],["task","Tasks"],["reminder","Reminders"],["groceries","Groceries"]];
+const HIST_ICON={meal:"Meal",task:"Task",reminder:"Reminder",groceries:"Groceries"};
+function histRows(){
+  const rows=[];
+  S.mealhistory.forEach(m=>rows.push({kind:"meal",coll:"mealhistory",id:m.id,title:m.title,day:m.date||"",at:m.createdAt||0,recipeId:m.recipeId}));
+  const logged=new Set(S.history.filter(x=>x.kind==="task"&&x.taskId).map(x=>x.taskId));
+  S.history.forEach(x=>rows.push({kind:x.kind,coll:"history",id:x.id,title:x.title,day:x.date||"",at:x.at||0,who:x.who,items:x.items,repeats:x.repeats,timed:true}));
+  S.todos.filter(t=>t.done&&!logged.has(t.id)&&t.text).forEach(t=>rows.push({kind:"task",coll:"todos",id:t.id,title:t.text,day:t.doneAt?keyOf(new Date(t.doneAt)):(t.date||today()),at:t.doneAt||0,who:t.who,timed:!!t.doneAt}));
+  return rows.filter(r=>r.day).sort((a,b)=>b.day.localeCompare(a.day)||b.at-a.at);
+}
+function histDay(k){ const d=parseKey(k); return `${DOWS[d.getDay()]}, ${MO[d.getMonth()]} ${d.getDate()}`; }
+function histPage(){
+  if(S.view!=="history"&&S.view!=="settings") S.prevView=S.view; closeSheet();
+  S.histTab=S.histTab||"all"; setView("history"); renderHistory(); $("#historyPage").scrollTop=0;
+}
+function renderHistory(){
+  const page=$("#historyPage"); if(!page||S.view!=="history") return;
+  const tab=S.histTab||"all", all=histRows(), rows=tab==="all"?all:all.filter(r=>r.kind===tab);
+  const tabs=h("div",{class:"fchips"},HIST_TABS.map(([v,l])=>{ const n=v==="all"?all.length:all.filter(r=>r.kind===v).length;
+    return h("button",{class:"chip"+(tab===v?" on":""),onclick:()=>{ S.histTab=v; renderHistory(); }},l+(n?" · "+n:"")); }));
   const list=h("div",{class:"pcs"});
-  if(!rows.length) list.append(h("p",{class:"hint"},"Nothing recorded yet. Tap “We had it” on a dish, or add a past meal below."));
+  if(!rows.length) list.append(h("p",{class:"hint"},tab==="meal"?"Nothing recorded yet. Tap “We had it” on a dish, or add a past meal below.":"Nothing here yet. Finished "+(tab==="all"?"tasks, reminders and grocery trips":tab==="groceries"?"grocery trips":tab+"s")+" show up here from now on."));
   let month="";
-  rows.forEach(m=>{ const d=parseKey(m.date), mk=MO[d.getMonth()]+" "+d.getFullYear();
+  rows.forEach(m=>{ const d=parseKey(m.day), mk=MO[d.getMonth()]+" "+d.getFullYear();
     if(mk!==month){ month=mk; list.append(h("h3",{style:"margin:10px 2px 0"},mk)); }
     const r=m.recipeId&&S.recipes.find(x=>x.id===m.recipeId);
+    const time=m.timed&&m.at?" · "+fmtTime(new Date(m.at).toTimeString().slice(0,5)):"";
+    const sub=[tab==="all"?HIST_ICON[m.kind]:null,m.who||null,histDay(m.day)+time,m.repeats?"↻ repeating":null].filter(Boolean).join(" · ");
+    const body=h("span",{style:"display:flex;flex-direction:column;min-width:0;gap:2px"},h("span",{style:"overflow:hidden;text-overflow:ellipsis"},m.title),h("span",{class:"meta"},sub),
+      m.items&&m.items.length?h("span",{class:"meta",style:"white-space:normal"},m.items.join(", ")):null);
     list.append(h("div",{class:"lrow"},
-      h(r?"button":"div",{class:"lk",style:"justify-content:space-between;gap:12px;text-align:left"+(r?";border:0":""),onclick:r?()=>{ closeSheet(); openRecipe(r.id); }:null},h("span",{style:"overflow:hidden;text-overflow:ellipsis"},m.title),h("span",{class:"meta",style:"flex:none"},WD[d.getDay()].slice(0,3)+", "+MO[d.getMonth()]+" "+d.getDate())),
-      h("button",{class:"pill icon","aria-label":"Remove "+m.title,style:"background:var(--card)",onclick:async()=>{ await delDoc("mealhistory",m.id); histSheet(); }},svg(IC.x)))); });
+      h(r?"button":"div",{class:"lk",style:"justify-content:space-between;gap:12px;text-align:left"+(r?";border:0":""),onclick:r?()=>openRecipe(r.id):null},body),
+      h("button",{class:"pill icon","aria-label":"Remove "+m.title,style:"background:var(--card)",onclick:async()=>{ await delDoc(m.coll,m.id); renderHistory(); }},svg(IC.x)))); });
+  const meals=S.mealhistory, counts={}; meals.forEach(m=>{ const k=m.recipeId||m.title; counts[k]=(counts[k]||0)+1; });
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0], topTitle=top&&meals.find(m=>(m.recipeId||m.title)===top[0]).title;
+  const parts=[h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>settingsPage()},svg(IC.left),"Settings"),h("span",{class:"grow"})),
+    h("h2",null,"History"),
+    h("p",{class:"hint",style:"margin:0"},"A record of what has been finished. Removing a row here only removes it from this list."),
+    tabs,
+    tab==="meal"&&meals.length?h("p",{class:"meta",style:"margin:0"},`${meals.length} meal${meals.length===1?"":"s"} recorded`+(top&&top[1]>1?` · most often: ${topTitle} (${top[1]}×)`:"")):null,
+    list];
+  if(tab==="meal"||tab==="all") parts.push(mealAddForm());
+  page.replaceChildren(h("div",{class:"sheet spage"},parts));
+}
+function mealAddForm(){
   const dateIn=h("input",{id:"hDate",type:"date",value:today(),max:today()});
   const pick=h("select",{id:"hDish"},[h("option",{value:""},"Choose a dish…"),...[...S.recipes].sort((a,b)=>a.title.localeCompare(b.title)).map(r=>h("option",{value:r.id},r.title)),h("option",{value:"_other"},"Something else…")]);
   const other=h("input",{id:"hOther",placeholder:"What did you have?",hidden:true});
@@ -1270,13 +1304,10 @@ function histSheet(){
   const add=async()=>{ if(!dateIn.value) return toast("Pick a date."); let title="",recipeId="";
     if(pick.value==="_other"){ title=other.value.trim(); } else if(pick.value){ const r=S.recipes.find(x=>x.id===pick.value); if(r){ title=r.title; recipeId=r.id; } }
     if(!title) return toast("Choose a dish or type what you had.");
-    await addDoc("mealhistory",{...(recipeId?{recipeId}:{}),title,date:dateIn.value,createdAt:Date.now()}); histSheet(); };
-  openSheet([h("h2",null,"Meal history"),
-    rows.length?h("p",{class:"meta",style:"margin:0"},`${rows.length} meal${rows.length===1?"":"s"} recorded`+(top&&top[1]>1?` · most often: ${topTitle} (${top[1]}×)`:"")):null,
-    list,
-    h("div",{style:"display:flex;flex-direction:column;gap:8px;padding-top:6px"},h("h3",{style:"margin:0"},"Add a past meal"),field("Day",dateIn),field("Dish",pick),other,h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Add to history"))),
-    h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+    await addDoc("mealhistory",{...(recipeId?{recipeId}:{}),title,date:dateIn.value,createdAt:Date.now()}); renderHistory(); };
+  return h("div",{style:"display:flex;flex-direction:column;gap:8px;padding-top:6px"},h("h3",{style:"margin:0"},"Add a past meal"),field("Day",dateIn),field("Dish",pick),other,h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Add to history")));
 }
+const histSheet=histPage;
 $("#histBtn").addEventListener("click",histSheet);
 const MEAL={week:0,q:"",f:"all"};
 const TAG_PRESETS=["Breakfast","Lunch","Dinner","Snack","Dessert","Pasta","Chicken","Beef","Pork","Seafood","Vegetarian","Soup","Salad","Sides","Slow cooker","Grill","Drinks","Quick"];
@@ -1436,7 +1467,7 @@ function groceriesView(L,keepVal){
   const pullIng=async()=>{ for(const i of miss) await addDoc("shopping",{text:i,aisle:guessAisle(i),got:false,createdAt:Date.now()}); toast("Added "+miss.length+" item"+(miss.length>1?"s":"")+" from the dinner list"); };
   L.append(h("div",{class:"listfoot"},h("span",{class:"meta"},left+" to get"),
     miss.length?h("button",{class:"pill",onclick:pullIng},"+ Ingredients for the dinner list ("+miss.length+")"):null,
-    got?h("button",{class:"pill",onclick:()=>S.shopping.filter(s=>s.got).forEach(s=>delDoc("shopping",s.id))},"Clear "+got+" in the cart"):null));
+    got?h("button",{class:"pill",onclick:()=>{ const gs=S.shopping.filter(s=>s.got); logHist("groceries",gs.length+" item"+(gs.length===1?"":"s")+" bought",{items:gs.map(x=>x.text).slice(0,60)}); gs.forEach(x=>delDoc("shopping",x.id)); }},"Clear "+got+" in the cart"):null));
   const wrap=h("div",{class:"aisles"});
   const tint={"Produce":"c-sage","Bakery":"c-amber","Meat & Seafood":"c-coral","Dairy & Eggs":"c-blue","Pantry":"c-gold","Frozen":"c-teal","Household":"c-lilac","Other":"c-none"};
   AISLE_ORDER.forEach(a=>{
@@ -1536,7 +1567,7 @@ function menuSheet(){
       row(ico("#guestBtn"),guestOn()?"Guest mode: on (tap to turn off)":"Guests are here",guestToggle),
       mod("photos")?row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")):null,
       mod("budget")?row(ico("#budgetBtn"),"Budget",budgetSheet):null,
-      mod("history")?row(ico("#histBtn"),"Meal history",histSheet):null,
+      mod("history")?row(ico("#histBtn"),"History",histPage):null,
       mod("reminders")?row(ico("#famBtn"),"Reminders",()=>remSheet()):null,
       mod("countdowns")?row(ico("#famBtn"),"Countdowns",()=>cdSheet()):null,
       mod("notes")?row(ico("#famBtn"),"Family notes",notesSheet):null,
@@ -1851,9 +1882,9 @@ function openRecipe(id){
     h("div",{class:"acts"},h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this dish?",r.title+" and its photo will be removed.","Delete",async()=>{ if(isTonight) await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); await delDoc("recipes",r.id); deleteImage(r.photoUrl); })},"Delete"),h("button",{class:"pill",onclick:()=>recipeSheet(r)},"Edit"),h("span",{class:"grow"}),
       isTonight?h("button",{class:"pill",onclick:async()=>{ await offTonight(r); closeSheet(); }},"Take off tonight"):h("button",{class:"pill",onclick:()=>{ saveSettings({tonight:{id:r.id,date:today()}}); closeSheet(); toast("Set as tonight's dinner"); }},"Make tonight"),dinBtn)],true);
 }
-function settingsBack(){ setView(S.prevView&&S.prevView!=="settings"?S.prevView:"home"); }
+function settingsBack(){ setView(S.prevView&&S.prevView!=="settings"&&S.prevView!=="history"?S.prevView:"home"); }
 function settingsPage(){
-  if(S.view!=="settings") S.prevView=S.view; closeSheet();
+  if(S.view!=="settings"&&S.view!=="history") S.prevView=S.view; closeSheet();
   const draft=JSON.parse(JSON.stringify(members()));
   const hh=h("input",{id:"stHouse",value:S.settings.household||""});
   const idleSel=h("select",{id:"stIdle"},[["0","Never"],["2","After 2 minutes"],["5","After 5 minutes"],["10","After 10 minutes"],["30","After 30 minutes"]].map(([v,l])=>h("option",{value:v},l))); idleSel.value=String(S.settings.idleMin??5);
@@ -1872,7 +1903,7 @@ function settingsPage(){
     h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:settingsBack},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]));
   setView("settings"); page.scrollTop=0;
 }
-$("#settingsBtn").addEventListener("click",()=>{ if(S.view==="settings") settingsBack(); else settingsPage(); });
+$("#settingsBtn").addEventListener("click",()=>{ if(S.view==="settings"||S.view==="history") settingsBack(); else settingsPage(); });
 $("#fab").addEventListener("click",()=>{
   if(S.view==="tasks") return todoSheet(meName()||members()[0]?.name||"");
   if(S.view==="meals") return snapDish();
@@ -1928,7 +1959,7 @@ function renderFam(){
       rows.slice(0,5).forEach(({r,when,today:isT,od})=>{
         const done=isT&&r.doneOn===k;
         const c=h("input",{type:"checkbox","aria-label":"Done: "+r.title}); c.checked=!!done; c.disabled=!isT;
-        c.addEventListener("change",()=>updDoc("reminders",r.id,{doneOn:c.checked?k:""}));
+        c.addEventListener("change",()=>{ updDoc("reminders",r.id,{doneOn:c.checked?k:""}); if(c.checked) logHist("reminder",r.title,{remId:r.id}); else unlogHist("reminder","remId",r.id); });
         bits.push(1);
         B.append(h("label",{class:"rem"+(done?" done":"")},c,h("span",{class:"grow"},r.title),when?h("span",{class:"meta"+(od?" late":"")},when):null));
       });
@@ -2066,7 +2097,7 @@ const MODULES=[
   ["Home page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"]]],
   ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"]]],
   ["Family",[["reminders","Recurring reminders"],["countdowns","Countdowns"],["notes","Family notes"],["prayer","Prayer list"]]],
-  ["Menu and extras",[["budget","Budget screen"],["history","Meal history"],["cameras","Cameras"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
+  ["Menu and extras",[["budget","Budget screen"],["history","History"],["cameras","Cameras"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
 ];
 const GUEST_DEFAULT=["budget_card","budget","reminders","countdowns","notes","prayer","cameras","history"];
 function guestHides(){ const a=S.settings&&S.settings.guestHides; return new Set(Array.isArray(a)?a:GUEST_DEFAULT); }
@@ -2129,10 +2160,10 @@ function applyModules(){
   if(mod("verse")&&!S.verse&&!S.verseBusy&&Date.now()-(S.verseAt||0)>60000){ S.verseBusy=true; pullVerse().finally(()=>{S.verseBusy=false;}); }
 }
 function moreSection(){
-  const items=[mod("budget")?["Budget",budgetSheet,"#budgetBtn"]:null,mod("history")?["Meal history",histSheet,"#histBtn"]:null,mod("cameras")?["Cameras",()=>camsSheet(false),"#camBtn"]:null].filter(Boolean);
+  const items=[mod("budget")?["Budget",budgetSheet,"#budgetBtn"]:null,mod("history")?["History",histPage,"#histBtn"]:null,mod("cameras")?["Cameras",()=>camsSheet(false),"#camBtn"]:null].filter(Boolean);
   if(!items.length) return h("div");
   const ico=sel=>{ const e=document.querySelector(sel+" svg"); return svg(e?e.innerHTML:""); };
-  return h("div",null,h("h3",null,"Budget, meals and cameras"),h("div",{style:"display:flex;flex-wrap:wrap;gap:8px"},items.map(([l,fn,sel])=>h("button",{class:"pill",onclick:fn},ico(sel),l))));
+  return h("div",null,h("h3",null,"Budget, history and cameras"),h("div",{style:"display:flex;flex-wrap:wrap;gap:8px"},items.map(([l,fn,sel])=>h("button",{class:"pill",onclick:fn},ico(sel),l))));
 }
 function guestSection(){
   const box=h("div",null,h("h3",null,"Guest mode: what it hides"));
@@ -2186,7 +2217,7 @@ function adminSection(){
 }
 function renderAll(){
   $("#mono").textContent=(S.settings.household||"H").trim()[0]?.toUpperCase()||"H";
-  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); renderPrayer(); renderNotes(); applyModules();
+  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); renderPrayer(); renderNotes(); renderHistory(); applyModules();
 }
 function toB64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(",")[1]); fr.onerror=rej; fr.readAsDataURL(blob); }); }
 

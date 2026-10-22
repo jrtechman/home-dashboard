@@ -139,6 +139,11 @@ button{cursor:pointer;border:0;background:none}
 .item.done .check{background:var(--strong);border-color:var(--strong)}
 .item.done .check svg{opacity:1}
 .ex{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--glass);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.tklist{display:flex;flex-direction:column;gap:8px;min-height:6px}
+.tkgrip{flex:none;width:30px;height:36px;border:0;background:transparent;display:grid;place-items:center;color:var(--muted);cursor:grab;touch-action:none;padding:0;margin-left:-6px;border-radius:10px}.tkgrip svg{width:18px;height:18px;fill:currentColor;stroke:none}.tkgrip:focus-visible{outline:2px solid var(--muted)}
+.item.tk.dragging{opacity:.35}.tkghost{box-shadow:0 14px 34px rgba(31,42,51,.28);opacity:.96;transform:rotate(1.2deg);cursor:grabbing}
+.dropline{height:4px;border-radius:4px;background:var(--ink);opacity:.55;flex:none}.col.dropcol{outline:2.5px dashed var(--muted);outline-offset:-3px}
+.repbox{margin-top:6px;display:flex;flex-direction:column;gap:8px}.repbtn{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:0 14px;border-radius:var(--r-item);border:0;background:var(--glass);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}.repbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .add-in{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;border-radius:var(--r-item);border:2px dashed var(--soft);color:var(--muted);font-weight:600;width:100%}
 .col-foot{display:flex;gap:8px;padding-top:6px}
 .col-foot .pill{background:var(--glass);min-height:40px;font-size:14px}
@@ -1197,35 +1202,97 @@ function renderCal(){
 }
 
 /* tasks */
-function todoItem(t,showWho){
+let DRAG=null;
+const isRepeating=t=>!!t.repeat&&t.repeat!=="none";
+function todoItem(t,showWho,drag){
   const due=taskDue(t), toggle=()=>{ const nx=!t.done&&taskNext(t);
     if(nx){ updDoc("todos",t.id,{date:nx,done:false,lastDone:today(),doneAt:Date.now()}); logHist("task",t.text,{taskId:t.id,repeats:true}); toast("Done. Next: "+shortDay(nx)+(t.time?" · "+fmtTime(t.time):"")); return; }
     updDoc("todos",t.id,{done:!t.done,doneAt:!t.done?Date.now():null}); if(t.done) logHist("task",t.text,{taskId:t.id}); else unlogHist("task","taskId",t.id); };
   const subs=[showWho?(t.who||"Everyone"):null,due?due.text:null,taskRepText(t)?"↻ "+taskRepText(t):null,t.notify&&t.date?"🔔":null].filter(Boolean).join(" · ");
-  const el=h("div",{class:"item tk c-"+colorOf(t.who)+(t.done?" done":""),role:"button",tabindex:"0",onclick:toggle,"aria-pressed":t.done?"true":"false"},
+  const el=h("div",{class:"item tk c-"+colorOf(t.who)+(t.done?" done":""),role:"button",tabindex:"0","data-id":t.id,onclick:toggle,"aria-pressed":t.done?"true":"false"},
+    drag?h("button",{class:"tkgrip",type:"button","aria-label":"Move task. Drag, or use the up and down arrow keys",title:"Drag to reorder or move to another list",onclick:ev=>ev.stopPropagation(),onpointerdown:ev=>dragStart(ev,t,el),onkeydown:ev=>gripKey(ev,t)},svg('<circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/>')):null,
     h("span",{class:"txt"},t.text,exTag(t),subs?h("span",{class:"sub"+(due&&due.over?" over":"")},subs):null),
     h("button",{class:"tkedit","aria-label":"Edit or schedule task",title:"Edit or schedule",onclick:ev=>{ ev.stopPropagation(); todoSheet(t.who||"",t); }},svg('<path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/>')),
     h("span",{class:"check"},svg(IC.check)));
   el.addEventListener("keydown",ev=>{ if((ev.key==="Enter"||ev.key===" ")&&ev.target===el){ ev.preventDefault(); toggle(); } });
   return el;
 }
+let REP_OPEN={}; try{ REP_OPEN=JSON.parse(localStorage.getItem("hd_repopen")||"{}")||{}; }catch(e){}
 function renderTasks(){
+  if(DRAG) return;
   const b=$("#taskBoard"); b.replaceChildren();
   const people=[...members().map(m=>({name:m.name,color:m.color})),{name:"",label:"Everyone",color:"none"}];
   people.forEach(p=>{
-    const list=S.todos.filter(t=>(t.who||"")===p.name).sort(taskOrder);
+    const all=S.todos.filter(t=>(t.who||"")===p.name).sort(taskOrder);
+    const list=all.filter(t=>!isRepeating(t)), reps=all.filter(isRepeating);
     const done=list.filter(t=>t.done).length;
     const label=p.label||p.name;
     const body=h("div",{class:"col-body"});
-    if(!list.length) body.append(h("div",{class:"empty-day"},"No tasks yet"));
-    list.forEach(t=>body.append(todoItem(t,false)));
-    body.append(h("button",{class:"add-in",onclick:()=>todoSheet(p.name)},"+ Add task"));
-    const col=h("div",{class:"col c-"+p.color},
+    const ol=h("div",{class:"tklist","data-sec":"open"});
+    if(!list.length) ol.append(h("div",{class:"empty-day"},"No tasks yet"));
+    list.forEach(t=>ol.append(todoItem(t,false,true)));
+    body.append(ol,h("button",{class:"add-in",onclick:()=>todoSheet(p.name)},"+ Add task"));
+    if(reps.length){
+      const isOpen=!!REP_OPEN[p.name];
+      const rl=h("div",{class:"tklist","data-sec":"rep",hidden:!isOpen}); reps.forEach(t=>rl.append(todoItem(t,false,true)));
+      const btn=h("button",{class:"repbtn","aria-expanded":isOpen?"true":"false",onclick:()=>{ REP_OPEN[p.name]=!REP_OPEN[p.name]; try{ localStorage.setItem("hd_repopen",JSON.stringify(REP_OPEN)); }catch(e){} renderTasks(); }},
+        h("span",null,"↻ Repeating · "+reps.length),svg(isOpen?'<path d="M6 15l6-6 6 6"/>':'<path d="M6 9l6 6 6-6"/>'));
+      body.append(h("div",{class:"repbox"},btn,rl));
+    }
+    const col=h("div",{class:"col c-"+p.color,"data-who":p.name},
       h("div",{class:"col-head"},h("div",{class:"avatar"},label[0].toUpperCase()),h("div",null,h("div",{class:"col-name"},label),h("div",{class:"count"},svg(IC.check),`${done}/${list.length}`))),
       body);
     if(done) col.append(h("div",{class:"col-foot"},h("button",{class:"pill",onclick:()=>list.filter(t=>t.done).forEach(t=>delDoc("todos",t.id))},`Clear ${done} done`)));
     b.append(col);
   });
+}
+/* Reorder and move tasks: drag the grip (mouse, finger or pen), or focus it and use the up/down arrow keys. */
+async function placeTask(t,who,sec,idx){
+  const ids=S.todos.filter(x=>x.id!==t.id&&(x.who||"")===who&&(sec==="rep")===isRepeating(x)).sort(taskOrder).map(x=>x.id);
+  ids.splice(Math.max(0,Math.min(idx,ids.length)),0,t.id);
+  const jobs=[];
+  ids.forEach((id,i)=>{ const x=S.todos.find(r=>r.id===id), patch={}; if(x.order!==(i+1)*10) patch.order=(i+1)*10; if(id===t.id&&(x.who||"")!==who) patch.who=who; if(Object.keys(patch).length) jobs.push(updDoc("todos",id,patch)); });
+  await Promise.all(jobs);
+}
+function gripKey(ev,t){
+  if(ev.key!=="ArrowUp"&&ev.key!=="ArrowDown") return; ev.preventDefault(); ev.stopPropagation();
+  const who=t.who||"", sec=isRepeating(t)?"rep":"open";
+  const ids=S.todos.filter(x=>(x.who||"")===who&&isRepeating(x)===(sec==="rep")).sort(taskOrder).map(x=>x.id), at=ids.indexOf(t.id), to=at+(ev.key==="ArrowUp"?-1:1);
+  if(to<0||to>=ids.length) return;
+  placeTask(t,who,sec,to).then(()=>setTimeout(()=>document.querySelector(`.tk[data-id="${t.id}"] .tkgrip`)?.focus(),30));
+}
+function dragStart(ev,t,el){
+  if(ev.button!==undefined&&ev.button!==0) return; ev.preventDefault(); ev.stopPropagation();
+  const board=$("#taskBoard"), r=el.getBoundingClientRect(), sec=isRepeating(t)?"rep":"open";
+  const ghost=el.cloneNode(true); ghost.classList.add("tkghost"); ghost.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;z-index:90;pointer-events:none`; document.body.append(ghost);
+  el.classList.add("dragging"); const line=h("div",{class:"dropline"});
+  DRAG={id:t.id}; const dx=ev.clientX-r.left, dy=ev.clientY-r.top; let px=ev.clientX, py=ev.clientY, target=null, raf=0;
+  const hit=()=>{
+    ghost.style.left=(px-dx)+"px"; ghost.style.top=(py-dy)+"px";
+    const col=document.elementsFromPoint(px,py).map(e=>e.closest&&e.closest(".col[data-who]")).find(Boolean);
+    document.querySelectorAll(".col.dropcol").forEach(c=>c!==col&&c.classList.remove("dropcol")); line.remove(); target=null;
+    if(!col||!board.contains(col)) return;
+    col.classList.add("dropcol");
+    const list=col.querySelector(`.tklist[data-sec="${sec}"]`); if(!list||list.hidden) return;
+    const items=[...list.querySelectorAll(":scope > .item.tk:not(.dragging)")]; const idx=items.filter(i=>{ const q=i.getBoundingClientRect(); return q.top+q.height/2<py; }).length;
+    if(items[idx]) list.insertBefore(line,items[idx]); else list.append(line);
+    target={who:col.dataset.who,idx};
+  };
+  const tickScroll=()=>{ if(!DRAG) return; const br=board.getBoundingClientRect(); let moved=false;
+    if(px<br.left+50){ board.scrollLeft-=14; moved=true; } else if(px>br.right-50){ board.scrollLeft+=14; moved=true; }
+    const cb=document.elementsFromPoint(px,py).map(e=>e.closest&&e.closest(".col-body")).find(Boolean);
+    if(cb){ const q=cb.getBoundingClientRect(); if(py<q.top+40){ cb.scrollTop-=12; moved=true; } else if(py>q.bottom-40){ cb.scrollTop+=12; moved=true; } }
+    if(moved) hit(); raf=requestAnimationFrame(tickScroll); };
+  const move=e=>{ px=e.clientX; py=e.clientY; hit(); };
+  const end=async cancel=>{
+    window.removeEventListener("pointermove",move); window.removeEventListener("pointerup",up); window.removeEventListener("pointercancel",cx); cancelAnimationFrame(raf);
+    ghost.remove(); line.remove(); el.classList.remove("dragging"); document.querySelectorAll(".col.dropcol").forEach(c=>c.classList.remove("dropcol"));
+    const tg=cancel?null:target; DRAG=null;
+    if(tg){ const moved=tg.who!==(t.who||""); await placeTask(t,tg.who,sec,tg.idx); toast(moved?"Moved to "+(tg.who||"Everyone"):"Reordered"); } else renderTasks();
+  };
+  const up=()=>end(false), cx=()=>end(true);
+  window.addEventListener("pointermove",move); window.addEventListener("pointerup",up); window.addEventListener("pointercancel",cx);
+  hit(); raf=requestAnimationFrame(tickScroll);
 }
 
 /* meals */
@@ -1696,7 +1763,7 @@ function todoSheet(who,existing){
 }
 function taskDue(t){ if(!t.date) return null; const over=!t.done&&(t.date<today()||(t.date===today()&&t.time&&t.time<new Date().toTimeString().slice(0,5)));
   return {over,text:(t.date<today()&&!t.done?"Overdue · ":"")+dayLabel(t.date)+(t.time?" · "+fmtTime(t.time):"")}; }
-const taskOrder=(a,b)=>(a.done-b.done)||((a.date?0:1)-(b.date?0:1))||String(a.date||"").localeCompare(String(b.date||""))||String(a.time||"99").localeCompare(String(b.time||"99"))||((a.createdAt||0)-(b.createdAt||0));
+const taskOrder=(a,b)=>(a.done-b.done)||((a.order==null?1e9:a.order)-(b.order==null?1e9:b.order))||((a.date?0:1)-(b.date?0:1))||String(a.date||"").localeCompare(String(b.date||""))||String(a.time||"99").localeCompare(String(b.time||"99"))||((a.createdAt||0)-(b.createdAt||0));
 /* Reads recipe text pasted from the Claude app, a website or a note. */
 function tidyIng(raw){
   let s=String(raw||"").replace(/\s+/g," ").trim(), lead="";

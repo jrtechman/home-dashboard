@@ -232,6 +232,7 @@ button{cursor:pointer;border:0;background:none}
 .spnow{display:flex;gap:14px;align-items:center}.spart{flex:none;width:96px;height:96px;border-radius:14px;object-fit:cover;background:var(--chip)}.spmeta{min-width:0;display:flex;flex-direction:column;gap:2px}.spname{font-weight:700;font-size:20px;line-height:1.2}
 .sptime{display:flex;align-items:center;gap:10px}.spbar{flex:1;height:6px;border-radius:6px;background:var(--line);overflow:hidden}.spbar i{display:block;height:100%;background:#1DB954;border-radius:6px;transition:width .9s linear}
 .spctl{display:flex;align-items:center;justify-content:center;gap:12px}.spctl .pill.icon svg{width:22px;height:22px;fill:currentColor;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.spctl .pill.on{background:var(--ink);color:var(--bg)}.spbig{width:60px;height:60px;min-height:60px;background:#1DB954!important;color:#fff!important}
+.brpre{white-space:pre-wrap;word-break:break-word;font:inherit;line-height:1.5;background:var(--chip);border-radius:16px;padding:16px;margin:0}
 .camgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px}
 .camtile{position:relative;display:block;width:100%;padding:0;border:0;border-radius:18px;overflow:hidden;background:var(--chip);aspect-ratio:16/9;cursor:pointer}
 .camtile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -2187,7 +2188,7 @@ function settingsPage(){
   const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value)}); idle(); toast("Settings saved"); settingsBack(); };
   const page=$("#settingsPage"); page.replaceChildren(h("div",{class:"sheet spage"},[h("h2",null,"Settings"),field("Household name",hh),
     h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
-    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),moreSection(),h("div",null,h("h3",null,"Change log"),h("p",{class:"hint",style:"margin:0 0 8px"},"See what has been added or fixed on the dashboard."),h("button",{class:"pill",onclick:changelogPage},"View change log")),guestSection(),faceSection(),pushSection(),adminSection(),
+    field("Photo screensaver",idleSel),field("This device is used by",meSel),field("Appearance (this device)",themeSel),moreSection(),briefingSection(),h("div",null,h("h3",null,"Change log"),h("p",{class:"hint",style:"margin:0 0 8px"},"See what has been added or fixed on the dashboard."),h("button",{class:"pill",onclick:changelogPage},"View change log")),guestSection(),faceSection(),pushSection(),adminSection(),
     exCount?h("div",{class:"acts"},h("span",{class:"meta grow"},`${exCount} example items are on the board.`),h("button",{class:"pill danger",onclick:()=>confirmSheet("Remove the examples?","Events, tasks, groceries and recipes marked “example” will be deleted.","Remove examples",async()=>{ for(const c of COLLS) for(const r of S[c].filter(r=>r.example)) await delDoc(c,r.id); toast("Examples removed"); })},"Remove examples")):null,
     h("div",{class:"acts"},h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:settingsBack},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]));
   setView("settings"); page.scrollTop=0;
@@ -2453,6 +2454,31 @@ function moreSection(){
   if(!items.length) return h("div");
   const ico=sel=>{ const e=document.querySelector(sel+" svg"); return svg(e?e.innerHTML:""); };
   return h("div",null,h("h3",null,"Budget and history"),h("div",{style:"display:flex;flex-wrap:wrap;gap:8px"},items.map(([l,fn,sel])=>h("button",{class:"pill",onclick:fn},ico(sel),l))));
+}
+/* Morning briefing as a text message: a private link an iPhone Shortcut fetches each morning, then sends as an iMessage. */
+function briefingSection(){
+  const box=h("div",null,h("h3",null,"Morning briefing text"));
+  const body=h("div",{style:"display:flex;flex-direction:column;gap:8px"}); box.append(body);
+  const draw=key=>{
+    body.replaceChildren();
+    body.append(h("p",{class:"hint",style:"margin:0"},"A short summary of the day (weather, calendar, tasks, reminders, dinner and the verse) that an iPhone Shortcut can fetch each morning and text to you."));
+    if(!key){ body.append(h("div",{class:"acts"},h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/briefing",{method:"POST",body:JSON.stringify({op:"key"})}); draw(j.key); }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't set that up."); } }},"Set up the briefing link"))); return; }
+    const who=h("select",{id:"brWho","aria-label":"Who the briefing is for"},[h("option",{value:""},"Everyone's tasks and events"),...members().map(m=>h("option",{value:m.name},"For "+m.name))]); who.value=meName()||"";
+    const link=h("input",{id:"brLink",readonly:true,"aria-label":"Briefing link",onfocus:e=>e.target.select()});
+    const mk=()=>{ link.value=location.origin+"/api/briefing?key="+key+(who.value?"&who="+encodeURIComponent(who.value):""); }; mk(); who.addEventListener("change",mk);
+    const copy=async()=>{ try{ await navigator.clipboard.writeText(link.value); toast("Link copied"); }catch(e){ link.select(); toast("Select the link and copy it."); } };
+    const preview=async()=>{ try{ const j=await api("/api/briefing?format=json"+(who.value?"&who="+encodeURIComponent(who.value):"")); openSheet([h("h2",null,"Briefing preview"),h("pre",{class:"brpre"},j.text)],true); }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't build the preview."); } };
+    body.append(field("Who is it for",who),field("Private link",link),
+      h("div",{class:"acts"},h("button",{class:"pill primary",onclick:preview},"Preview"),h("button",{class:"pill",onclick:copy},"Copy link"),h("button",{class:"pill",onclick:()=>confirmSheet("Make a new link?","The old link stops working. You will need to paste the new one into your Shortcut.","Make new link",async()=>{ try{ const j=await api("/api/briefing",{method:"POST",body:JSON.stringify({op:"reset"})}); draw(j.key); toast("New link made"); }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't make a new link."); } })},"Make a new link")),
+      h("ol",{class:"hsteps"},
+        h("li",null,"Open the Shortcuts app on your iPhone, then Automation, then New Automation, then Time of Day (for example 7:00 AM, Daily), and choose Run Immediately."),
+        h("li",null,"Add the action Get Contents of URL and paste the link above."),
+        h("li",null,"Add the action Send Message, set Recipients to yourself (or your wife), and use the result of the previous step as the message."),
+        h("li",null,"Tap Done. Run it once from the Shortcuts app to test.")),
+      h("p",{class:"hint",style:"margin:0"},"Anyone who has the link can read the briefing, so treat it like a password."));
+  };
+  api("/api/briefing",{method:"POST",body:JSON.stringify({op:"status"})}).then(j=>{ if(j.exists) api("/api/briefing",{method:"POST",body:JSON.stringify({op:"key"})}).then(k=>draw(k.key)).catch(()=>draw("")); else draw(""); }).catch(()=>draw(""));
+  return box;
 }
 function guestSection(){
   const box=h("div",null,h("h3",null,"Guest mode: what it hides"));

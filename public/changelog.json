@@ -1,6 +1,16 @@
 [
  {
   "date": "2026-10-21",
+  "title": "Morning briefing text",
+  "items": [
+   {
+    "tag": "New",
+    "text": "Settings has a Morning briefing text section: a preview of a daily summary (weather, calendar, tasks due, reminders, tonight's dinner and the verse) and a private link an iPhone Shortcut can fetch each morning to text it to you."
+   }
+  ]
+ },
+ {
+  "date": "2026-10-21",
   "title": "Spotify on the Home page",
   "items": [
    {

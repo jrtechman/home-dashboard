@@ -17,11 +17,12 @@ import * as push from "../lib/routes/push.js";
 import * as admin from "../lib/routes/admin.js";
 import * as guest from "../lib/routes/guest.js";
 import * as cron from "../lib/routes/cron.js";
+import * as briefing from "../lib/routes/briefing.js";
 import * as spotify from "../lib/routes/spotify.js";
 import * as ha from "../lib/routes/ha.js";
 import * as recipeSearch from "../lib/routes/recipe-search.js";
 
-const ROUTES = { album, apple, budget, calendar, db, "draft-recipe": draftRecipe, "import-recipe": importRecipe, login, passkey, state, upload, weather, verse, push, admin, guest, cron, "recipe-search": recipeSearch, ha, spotify };
+const ROUTES = { album, apple, budget, calendar, db, "draft-recipe": draftRecipe, "import-recipe": importRecipe, login, passkey, state, upload, weather, verse, push, admin, guest, cron, "recipe-search": recipeSearch, ha, spotify, briefing };
 
 async function handle(request) {
   const url = new URL(request.url);

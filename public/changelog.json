@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Settings bottom bar fix",
+    "items": [
+      {
+        "tag": "Fixed",
+        "text": "On the Settings page the Save and Cancel bar no longer floats above the bottom of the screen with buttons peeking out underneath it."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Write on sticky notes",
     "items": [
       {

@@ -229,6 +229,9 @@ button{cursor:pointer;border:0;background:none}
 .clitem ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.clitem li{display:flex;gap:10px;align-items:flex-start;line-height:1.4}
 .cltag{flex:none;min-width:70px;text-align:center;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}.cltag.new{background:#D6EAF5;color:#1D5A85}.cltag.improved{background:#E3EFD9;color:#3F6B2C}.cltag.fixed{background:#F7E4CC;color:#8A5A1E}
 :root[data-theme="dark"] .cltag.new{background:#1C2A38;color:#8FC4EC}:root[data-theme="dark"] .cltag.improved{background:#222D20;color:#A7D08F}:root[data-theme="dark"] .cltag.fixed{background:#36291A;color:#E8B878}
+.spnow{display:flex;gap:14px;align-items:center}.spart{flex:none;width:96px;height:96px;border-radius:14px;object-fit:cover;background:var(--chip)}.spmeta{min-width:0;display:flex;flex-direction:column;gap:2px}.spname{font-weight:700;font-size:20px;line-height:1.2}
+.sptime{display:flex;align-items:center;gap:10px}.spbar{flex:1;height:6px;border-radius:6px;background:var(--line);overflow:hidden}.spbar i{display:block;height:100%;background:#1DB954;border-radius:6px;transition:width .9s linear}
+.spctl{display:flex;align-items:center;justify-content:center;gap:12px}.spctl .pill.icon svg{width:22px;height:22px;fill:currentColor;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.spctl .pill.on{background:var(--ink);color:var(--bg)}.spbig{width:60px;height:60px;min-height:60px;background:#1DB954!important;color:#fff!important}
 .camgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px}
 .camtile{position:relative;display:block;width:100%;padding:0;border:0;border-radius:18px;overflow:hidden;background:var(--chip);aspect-ratio:16/9;cursor:pointer}
 .camtile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -1112,7 +1115,7 @@ async function houseLoad(){
   renderHouse();
 }
 function houseEnter(){
-  renderHouse(); houseLoad(); clearInterval(HOUSE.timer);
+  renderHouse(); houseLoad(); if(mod("spotify")) spotLoad(); clearInterval(SPOT.timer); SPOT.timer=setInterval(()=>{ if(S.view!=="house"){ clearInterval(SPOT.timer); return; } if(!HOUSE.busy&&document.visibilityState==="visible"&&mod("spotify")) spotLoad(); },5000); clearInterval(HOUSE.timer);
   HOUSE.timer=setInterval(()=>{ if(S.view!=="house"){ clearInterval(HOUSE.timer); HOUSE.timer=0; return; } if(!HOUSE.busy&&document.visibilityState==="visible") houseLoad(); },8000);
   clearInterval(HOUSE.snap);
   HOUSE.snap=setInterval(()=>{ if(S.view!=="house"){ clearInterval(HOUSE.snap); HOUSE.snap=0; return; } document.querySelectorAll("#housePage img[data-snap]").forEach(i=>{ const u=i.dataset.snap; i.src=u+(u.includes("?")?"&":"?")+"_t="+Date.now(); }); },6000);
@@ -1146,6 +1149,7 @@ function renderHouse(){
       cams.length?g:h("p",{class:"hint"},"No cameras yet. Tap Edit cameras to add each camera's picture and live address."),
       cams.length?h("p",{class:"hint",style:"margin:8px 0 0"},"Pictures refresh every few seconds. Tap a camera for live video."):null));
   }
+  if(mod("spotify")) cards.push(spotCard());
   const ents=HOUSE.ents||[], notConn=HOUSE.configured===false;
   const unsure=HOUSE.configured===null&&!HOUSE.err;
   const msg=t=>h("p",{class:"hint",style:"margin:0"},t);
@@ -1214,6 +1218,67 @@ function changelogPage(){
         h("ul",null,(e.items||[]).map(i=>h("li",null,h("span",{class:"cltag "+String(i.tag||"").toLowerCase()},i.tag||""),i.text))))); });
     if(!list.length) box.append(h("p",{class:"hint"},"Nothing here yet."));
   }).catch(()=>{ const box=$("#clList"); if(box) box.replaceChildren(h("p",{class:"hint"},"Couldn't load the change log.")); });
+}
+
+/* ---------- Spotify card (Home page): now playing, controls, volume, device ---------- */
+const SPOT={st:null,player:null,devices:[],err:"",n:0,timer:0,tick:0};
+async function spotLoad(){
+  try{
+    const j=await api("/api/spotify"); SPOT.st={configured:j.configured,connected:j.connected}; SPOT.err="";
+    SPOT.player=j.player||null;
+    if(j.connected&&(SPOT.n++%4===0||!(SPOT.player&&SPOT.player.active))){ try{ SPOT.devices=(await api("/api/spotify?op=devices")).devices||[]; }catch(e){} }
+  }catch(e){ if(e.code==="auth") return; if(!SPOT.st) SPOT.st={configured:true,connected:true}; SPOT.err=e.code==="offline"?"No connection.":(e.message||"Couldn't reach Spotify."); }
+  renderHouse();
+}
+async function spotCall(op,extra){
+  try{ await api("/api/spotify",{method:"POST",body:JSON.stringify({op,...(extra||{})})}); }
+  catch(e){ if(e.code!=="auth") toast(e.message||"Spotify didn't do that."); }
+  setTimeout(spotLoad,500);
+}
+const mmss=ms=>{ const s=Math.max(0,Math.floor(ms/1000)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+function spotCard(){
+  const st=SPOT.st, pl=SPOT.player, kids=[];
+  const note=t=>h("p",{class:"hint",style:"margin:0"},t);
+  if(!st) return houseCard("Spotify",null,note(SPOT.err||"Loading…"));
+  if(!st.configured) return houseCard("Spotify",null,h("ol",{class:"hsteps"},
+    h("li",null,"Go to developer.spotify.com, sign in, and create an app. Add the Redirect URI "+location.origin+"/api/spotify"),
+    h("li",null,"Copy the app's Client ID and Client secret."),
+    h("li",null,"In Vercel, Settings, Environment Variables: add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET, then redeploy."),
+    h("li",null,"Come back here and tap Connect Spotify. Controls need a Spotify Premium account.")));
+  if(!st.connected) return houseCard("Spotify",null,note("Connect your Spotify account to see what is playing and control it from here. Controls need Spotify Premium."),
+    h("div",{class:"acts"},h("button",{class:"pill primary",onclick:()=>{ location.href="/api/spotify?op=login"; }},"Connect Spotify")));
+  if(SPOT.err) kids.push(note(SPOT.err));
+  if(pl&&pl.track){
+    const t=pl.track, dv=pl.device;
+    const prog=()=>Math.min(pl.duration,pl.progress+(pl.playing?Date.now()-pl.at:0));
+    const bar=h("div",{class:"spbar"},h("i",{style:`width:${pl.duration?Math.round(prog()/pl.duration*100):0}%`})), cur=h("span",{class:"meta"},mmss(prog()));
+    kids.push(h("div",{class:"spnow"},t.image?h("img",{class:"spart",src:t.image,alt:t.album||"Album art"}):h("div",{class:"spart"}),
+      h("div",{class:"spmeta"},h("div",{class:"spname"},t.name),h("div",{class:"meta"},t.artists),h("div",{class:"meta"},t.album))));
+    kids.push(h("div",{class:"sptime"},cur,bar,h("span",{class:"meta"},mmss(pl.duration))));
+    clearInterval(SPOT.tick); SPOT.tick=setInterval(()=>{ if(S.view!=="house"||!bar.isConnected){ clearInterval(SPOT.tick); return; } bar.firstChild.style.width=(pl.duration?Math.round(prog()/pl.duration*100):0)+"%"; cur.textContent=mmss(prog()); },1000);
+    const btn=(label,svgp,fn,cls)=>h("button",{class:"pill icon "+(cls||""),"aria-label":label,title:label,onclick:fn},svg(svgp));
+    kids.push(h("div",{class:"spctl"},
+      btn("Shuffle",'<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',()=>spotCall("shuffle",{state:!pl.shuffle}),pl.shuffle?"on":""),
+      btn("Previous",'<path d="M6 5v14M19 5l-9 7 9 7z"/>',()=>spotCall("previous")),
+      btn(pl.playing?"Pause":"Play",pl.playing?'<path d="M8 5v14M16 5v14"/>':'<path d="M7 4l13 8-13 8z"/>',()=>{ pl.playing=!pl.playing; pl.at=Date.now(); renderHouse(); spotCall(pl.playing?"play":"pause"); },"spbig"),
+      btn("Next",'<path d="M18 5v14M5 5l9 7-9 7z"/>',()=>spotCall("next"))));
+    if(dv&&dv.volume!=null){
+      const sl=h("input",{type:"range",min:"0",max:"100",value:String(dv.volume),class:"hsl","aria-label":"Volume"}), val=h("span",{class:"meta hv"},dv.volume+"%");
+      sl.addEventListener("pointerdown",()=>{ HOUSE.busy++; }); sl.addEventListener("input",()=>{ val.textContent=sl.value+"%"; });
+      sl.addEventListener("change",()=>spotCall("volume",{percent:Number(sl.value)}));
+      const rel=()=>{ HOUSE.busy=Math.max(0,HOUSE.busy-1); }; sl.addEventListener("pointerup",rel); sl.addEventListener("pointercancel",rel);
+      kids.push(h("div",{class:"hsr"},h("span",{class:"meta"},"Volume"),sl,val));
+    }
+  } else kids.push(note("Nothing is playing. Start music in Spotify, or pick a device below and play."));
+  const devs=SPOT.devices||[];
+  if(devs.length){
+    const sel=h("select",{"aria-label":"Play on"},devs.map(d=>h("option",{value:d.id,selected:d.active},d.name+(d.active?" (playing here)":""))));
+    sel.addEventListener("change",()=>spotCall("transfer",{device_id:sel.value,play:!!(pl&&pl.playing)}));
+    kids.push(h("div",{class:"row"},h("span",{class:"meta"},"Play on"),sel));
+    if(!(pl&&pl.track)) kids.push(h("div",{class:"acts"},h("button",{class:"pill primary",onclick:()=>spotCall("transfer",{device_id:sel.value,play:true})},"Play on this device")));
+  } else if(!(pl&&pl.track)) kids.push(note("No Spotify devices found. Open the Spotify app on a phone, speaker or computer."));
+  kids.push(h("div",{class:"acts"},h("button",{class:"pill",style:"font-size:13px;min-height:34px",onclick:()=>confirmSheet("Disconnect Spotify?","The dashboard will stop showing and controlling Spotify until you connect again.","Disconnect",async()=>{ await api("/api/spotify",{method:"POST",body:JSON.stringify({op:"disconnect"})}); SPOT.st={configured:true,connected:false}; SPOT.player=null; renderHouse(); })},"Disconnect")));
+  return houseCard("Spotify",null,...kids);
 }
 
 /* ---------- light / dark ---------- */
@@ -2319,9 +2384,9 @@ function prayerSheet(showAnswered){
 $("#famBtn").addEventListener("click",famSheet);
 const MODULES=[
   ["Main page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"]]],
-  ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"],["house","Home page (cameras, lights, thermostat)"]]],
+  ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"],["house","Home page (cameras, lights, thermostat, Spotify)"]]],
   ["Family",[["reminders","Recurring reminders"],["countdowns","Countdowns"],["notes","Family notes"],["prayer","Prayer list"]]],
-  ["Menu and extras",[["budget","Budget screen"],["history","History"],["cameras","Cameras"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
+  ["Menu and extras",[["budget","Budget screen"],["history","History"],["cameras","Cameras"],["spotify","Spotify (Home page)"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
 ];
 const GUEST_DEFAULT=["budget_card","budget","reminders","countdowns","notes","prayer","cameras","history","house"];
 function guestHides(){ const a=S.settings&&S.settings.guestHides; return new Set(Array.isArray(a)?a:GUEST_DEFAULT); }

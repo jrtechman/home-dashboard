@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Settings reorganized",
+    "items": [
+      {
+        "tag": "Changed",
+        "text": "Settings now has six tabs grouped by what you are doing: This screen (who uses this device, light/dark, notifications, Face ID, Arrange Main page, Full screen, Sign out), Household (name, family, photo screensaver), Morning text, Guest mode, Features (admin), and More (Budget, History, change log, examples)."
+      },
+      {
+        "tag": "Changed",
+        "text": "Each tab says at the top whether it affects only this screen or everyone. Save and Cancel only appear on Household, the one tab that needs them; everything else saves right away."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Meals for Jason, for Abby, or both",
     "items": [
       {

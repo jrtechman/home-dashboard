@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Lunch, eating out and on your own",
+    "items": [
+      {
+        "tag": "New",
+        "text": "The weekly Meal plan now has a Lunch and a Dinner slot for every day."
+      },
+      {
+        "tag": "New",
+        "text": "When adding a meal, besides picking a dish you can choose Eating out or On your own, with an optional note such as the restaurant. These show on the plan, on the Calendar, on the Main page’s dinner card and in the morning briefing."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Preview recipes from the web search",
     "items": [
       {

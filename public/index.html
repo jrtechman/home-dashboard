@@ -357,7 +357,7 @@ body.arranging #fab{display:none!important}
 #mealQ:focus{outline:0;border-color:color-mix(in srgb,var(--muted) 70%,transparent)}
 .tgpick{display:flex;gap:8px;flex-wrap:wrap}.tgpick .chip.on{background:var(--ink);color:var(--bg)}
 .mplan{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}.mday{background:var(--soft);border-radius:18px;padding:10px;display:flex;flex-direction:column;gap:6px;min-height:100px}.mday.today{outline:2px solid var(--accent)}
-.mdh{display:flex;justify-content:space-between;align-items:baseline;gap:4px}.mdn{font-weight:700;font-size:14px}.mdd{font-size:12px;color:var(--muted)}.mdb{display:flex;flex-direction:column;gap:6px;flex:1}
+.mdh{display:flex;justify-content:space-between;align-items:baseline;gap:4px}.mdn{font-weight:700;font-size:14px}.mdd{font-size:12px;color:var(--muted)}.mdb{display:flex;flex-direction:column;gap:10px;flex:1}.mgrp{display:flex;flex-direction:column;gap:6px}.mgl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .mchip{display:flex;align-items:center;border-radius:12px;background:var(--tint,var(--card));overflow:hidden}.mchip .mct{flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:0;background:none;padding:4px 6px;text-align:left;font-weight:600;font-size:13px;color:var(--ink);cursor:pointer}.mchip .mct img{width:26px;height:26px;border-radius:8px;object-fit:cover;flex:none}.mchip .mct span{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.15}.mcx{flex:none;border:0;background:none;color:var(--muted);font-size:18px;padding:0 8px;cursor:pointer}
 .madd{border:2px dashed var(--line);background:none;border-radius:12px;color:var(--muted);font-weight:600;font-size:13px;padding:6px;cursor:pointer}
 .mloose{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:2px 4px}
@@ -376,7 +376,7 @@ body.arranging #fab{display:none!important}
 .cing{justify-content:flex-start;gap:12px}.cin{display:flex;gap:14px;align-items:center;font-size:22px;font-weight:600}.cin input{width:26px;height:26px;flex:none}
 .cnav{display:flex;align-items:center;gap:14px}.cbtn{min-width:140px;min-height:64px;border-radius:999px;border:0;background:var(--chip);font:700 20px inherit;font-family:inherit;color:var(--ink);cursor:pointer}.cbtn.primary{background:var(--ink);color:var(--bg)}.cbtn:disabled{opacity:.35}
 .cdots{flex:1;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}.cd{width:10px;height:10px;border-radius:50%;background:var(--line)}.cd.past{background:var(--muted)}.cd.on{background:var(--ink);transform:scale(1.3)}
-@media (max-width:900px){.mplan{grid-template-columns:1fr}.mday{min-height:0;flex-direction:row;flex-wrap:wrap;align-items:center}.mdh{flex:0 0 74px;flex-direction:column}.mdb{flex-direction:row;flex-wrap:wrap;align-items:center}.dcgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.cbtn{min-width:100px}.cdots{display:none}}
+@media (max-width:900px){.mplan{grid-template-columns:1fr}.mday{min-height:0}.mdb{flex-direction:column}.dcgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.cbtn{min-width:100px}.cdots{display:none}}
 .pdots{display:flex;gap:16px;justify-content:center;margin:8px 0}.pd{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);transition:.1s}.pd.on{background:var(--ink);border-color:var(--ink)}.pdots.shake{animation:pshake .3s}@keyframes pshake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .ppad{display:grid;grid-template-columns:repeat(3,76px);gap:12px;justify-content:center;margin:4px 0 8px}.pk{height:68px;width:76px;padding:0;border-radius:50%;border:0;background:var(--chip);font-family:var(--display);font-weight:600;font-size:26px;color:var(--ink);cursor:pointer;display:grid;place-items:center;-webkit-tap-highlight-color:transparent}.pk:active{background:var(--soft)}.pk.x,.pk.del{font-family:inherit;font-weight:600;font-size:15px;background:transparent;color:var(--muted)}.pk.del{font-size:24px}
 .pill.on{background:var(--ink);color:var(--bg)}.pill.on svg{stroke:var(--bg)}
@@ -1368,7 +1368,8 @@ function renderHome(){
   const r=tonightRecipe();
   dn.append(h("div",{class:"lbl-s"},"Tonight's dinner"));
   if(r){ if(r.photoUrl) dn.append(h("img",{class:"thumb",src:dishUrl(r),alt:r.title})); dn.append(h("div",{class:"dinner-title"},r.title), h("div",{class:"meta"},`${r.minutes||"?"} min · ${(r.ingredients||[]).length} ingredient${(r.ingredients||[]).length===1?"":"s"}`), h("div",{class:"acts",style:"margin-top:12px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>openRecipe(r.id)},"Open recipe"),h("button",{class:"pill",style:"background:var(--card)",onclick:()=>offTonight(r)},"Take off tonight"))); }
-  else dn.append(h("div",{class:"dinner-title"},"Not picked yet"), h("div",{class:"meta"},S.dinnerlist.length?`${S.dinnerlist.length} on the dinner list`:"The dinner list is empty"), h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>setView("meals")},"Open the dinner list")));
+  else if(tonightKind()) dn.append(h("div",{class:"dinner-title"},kindText(tonightKind())), h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>setView("meals")},"Open the meal plan")));
+  else dn.append(h("div",{class:"dinner-title"},"Not picked yet"), h("div",{class:"meta"},S.dinnerlist.filter(d=>d.recipeId&&!isLunch(d)).length?`${S.dinnerlist.filter(d=>d.recipeId&&!isLunch(d)).length} on the dinner list`:"The dinner list is empty"), h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>setView("meals")},"Open the dinner list")));
 
   const tb=$("#homeTasks"); tb.replaceChildren();
   const open=S.todos.filter(t=>!t.done).sort(taskOrder).slice(0,6);
@@ -1401,10 +1402,11 @@ function evCard(e,whenLabel){
     h("div",{class:"when"},whenLabel?h("div",null,whenLabel,h("div",null,fmtTime(e.time))):fmtTime(e.time)),
     h("div",{class:"what"},e.title,exTag(e),h("div",{class:"who"},h("span",{class:"dot"}),who)));
 }
+const isLunch=d=>d&&d.meal==="lunch";
 function tonightRecipe(){
   const t=S.settings.tonight;
   if(t&&t.date===today()){ const r=S.recipes.find(r=>r.id===t.id); if(r) return r; }
-  const d=S.dinnerlist.find(d=>d.date===today()&&S.recipes.some(r=>r.id===d.recipeId));
+  const d=S.dinnerlist.find(d=>d.date===today()&&!isLunch(d)&&S.recipes.some(r=>r.id===d.recipeId));
   return d?S.recipes.find(r=>r.id===d.recipeId):null;
 }
 /* days for dinner-list dishes */
@@ -1416,7 +1418,9 @@ function dayLabel(k){
   if(diff>1&&diff<7) return WD[d.getDay()].slice(0,3);
   return MO[d.getMonth()]+" "+d.getDate();
 }
-const plannedFor=k=>S.dinnerlist.filter(d=>d.date===k).map(d=>({d,r:S.recipes.find(r=>r.id===d.recipeId)})).filter(x=>x.r);
+const plannedFor=k=>S.dinnerlist.filter(d=>d.date===k).map(d=>({d,r:S.recipes.find(r=>r.id===d.recipeId)})).filter(x=>x.r||x.d.kind).sort((a,b)=>(isLunch(b.d)?1:0)-(isLunch(a.d)?1:0));
+const tonightKind=()=>S.dinnerlist.find(d=>d.date===today()&&!isLunch(d)&&d.kind);
+const kindText=d=>(d.kind==="out"?"Eating out":"On your own")+(d.note?": "+d.note:"");
 
 /* calendar */
 function renderCal(){
@@ -1428,7 +1432,7 @@ function renderCal(){
     const body=h("div",{class:"col-body"});
     if(!evs.length&&!plannedFor(k).length) body.append(h("div",{class:"empty-day"},"Nothing planned"));
     evs.forEach(e=>body.append(evCard(e)));
-    plannedFor(k).forEach(({r})=>body.append(h("button",{class:"ev c-amber",onclick:()=>openRecipe(r.id)},h("div",{class:"when"},"Dinner"),h("div",{class:"what"},r.title,h("div",{class:"who"},h("span",{class:"dot"}),"Dinner plan")))));
+    plannedFor(k).forEach(({d,r})=>{ const lbl=isLunch(d)?"Lunch":"Dinner"; body.append(h("button",{class:"ev c-amber",onclick:()=>r?openRecipe(r.id):setView("meals")},h("div",{class:"when"},lbl),h("div",{class:"what"},r?r.title:kindText(d),h("div",{class:"who"},h("span",{class:"dot"}),lbl+" plan")))); });
     body.append(h("button",{class:"add-in",onclick:()=>eventSheet({date:k})},svg(IC.plus,""),"Add event"));
     b.append(h("div",{class:"col "+(isToday?"today c-blue":(d.getDay()%6===0?"c-amber":"c-none"))},
       h("button",{class:"dayhead",onclick:()=>eventSheet({date:k})},h("span",{class:"dn"},d.getDate()),h("span",{class:"dw"},WD[d.getDay()]),isToday?h("span",{class:"tag"},"Today"):null),
@@ -1533,7 +1537,7 @@ function dragStart(ev,t,el){
 
 /* meals */
 const dishUrl=r=>r&&r.photoUrl?r.photoUrl:null;
-const onDinner=id=>S.dinnerlist.find(d=>d.recipeId===id);
+const onDinner=id=>S.dinnerlist.find(d=>d.recipeId===id&&!isLunch(d));
 const TINTS=["c-amber","c-teal","c-coral","c-blue","c-sage","c-lilac"];
 const tintOf=id=>TINTS[[...String(id)].reduce((n,c)=>n+c.charCodeAt(0),0)%TINTS.length];
 function dishTile(r,badge,entry){
@@ -1548,12 +1552,12 @@ function snapDish(){ $("#dishIn").click(); }
 $("#dishIn").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) recipeSheet(null,f); });
 async function offTonight(r){
   await saveSettings({tonight:null});
-  for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id&&d.date===today())) await delDoc("dinnerlist",d.id);
+  for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id&&d.date===today()&&!isLunch(d))) await delDoc("dinnerlist",d.id);
   toast("Taken off tonight"); }
 async function cookedTonight(r){
-  const planned=S.dinnerlist.find(d=>d.recipeId===r.id&&d.date), day=(planned&&planned.date<=today()&&planned.date)||today();
+  const planned=S.dinnerlist.find(d=>d.recipeId===r.id&&d.date&&!isLunch(d)), day=(planned&&planned.date<=today()&&planned.date)||today();
   if(!S.mealhistory.some(m=>m.recipeId===r.id&&m.date===day)) await addDoc("mealhistory",{recipeId:r.id,title:r.title,date:day,createdAt:Date.now()});
-  await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); toast("Marked as made, saved to meal history and taken off the dinner list"); }
+  await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id&&!isLunch(d))) await delDoc("dinnerlist",d.id); toast("Marked as made, saved to meal history and taken off the dinner list"); }
 /* History: a page inside Settings. Meals (what we had), plus tasks, reminders and groceries as they were finished. */
 const HIST_TABS=[["all","Everything"],["meal","Meals"],["task","Tasks"],["reminder","Reminders"],["groceries","Groceries"]];
 const HIST_ICON={meal:"Meal",task:"Task",reminder:"Reminder",groceries:"Groceries"};
@@ -1682,16 +1686,36 @@ function webSearchSheet(q0){
   openSheet([head,srow,box,tip,pv],true); pv.style.display="none";
   if(q0) run();
 }
-function pickDishSheet(k){
-  const q=h("input",{id:"pdQ",placeholder:"Search dishes",type:"search",autocomplete:"off"}), list=h("div",{class:"pcs",style:"max-height:52vh;overflow-y:auto"});
-  const pick=async r=>{ closeSheet(); const e=S.dinnerlist.find(d=>d.recipeId===r.id&&!d.date)||S.dinnerlist.find(d=>d.recipeId===r.id);
-    if(e&&!e.date) await updDoc("dinnerlist",e.id,{date:k}); else await addDoc("dinnerlist",{recipeId:r.id,addedAt:Date.now(),date:k}); toast(r.title+" planned for "+dayLabel(k)); };
+/* Eating out / On your own: a planner entry with no recipe, plus an optional note (where, or what). */
+function kindSheet(k,meal,kind,ex){
+  const out=kind==="out", lab=meal==="lunch"?"Lunch":"Dinner";
+  const inp=h("input",{id:"kindNote",placeholder:out?"Where? (optional)":"What? (optional)",maxlength:60,value:(ex&&ex.note)||"",autocomplete:"off"});
+  const save=async()=>{ const note=inp.value.trim().slice(0,60); closeSheet();
+    if(ex) await updDoc("dinnerlist",ex.id,{kind,note});
+    else await addDoc("dinnerlist",{kind,note,meal:meal==="lunch"?"lunch":"",addedAt:Date.now(),date:k});
+    toast((out?"Eating out":"On your own")+" planned for "+dayLabel(k)); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter") save(); });
+  openSheet([h("h2",null,(out?"Eating out":"On your own")+" · "+lab),h("p",{class:"meta",style:"margin:0"},k===today()?"Today":shortDay(k)),inp,
+    h("div",{class:"acts"},ex?h("button",{class:"pill danger",onclick:async()=>{ closeSheet(); await delDoc("dinnerlist",ex.id); }},"Remove"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},"Save"))]);
+  setTimeout(()=>inp.focus(),30);
+}
+function pickDishSheet(k,meal){
+  const lunch=meal==="lunch";
+  const q=h("input",{id:"pdQ",placeholder:"Search dishes",type:"search",autocomplete:"off"}), list=h("div",{class:"pcs",style:"max-height:46vh;overflow-y:auto"});
+  const pick=async r=>{ closeSheet();
+    if(lunch){ const e=S.dinnerlist.find(d=>d.recipeId===r.id&&!d.date);
+      if(e) await updDoc("dinnerlist",e.id,{date:k,meal:"lunch"}); else await addDoc("dinnerlist",{recipeId:r.id,addedAt:Date.now(),date:k,meal:"lunch"});
+    } else { const e=S.dinnerlist.find(d=>d.recipeId===r.id&&!d.date&&!isLunch(d))||S.dinnerlist.find(d=>d.recipeId===r.id&&!isLunch(d));
+      if(e&&!e.date) await updDoc("dinnerlist",e.id,{date:k}); else await addDoc("dinnerlist",{recipeId:r.id,addedAt:Date.now(),date:k}); }
+    toast(r.title+" planned for "+(lunch?"lunch ":"")+dayLabel(k)); };
   const draw=()=>{ list.replaceChildren(); const t=q.value.trim().toLowerCase();
     const rs=[...S.recipes].filter(r=>!t||String(r.title||"").toLowerCase().includes(t)||(r.tags||[]).some(x=>x.toLowerCase().includes(t))).sort((a,b)=>(b.fav?1:0)-(a.fav?1:0)||String(a.title).localeCompare(String(b.title)));
     if(!rs.length) list.append(h("p",{class:"hint"},S.recipes.length?"No match.":"No dishes yet. Add one in Our dishes first."));
     rs.forEach(r=>list.append(h("button",{class:"mrow",style:"justify-content:flex-start;gap:12px",onclick:()=>pick(r)},dishUrl(r)?h("img",{src:dishUrl(r),alt:"",style:"width:44px;height:44px;border-radius:12px;object-fit:cover;flex:none"}):h("span",{class:"dini s "+tintOf(r.id)},(r.title||"?")[0].toUpperCase()),h("span",{style:"flex:1;min-width:0;text-align:left"},r.title,r.fav?" ★":""),h("span",{class:"meta"},r.minutes?r.minutes+" min":"")))); };
   q.addEventListener("input",draw); draw();
-  openSheet([h("h2",null,"Dinner for "+(k===today()?"today":shortDay(k))),q,list,h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"))]);
+  openSheet([h("h2",null,(lunch?"Lunch for ":"Dinner for ")+(k===today()?"today":shortDay(k))),
+    h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ closeSheet(); kindSheet(k,meal,"out"); }},"Eating out"),h("button",{class:"pill",onclick:()=>{ closeSheet(); kindSheet(k,meal,"own"); }},"On your own")),
+    q,list,h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"))]);
 }
 function renderMeals(){
   if(document.activeElement&&document.activeElement.id==="mealQ"&&$("#dishGrid")){ renderDishGrid(); return; }
@@ -1699,25 +1723,27 @@ function renderMeals(){
   const r=tonightRecipe(), tu=dishUrl(r);
   m.append(h("div",{class:"tonight c-amber"},
     tu?h("img",{class:"tthumb",src:tu,alt:r.title}):null,
-    h("div",{style:"min-width:0"},h("div",{class:"lbl"},"Tonight"),h("div",{class:"dinner-title"},r?r.title:"Nothing picked"),h("div",{class:"meta"},r?(r.minutes?r.minutes+" minutes":""):"Plan a dinner below, or open a dish and choose “Make tonight”.")),
+    h("div",{style:"min-width:0"},h("div",{class:"lbl"},"Tonight"),h("div",{class:"dinner-title"},r?r.title:tonightKind()?kindText(tonightKind()):"Nothing picked"),h("div",{class:"meta"},r?(r.minutes?r.minutes+" minutes":""):"Plan a dinner below, or open a dish and choose “Make tonight”.")),
     r?h("div",{class:"acts"},h("button",{class:"pill primary",onclick:()=>cookMode(r.id)},"Start cooking"),h("button",{class:"pill",onclick:()=>openRecipe(r.id)},"Open recipe"),h("button",{class:"pill",onclick:()=>cookedTonight(r)},"We had it"),h("button",{class:"pill",onclick:()=>offTonight(r)},"Take off tonight")):null));
   /* week planner */
-  const start=addDays(new Date(),MEAL.week*7), end=addDays(start,6), dl=S.dinnerlist.map(d=>({d,r:S.recipes.find(x=>x.id===d.recipeId)})).filter(x=>x.r);
-  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Dinner plan"),h("span",{class:"meta",style:"margin-top:8px"},`${MO[start.getMonth()]} ${start.getDate()} – ${MO[end.getMonth()]} ${end.getDate()}`),h("span",{class:"grow"}),
+  const start=addDays(new Date(),MEAL.week*7), end=addDays(start,6), dl=S.dinnerlist.filter(d=>!isLunch(d)).map(d=>({d,r:S.recipes.find(x=>x.id===d.recipeId)})).filter(x=>x.r);
+  m.append(h("div",{class:"acts"},h("h2",{class:"sec",style:"margin:6px 4px 0"},"Meal plan"),h("span",{class:"meta",style:"margin-top:8px"},`${MO[start.getMonth()]} ${start.getDate()} – ${MO[end.getMonth()]} ${end.getDate()}`),h("span",{class:"grow"}),
     h("div",{class:"pnav"},h("button",{class:"pill icon","aria-label":"Previous week",disabled:MEAL.week<=0,onclick:()=>{ MEAL.week=Math.max(0,MEAL.week-1); renderMeals(); }},svg(IC.left)),
     h("button",{class:"pill",onclick:()=>{ MEAL.week=0; renderMeals(); }},"This week"),
     h("button",{class:"pill icon","aria-label":"Next week",onclick:()=>{ MEAL.week++; renderMeals(); }},svg(IC.right)),
     mod("askhelp")?h("button",{class:"pill",onclick:async()=>{ try{ const j=await api("/api/push",{method:"POST",body:JSON.stringify({op:"help",by:meName()||"Someone",ep:pushId()})}); toast(j.already?"You asked a few minutes ago.":"Asked the family for help"); }catch(e){ if(e.code!=="auth") toast(e.message||"Couldn't send the request."); } }},"Ask for help"):null)));
   const plan=h("div",{class:"mplan"});
+  const chipFor=(e,x)=>{ const gone=()=>isLunch(e)||!x?delDoc("dinnerlist",e.id):updDoc("dinnerlist",e.id,{date:""}); const nm=x?x.title:kindText(e);
+    return h("div",{class:"mchip "+tintOf(e.id)},
+      h("button",{class:"mct",onclick:()=>x?openRecipe(x.id):kindSheet(e.date,isLunch(e)?"lunch":"dinner",e.kind,e),title:nm},x&&dishUrl(x)?h("img",{src:dishUrl(x),alt:""}):null,h("span",null,nm)),
+      h("button",{class:"mcx","aria-label":"Take "+nm+" off this day",onclick:gone},"×")); };
   for(let i=0;i<7;i++){
-    const d=addDays(start,i), k=keyOf(d), items=dl.filter(x=>x.d.date===k);
-    const cell=h("div",{class:"mday"+(k===today()?" today":"")},
+    const d=addDays(start,i), k=keyOf(d), all=S.dinnerlist.filter(x=>x.date===k).map(x=>({e:x,r:S.recipes.find(y=>y.id===x.recipeId)})).filter(x=>x.r||x.e.kind);
+    const grp=(meal,label)=>{ const items=all.filter(x=>(meal==="lunch")===isLunch(x.e));
+      return h("div",{class:"mgrp"},h("div",{class:"mgl"},label),...items.map(({e,r:x})=>chipFor(e,x)),h("button",{class:"madd",onclick:()=>pickDishSheet(k,meal)},items.length?"+":"+ Add "+label.toLowerCase())); };
+    plan.append(h("div",{class:"mday"+(k===today()?" today":"")},
       h("div",{class:"mdh"},h("span",{class:"mdn"},k===today()?"Today":DOWS[d.getDay()]),h("span",{class:"mdd"},MO[d.getMonth()]+" "+d.getDate())),
-      h("div",{class:"mdb"},items.map(({d:e,r:x})=>h("div",{class:"mchip "+tintOf(x.id)},
-        h("button",{class:"mct",onclick:()=>openRecipe(x.id),title:x.title},dishUrl(x)?h("img",{src:dishUrl(x),alt:""}):null,h("span",null,x.title)),
-        h("button",{class:"mcx","aria-label":"Take "+x.title+" off this day",onclick:()=>updDoc("dinnerlist",e.id,{date:""})},"×"))),
-        h("button",{class:"madd",onclick:()=>pickDishSheet(k)},items.length?"+":"+ Add dinner")));
-    plan.append(cell);
+      h("div",{class:"mdb"},grp("lunch","Lunch"),grp("dinner","Dinner"))));
   }
   m.append(plan);
   const loose=dl.filter(x=>!x.d.date);
@@ -2221,7 +2247,7 @@ function openRecipe(id){
   const addAll=async()=>{ const miss=(r.ingredients||[]).filter(i=>!onList(i)); for(const i of miss) await addDoc("shopping",{text:i,aisle:guessAisle(i),got:false,createdAt:Date.now()}); toast(miss.length?`Added ${miss.length} item${miss.length>1?"s":""} to the shopping list`:"Everything is already on the list"); setTimeout(drawIng,300); };
   const isTonight=tonightRecipe()?.id===r.id;
   const inList=onDinner(r.id);
-  const dinBtn=inList?h("button",{class:"pill",onclick:async()=>{ closeSheet(); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); toast("Taken off the dinner list"); }},"Remove from dinner list")
+  const dinBtn=inList?h("button",{class:"pill",onclick:async()=>{ closeSheet(); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id&&!isLunch(d))) await delDoc("dinnerlist",d.id); toast("Taken off the dinner list"); }},"Remove from dinner list")
     :h("button",{class:"pill primary",onclick:async()=>{ closeSheet(); await addDoc("dinnerlist",{recipeId:r.id,addedAt:Date.now()}); toast("Added to the dinner list"); }},"Add to dinner list");
   const dayInp=h("input",{id:"dinDay",type:"date",value:(inList&&inList.date)||""});
   const setDay=async k=>{

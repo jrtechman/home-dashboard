@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "We had it keeps the meal on the plan",
+    "items": [
+      {
+        "tag": "Changed",
+        "text": "Tapping “We had it” (or the ✓ on a planned meal) now saves it to History but leaves it on the plan, with the ✓ filled in. Tap it again to undo."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "History for each dish",
     "items": [
       {

@@ -170,6 +170,11 @@ button{cursor:pointer;border:0;background:none}
 .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0 0 12px;text-wrap:balance}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.cw{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack .todaycard .scroll{flex:0 1 auto;overflow-y:auto}.todaycard .tapnote{margin-top:8px;font-size:13px;color:var(--muted);font-weight:600}.pray{cursor:pointer}.pray .pyhead{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 0 4px}.pray .pyrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.pray .pyrow:first-of-type{border-top:0}.pray .pyt{flex:1;min-width:0;font-size:16px;line-height:1.3;display:flex;flex-direction:column}.pray .pyt small{color:var(--muted);font-size:13px}.pray .pybtn{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;background:var(--glass);font-weight:600;font-size:14px}.pray .pybtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.pray .pydone .pyt{opacity:.6;text-decoration:line-through}.pray .pybtn.on{background:var(--accent);color:var(--accent-ink)}.pray .pyall{padding:10px 0;font-size:17px;font-weight:600}.pray .pyfoot{margin-top:8px;font-size:13px;color:var(--muted);font-weight:500}
+.avatar.emo{font-size:28px;background:var(--soft,var(--chip));line-height:1}
+.wemo{font-size:14px;line-height:1;flex:none}.ev .who .wemo{margin-right:-2px}
+.evwx{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted);margin-top:3px}.evwx.wet{color:#2f6fb3}
+.avbtn{flex:none;width:44px;min-width:44px;height:44px;padding:0;justify-content:center;font-size:22px;background:var(--card)}
+.emogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px}.emo{min-height:52px;border-radius:16px;background:var(--chip);font-size:28px;line-height:1}.emo.on{outline:3px solid var(--accent)}
 .pcatrow{display:flex;gap:6px;align-items:center}.view .pcatrow input{min-width:0}.pcatrow input,.pcatadd input{flex:1;min-width:0;min-height:48px;border:0;border-radius:16px;background:var(--chip);padding:0 16px;font-size:16px}.pcatrow .pill.icon{flex:none;width:40px;min-height:40px;height:40px}
 .dnlist{display:flex;flex-direction:column;gap:8px;margin-top:6px}.dnrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:var(--glass)}.dnrow.tap{cursor:pointer}.dnwho{flex:none;display:flex;gap:4px;min-width:28px;justify-content:center}.dnt{flex:1;min-width:0}.dnrow .dinner-title{font-size:20px;line-height:1.2;overflow-wrap:anywhere}
 .pcard{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:20px;background:var(--chip)}.pcard.done{opacity:.8}.pcard .pct{font-weight:600;font-size:17px;line-height:1.3;overflow-wrap:anywhere}.pcard .acts{margin-top:4px;flex-wrap:wrap}.pcard .pill:not(.primary){background:var(--card)}.pcard .pill:disabled{opacity:.7}.pcu{font-size:15px;line-height:1.35;overflow-wrap:anywhere}
@@ -789,7 +794,7 @@ async function pullWeather(){
   if(!mod("weather")) return;
   const p=S.settings.place; if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon)){ S.weather=null; renderWx(); return; }
   S.wxAt=Date.now(); try{ S.weather=await api(`/api/weather?lat=${p.lat}&lon=${p.lon}`); }catch(e){ S.weather=e&&e.code==="auth"?null:{error:e.message||"Couldn't get the weather."}; }
-  renderWx();
+  renderWx(); try{ renderHome(); renderCal(); }catch(e){}
 }
 async function pullVerse(){
   if(!mod("verse")) return;
@@ -1123,6 +1128,7 @@ function renderBudget(){
 }
 
 const members=()=>S.settings.members||[];
+const emojiOf=name=>{ const m=(S.settings.members||[]).find(m=>m.name===name); return (m&&m.emoji)||""; };
 const colorOf=name=>{ const m=members().find(m=>m.name===name); return m?m.color:"none"; };
 const today=()=>keyOf(new Date());
 
@@ -1418,17 +1424,29 @@ function upcomingSheet(){
   openSheet([h("h2",null,"Upcoming events"),list,h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ closeSheet(); setView("calendar"); }},"Open calendar"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
 document.addEventListener("click",ev=>{ const c=ev.target.closest&&ev.target.closest(".todaycard"); if(c&&!ev.target.closest("button")&&!$("#sheetHost").firstChild) upcomingSheet(); });
+/* a person's emoji if they have one, otherwise the color dot */
+const whoMark=n=>emojiOf(n)?h("span",{class:"wemo"},emojiOf(n)):h("span",{class:"dot"});
+/* Forecast for the hour an event starts (home weather location, next 7 days). Hidden for all-day and past events. */
+function evWxLine(e){
+  try{
+    const w=S.weather; if(!mod("weather")||S.settings.eventWx===false||!w||w.error||!w.hourAll||!e.time||!e.date) return null;
+    const hh=String(e.time).slice(0,2), row=w.hourAll.find(x=>String(x[0])===e.date+"T"+hh+":00"); if(!row) return null;
+    const now=new Date(); if(e.date===today()&&Number(hh)<now.getHours()) return null;
+    const [,temp,rain,code]=row, wet=rain>=50;
+    return h("div",{class:"evwx"+(wet?" wet":""),title:"Forecast for "+((S.settings.place&&S.settings.place.name)||"home")+" at "+fmtTime(e.time)},h("span",null,wxInfo(code)[1]),h("span",null,temp+"°"+(rain>=20?" · "+rain+"% rain":"")));
+  }catch(x){ return null; }
+}
 function evCard(e,whenLabel){
   if(e.ext){
     const col=members().some(m=>m.name===e.cal)?colorOf(e.cal):"teal";
     return h("button",{class:"ev ext c-"+col,onclick:()=>extSheet(e)},
       h("div",{class:"when"},whenLabel?h("div",null,whenLabel,h("div",null,fmtTime(e.time))):fmtTime(e.time)),
-      h("div",{class:"what"},e.title,e.location?h("div",{class:"evwhere"},e.location):null,h("div",{class:"who"},h("span",{class:"dot"}),e.cal)));
+      h("div",{class:"what"},e.title,e.location?h("div",{class:"evwhere"},e.location):null,evWxLine(e),h("div",{class:"who"},whoMark(e.cal),e.cal)));
   }
   const who=e.who||"Everyone";
   return h("button",{class:"ev c-"+colorOf(e.who),onclick:()=>eventSheet(e)},
     h("div",{class:"when"},whenLabel?h("div",null,whenLabel,h("div",null,fmtTime(e.time))):fmtTime(e.time)),
-    h("div",{class:"what"},e.title,exTag(e),h("div",{class:"who"},h("span",{class:"dot"}),who)));
+    h("div",{class:"what"},e.title,exTag(e),evWxLine(e),h("div",{class:"who"},whoMark(e.who),who)));
 }
 const tonightEntry=r=>S.dinnerlist.find(d=>d.recipeId===r.id&&!isLunch(d)&&d.date===today())||{recipeId:r.id,date:today()};
 const isLunch=d=>d&&d.meal==="lunch";
@@ -1457,7 +1475,7 @@ function tonightAll(){
 const tonightKind=()=>S.dinnerlist.find(d=>d.date===today()&&!isLunch(d)&&d.kind);
 /* Who a planned meal is for: item.for = list of family member names; empty or missing means everyone. */
 const forList=d=>(Array.isArray(d.for)?d.for:[]).filter(n=>members().some(m=>m.name===n));
-const initialOf=n=>(String(n||"?").trim()[0]||"?").toUpperCase();
+const initialOf=n=>emojiOf(n)||(String(n||"?").trim()[0]||"?").toUpperCase();
 const forBadges=d=>forList(d).map(n=>h("span",{class:"fwho c-"+colorOf(n),title:n},initialOf(n)));
 function whoPicker(sel,onchange){ const box=h("div",{class:"tgpick"});
   const draw=()=>{ box.replaceChildren(h("span",{class:"meta",style:"align-self:center"},"For:"),...members().map(m=>h("button",{type:"button",class:"chip c-"+m.color+(sel.includes(m.name)?" on":""),"aria-pressed":sel.includes(m.name)?"true":"false",onclick:()=>{ const i=sel.indexOf(m.name); if(i<0) sel.push(m.name); else sel.splice(i,1); draw(); if(onchange) onchange(); }},initialOf(m.name)+" · "+m.name)),h("span",{class:"meta",style:"align-self:center"},sel.length?"":"Everyone")); };
@@ -1525,7 +1543,7 @@ function renderTasks(){
       body.append(h("div",{class:"repbox"},btn,rl));
     }
     const col=h("div",{class:"col c-"+p.color,"data-who":p.name},
-      h("div",{class:"col-head"},h("div",{class:"avatar"},label[0].toUpperCase()),h("div",null,h("div",{class:"col-name"},label),h("div",{class:"count"},svg(IC.check),`${done}/${list.length}`))),
+      h("div",{class:"col-head"},h("div",{class:"avatar"+(emojiOf(p.name)?" emo":"")},emojiOf(p.name)||label[0].toUpperCase()),h("div",null,h("div",{class:"col-name"},label),h("div",{class:"count"},svg(IC.check),`${done}/${list.length}`))),
       body);
     if(done) col.append(h("div",{class:"col-foot"},h("button",{class:"pill",onclick:()=>list.filter(t=>t.done).forEach(t=>delDoc("todos",t.id))},`Clear ${done} done`)));
     b.append(col);
@@ -2337,6 +2355,17 @@ function openRecipe(id){
     h("div",{class:"acts"},h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this dish?",r.title+" and its photo will be removed.","Delete",async()=>{ if(isTonight) await saveSettings({tonight:null}); for(const d of S.dinnerlist.filter(d=>d.recipeId===r.id)) await delDoc("dinnerlist",d.id); await delDoc("recipes",r.id); deleteImage(r.photoUrl); })},"Delete"),h("button",{class:"pill",onclick:()=>recipeSheet(r)},"Edit"),h("span",{class:"grow"}),
       isTonight?h("button",{class:"pill",onclick:async()=>{ await offTonight(r); closeSheet(); }},"Take off tonight"):h("button",{class:"pill",onclick:()=>{ saveSettings({tonight:{id:r.id,date:today()}}); closeSheet(); toast("Set as tonight's dinner"); }},"Make tonight"),dinBtn)],true);
 }
+/* Pick an emoji avatar for a family member (or go back to their initial). */
+const AV_EMOJI=["😀","😎","🤓","🥳","😇","🤠","👩","👨","🧑","👧","👦","👶","👵","👴","🦸","🧙","🧚","🐶","🐱","🐰","🦊","🐻","🐼","🦁","🐯","🐸","🐵","🦄","🐢","🦋","🐝","🌻","🌈","⭐","⚽","🏀","🎸","🎨","📚","🚀","🍕","🏑"];
+function emojiPicker(cur,onPick){
+  const pick=v=>{ closeSheet(); onPick(v); };
+  const grid=h("div",{class:"emogrid"},AV_EMOJI.map(e=>h("button",{type:"button",class:"emo"+(e===cur?" on":""),"aria-label":e,onclick:()=>pick(e)},e)));
+  const own=h("input",{id:"emoOwn",placeholder:"Type or paste any emoji",maxlength:8,style:"display:none"});
+  own.addEventListener("keydown",e=>{ if(e.key==="Enter"){ const g=Array.from(own.value.trim())[0]; if(g) pick(g); } });
+  const ownBtn=h("button",{class:"pill",onclick:()=>{ own.style.display=""; own.focus(); ownBtn.style.display="none"; }},"Type your own");
+  openSheet([h("h2",null,"Choose an avatar"),grid,h("div",{style:"display:flex;flex-direction:column;gap:8px"},ownBtn,own),
+    h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>pick("")},"Use their initial"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"))]);
+}
 function settingsBack(){ setView(S.prevView&&S.prevView!=="settings"&&S.prevView!=="history"&&S.prevView!=="changelog"?S.prevView:"home"); }
 function settingsPage(){
   if(S.view!=="settings"&&S.view!=="history"&&S.view!=="changelog") S.prevView=S.view; closeSheet();
@@ -2345,13 +2374,13 @@ function settingsPage(){
   const stTitle=h("input",{id:"stSaverTitle",placeholder:"The Reiners",value:S.settings.saverTitle===undefined?"The Reiners":S.settings.saverTitle});
   const idleSel=h("select",{id:"stIdle"},[["0","Never"],["2","After 2 minutes"],["5","After 5 minutes"],["10","After 10 minutes"],["30","After 30 minutes"]].map(([v,l])=>h("option",{value:v},l))); idleSel.value=String(S.settings.idleMin??5);
   const themeSel=h("select",{id:"stTheme"},[["auto","Automatic (match this device)"],["light","Light"],["dark","Dark"]].map(([v,l])=>h("option",{value:v},l))); themeSel.value=themePref(); themeSel.addEventListener("change",()=>setTheme(themeSel.value));
-  const meSel=h("select",{id:"stMe"},[h("option",{value:""},"Shared screen (no one in particular)"),...members().map(m=>h("option",{value:m.name},m.name))]); meSel.value=meName(); meSel.addEventListener("change",()=>setMe(meSel.value));
+  const meSel=h("select",{id:"stMe"},[h("option",{value:""},"Shared screen (no one in particular)"),...members().map(m=>h("option",{value:m.name},(m.emoji?m.emoji+" ":"")+m.name))]); meSel.value=meName(); meSel.addEventListener("change",()=>setMe(meSel.value));
   const list=h("div",{style:"display:flex;flex-direction:column;gap:8px"});
   const draw=()=>{ list.replaceChildren(); draft.forEach((m,i)=>{ const inp=h("input",{id:"mem"+i,value:m.name,"aria-label":"Name"}); inp.addEventListener("input",()=>{m.name=inp.value;});
-    list.append(h("div",{class:"mem"},inp,h("div",{class:"swatches"},COLORS.map(c=>h("button",{class:"sw c-"+c,"aria-label":c,"aria-pressed":m.color===c?"true":"false",onclick:()=>{m.color=c;draw();}}))),h("button",{class:"pill icon","aria-label":"Remove "+m.name,style:"background:var(--card)",onclick:()=>{draft.splice(i,1);draw();}},svg(IC.x)))); }); };
+    list.append(h("div",{class:"mem"},h("button",{class:"pill icon avbtn","aria-label":"Choose an avatar for "+(m.name||"this person"),title:"Choose an avatar",onclick:()=>emojiPicker(m.emoji,v=>{ m.emoji=v; draw(); })},m.emoji||((m.name||"?").trim()[0]||"?").toUpperCase()),inp,h("div",{class:"swatches"},COLORS.map(c=>h("button",{class:"sw c-"+c,"aria-label":c,"aria-pressed":m.color===c?"true":"false",onclick:()=>{m.color=c;draw();}}))),h("button",{class:"pill icon","aria-label":"Remove "+m.name,style:"background:var(--card)",onclick:()=>{draft.splice(i,1);draw();}},svg(IC.x)))); }); };
   draw();
   const exCount=COLLS.reduce((n,c)=>n+S[c].filter(r=>r.example).length,0);
-  const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color})).filter(m=>m.name); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value),saverTitle:stTitle.value.trim()}); idle(); toast("Settings saved"); settingsBack(); };
+  const save=async()=>{ const clean=draft.map(m=>({name:m.name.trim(),color:m.color,emoji:m.emoji||""})).filter(m=>m.name); await saveSettings({household:hh.value.trim()||"Our Home",members:clean,idleMin:Number(idleSel.value),saverTitle:stTitle.value.trim()}); idle(); toast("Settings saved"); settingsBack(); };
   const col="display:flex;flex-direction:column;gap:14px";
   const lead=t=>h("p",{class:"hint slead",style:"margin:0"},t);
   const panes={
@@ -2361,6 +2390,7 @@ function settingsPage(){
     household:h("div",{class:"spane",style:col},lead("Shared by every screen. Tap Save when you are done."),field("Household name",hh),
       h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
       h("div",{style:"display:flex;flex-direction:column;gap:10px"},h("h3",{style:"margin:0"},"Photo screensaver"),field("Start after",idleSel),field("Name shown on the screensaver (leave blank for none)",stTitle),h("p",{class:"hint",style:"margin:0"},"Tip: press and hold the Sleep button for a second to black out the screen at night. Tap anywhere to bring back the slideshow.")),
+      mod("weather")?h("div",{style:"display:flex;flex-direction:column;gap:8px"},h("h3",{style:"margin:0"},"Calendar"),h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600"},Object.assign(h("input",{type:"checkbox"}),{checked:S.settings.eventWx!==false,onchange:e=>saveSettings({eventWx:e.target.checked})}),"Show the forecast on events"),h("p",{class:"hint",style:"margin:0"},"Timed events in the next 7 days show the weather at their start time for your weather location. Saves right away.")):null,
       mod("prayer")?prayCatSection():null),
     alerts:h("div",{class:"spane",style:col},lead("Send a daily summary to your phone as a text message."),briefingSection()),
     privacy:h("div",{class:"spane",style:col},lead("Choose what is hidden when guests are over. Changes apply right away."),guestSection()),

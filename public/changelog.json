@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Avatars and event forecasts",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Give each person an emoji avatar in Settings > Household (tap the circle next to their name). It shows in place of their initial on task columns, dinner labels and events, and in the \"This device is used by\" list. \"Use their initial\" puts it back."
+      },
+      {
+        "tag": "New",
+        "text": "Timed events in the next 7 days now show the forecast for the hour they start: icon, temperature, and the chance of rain when it is 20% or more. It uses your weather location. Turn it off in Settings > Household > Calendar."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Tonight's dinner shows every dinner",
     "items": [
       {

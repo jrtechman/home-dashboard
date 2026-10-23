@@ -1,5 +1,15 @@
 [
   {
+    "date": "2026-10-23",
+    "title": "Bottom bar lines up on every phone page",
+    "items": [
+      {
+        "tag": "Fixed",
+        "text": "On Tasks and Lists the bottom menu bar sat higher than on the other pages. It now sits at the very bottom of the screen on every page."
+      }
+    ]
+  },
+  {
     "date": "2026-10-22",
     "title": "Compact header on phones",
     "items": [

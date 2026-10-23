@@ -10,6 +10,10 @@
       {
         "tag": "Fixed",
         "text": "On the Calendar page the Calendars, previous, Today and next buttons now sit on their own row under the date instead of squeezing the date into a narrow column."
+      },
+      {
+        "tag": "Fixed",
+        "text": "On phones, cards on the Main page no longer get cut off on the right when a line is long (a weather location, an event address). The page now always fits the screen width and long text wraps or is shortened."
       }
     ]
   },

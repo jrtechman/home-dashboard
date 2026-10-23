@@ -171,6 +171,7 @@ button{cursor:pointer;border:0;background:none}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.cw{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack .todaycard .scroll{flex:0 1 auto;overflow-y:auto}.todaycard .tapnote{margin-top:8px;font-size:13px;color:var(--muted);font-weight:600}.pray{cursor:pointer}.pray .pyhead{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 0 4px}.pray .pyrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.pray .pyrow:first-of-type{border-top:0}.pray .pyt{flex:1;min-width:0;font-size:16px;line-height:1.3;display:flex;flex-direction:column}.pray .pyt small{color:var(--muted);font-size:13px}.pray .pybtn{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;background:var(--glass);font-weight:600;font-size:14px}.pray .pybtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.pray .pydone .pyt{opacity:.6;text-decoration:line-through}.pray .pybtn.on{background:var(--accent);color:var(--accent-ink)}.pray .pyall{padding:10px 0;font-size:17px;font-weight:600}.pray .pyfoot{margin-top:8px;font-size:13px;color:var(--muted);font-weight:500}
 .pcatrow{display:flex;gap:6px;align-items:center}.view .pcatrow input{min-width:0}.pcatrow input,.pcatadd input{flex:1;min-width:0;min-height:48px;border:0;border-radius:16px;background:var(--chip);padding:0 16px;font-size:16px}.pcatrow .pill.icon{flex:none;width:40px;min-height:40px;height:40px}
+.dnlist{display:flex;flex-direction:column;gap:8px;margin-top:6px}.dnrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:var(--glass)}.dnrow.tap{cursor:pointer}.dnwho{flex:none;display:flex;gap:4px;min-width:28px;justify-content:center}.dnt{flex:1;min-width:0}.dnrow .dinner-title{font-size:20px;line-height:1.2;overflow-wrap:anywhere}
 .pcard{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:20px;background:var(--chip)}.pcard.done{opacity:.8}.pcard .pct{font-weight:600;font-size:17px;line-height:1.3;overflow-wrap:anywhere}.pcard .acts{margin-top:4px;flex-wrap:wrap}.pcard .pill:not(.primary){background:var(--card)}.pcard .pill:disabled{opacity:.7}.pcu{font-size:15px;line-height:1.35;overflow-wrap:anywhere}
 .stack.left{display:flex;flex-direction:column}.stack .todaycard{flex:none;max-height:340px;cursor:pointer}
 .cw{position:relative;display:flex;flex-direction:column;min-height:0;flex:none}.cw>.card{flex:none}
@@ -1385,9 +1386,18 @@ function renderHome(){
   const dn=$("#homeDinner"); dn.replaceChildren();
   const r=tonightRecipe();
   dn.append(h("div",{class:"lbl-s"},"Tonight's dinner"));
+  const ents=tonightAll();
+  if(ents.length>1){
+    dn.append(h("div",{class:"dnlist"},ents.map(({d,r:rr})=>{ const who=d?forList(d):[]; const title=rr?rr.title:kindText(d);
+      return h("div",{class:"dnrow"+(rr?" tap":""),onclick:rr?()=>openRecipe(rr.id):null},
+        h("div",{class:"dnwho"},who.length?who.map(n=>h("span",{class:"fwho c-"+colorOf(n),title:n},initialOf(n))):h("span",{class:"meta"},"All")),
+        h("div",{class:"dnt"},h("div",{class:"dinner-title"},title),rr?h("div",{class:"meta"},`${rr.minutes||"?"} min`+(rr.ingredients&&rr.ingredients.length?` · ${rr.ingredients.length} ingredient${rr.ingredients.length===1?"":"s"}`:"")):null)); })),
+      h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>setView("meals")},"Open the meal plan")));
+  } else {
   if(r){ if(r.photoUrl) dn.append(h("img",{class:"thumb",src:dishUrl(r),alt:r.title})); dn.append(h("div",{class:"dinner-title"},r.title), h("div",{class:"meta"},`${r.minutes||"?"} min · ${(r.ingredients||[]).length} ingredient${(r.ingredients||[]).length===1?"":"s"}`), h("div",{class:"acts",style:"margin-top:12px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>openRecipe(r.id)},"Open recipe"),h("button",{class:"pill",style:"background:var(--card)",onclick:()=>offTonight(r)},"Take off tonight"))); }
   else if(tonightKind()) dn.append(h("div",{class:"dinner-title"},kindText(tonightKind())), h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>setView("meals")},"Open the meal plan")));
   else dn.append(h("div",{class:"dinner-title"},"Not picked yet"), h("div",{class:"meta"},S.dinnerlist.filter(d=>d.recipeId&&!isLunch(d)).length?`${S.dinnerlist.filter(d=>d.recipeId&&!isLunch(d)).length} on the dinner list`:"The dinner list is empty"), h("div",{class:"acts",style:"margin-top:10px"},h("button",{class:"pill",style:"background:var(--card)",onclick:()=>setView("meals")},"Open the dinner list")));
+  }
 
   const tb=$("#homeTasks"); tb.replaceChildren();
   const open=S.todos.filter(t=>!t.done).sort(taskOrder).slice(0,6);
@@ -1438,6 +1448,12 @@ function dayLabel(k){
   return MO[d.getMonth()]+" "+d.getDate();
 }
 const plannedFor=k=>S.dinnerlist.filter(d=>d.date===k).map(d=>({d,r:S.recipes.find(r=>r.id===d.recipeId)})).filter(x=>x.r||x.d.kind).sort((a,b)=>(isLunch(b.d)?1:0)-(isLunch(a.d)?1:0));
+/* every dinner planned for today (several when people eat different things); the "Make tonight" dish counts too */
+function tonightAll(){
+  const list=S.dinnerlist.filter(d=>d.date===today()&&!isLunch(d)).map(d=>({d,r:S.recipes.find(r=>r.id===d.recipeId)})).filter(x=>x.r||x.d.kind);
+  const t=tonightRecipe(); if(t&&!list.some(x=>x.r&&x.r.id===t.id)) list.unshift({d:{recipeId:t.id,date:today()},r:t});
+  return list;
+}
 const tonightKind=()=>S.dinnerlist.find(d=>d.date===today()&&!isLunch(d)&&d.kind);
 /* Who a planned meal is for: item.for = list of family member names; empty or missing means everyone. */
 const forList=d=>(Array.isArray(d.for)?d.for:[]).filter(n=>members().some(m=>m.name===n));

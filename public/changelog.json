@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Tonight's dinner shows every dinner",
+    "items": [
+      {
+        "tag": "Changed",
+        "text": "When different dinners are planned for tonight (for example one for Jason and one for Abby), the Tonight's dinner card on the Main page now lists each one with the initials of who it is for. Tap a dish to open its recipe. With a single dinner the card looks the same as before."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Prayer list update",
     "items": [
       {

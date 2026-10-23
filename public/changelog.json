@@ -18,6 +18,10 @@
       {
         "tag": "Improved",
         "text": "Redesigned list: each request is its own card with Prayed, Update, Details and Answered buttons, and a note of how many have been prayed for today."
+      },
+      {
+        "tag": "New",
+        "text": "Settings, Household, Prayer list categories: add, rename, reorder and remove the categories. Renaming updates the requests that use it."
       }
     ]
   },

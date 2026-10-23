@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Scrollable bottom tabs on phones",
+    "items": [
+      {
+        "tag": "New",
+        "text": "On a phone, the bottom tab bar now scrolls sideways so there is room for more tabs. Budget, Photos and Home now show up as tabs (if their feature is switched on), and the Menu button stays pinned at the far right no matter how far you scroll."
+      },
+      {
+        "tag": "Improved",
+        "text": "When you open a page, its tab scrolls into view in the bottom bar."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Rearrange the left menu bar",
     "items": [
       {

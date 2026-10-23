@@ -493,13 +493,15 @@ body.arranging #fab{display:none!important}
   .menu-btn{display:flex}
   .rail{gap:0}
   .fsbtn{display:none}
-  .nav[data-view=photos],.nav[data-view=house],.nav[data-view=budget],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn,#famBtn,#guestBtn{display:none}
+  #sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn,#famBtn,#guestBtn{display:none}
   :root{padding-bottom:0}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
   .mono,.rail .spacer{display:none}
   .nav{flex:1 0 64px;font-size:11px;padding:10px 0}
+  .rail{scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}.rail::-webkit-scrollbar{display:none}
+  .rail>.menu-btn{order:99;flex:0 0 64px;position:sticky;right:0;z-index:3;background:var(--rail);box-shadow:-8px 0 10px -8px rgba(0,0,0,.22)}
   body.arranging .rail .nav{padding-top:40px}
   .nctl{top:6px;left:50%;right:auto;transform:translateX(-50%);justify-content:center;gap:4px}
   .main{padding-left:max(0px,env(safe-area-inset-left,0px))}
@@ -1267,7 +1269,8 @@ function setView(v){
   S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history"||v==="changelog"||v==="house"||v==="budget")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"||v==="changelog"); }
   document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.name!==v);
   document.querySelectorAll(".nav[data-view]").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
-  const mb=$("#menuBtn"); if(mb){ if(v==="photos"||v==="house"||v==="budget") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
+  const mb=$("#menuBtn"); if(mb){ const vb=navBtn(v); if((v==="photos"||v==="house"||v==="budget")&&!(vb&&vb.offsetParent)) mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
+  { const vb=navBtn(v); if(vb&&isNarrow()) try{ vb.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"}); }catch(e){} }
   try{ history.replaceState(null,"","#"+v); }catch(e){}
   renderTools(); updateGreet();
   if(v==="home") applyLayout();

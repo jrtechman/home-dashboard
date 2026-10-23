@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Rearrange the left menu bar",
+    "items": [
+      {
+        "tag": "New",
+        "text": "In Arrange this page, each button in the left menu bar (bottom bar on phones) now has small arrows. Use them to move Main, Calendar, Tasks, Meals, Lists, Budget, Photos and Home into the order you like. The order is saved under each person's name, like the card layout, and Reset puts both back to standard. Menu always stays last on phones."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Budget tab, prayer requests from +, smaller tag box",
     "items": [
       {

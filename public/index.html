@@ -72,6 +72,10 @@ button{cursor:pointer;border:0;background:none}
 .rail{background:var(--rail);display:flex;flex-direction:column;align-items:stretch;padding-block:14px;padding-left:env(safe-area-inset-left,0px);gap:2px}
 .mono{font-family:var(--display);font-size:28px;color:var(--muted);text-align:center;margin-block:6px 18px}
 .nav{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;font-size:13px;font-weight:500;color:var(--ink)}
+.nav{position:relative}
+.nctl{position:absolute;top:8px;left:2px;right:2px;display:flex;justify-content:space-between;pointer-events:none;z-index:2}
+.nctl span{pointer-events:auto;width:24px;height:24px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.nctl span.off{opacity:.35}.nav .nctl svg{width:13px;height:13px;margin:0;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .rail{overflow-y:auto;scrollbar-width:none}.rail::-webkit-scrollbar{display:none}
 @media (min-width:901px) and (max-height:880px){.nav{padding:8px 0}}
 .nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -487,6 +491,8 @@ body.arranging #fab{display:none!important}
   .rail{order:2;flex-direction:row;position:sticky;bottom:0;padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-x:auto;z-index:4}
   .mono,.rail .spacer{display:none}
   .nav{flex:1 0 64px;font-size:11px;padding:10px 0}
+  body.arranging .rail .nav{padding-top:40px}
+  .nctl{top:6px;left:50%;right:auto;transform:translateX(-50%);justify-content:center;gap:4px}
   .main{padding-left:max(0px,env(safe-area-inset-left,0px))}
   .top{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"date date tools" "time greet tools";align-items:center;column-gap:10px;row-gap:0;padding:8px 16px 6px 16px}
   .date{grid-area:date;font-size:22px;line-height:1.15}.time{grid-area:time;font-size:16px;line-height:1.2}.greet{grid-area:greet;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1256,6 +1262,7 @@ function setView(v){
   try{ history.replaceState(null,"","#"+v); }catch(e){}
   renderTools(); updateGreet();
   if(v==="home") applyLayout();
+  applyNavOrder();
   if(v==="house") houseEnter();
   if(v==="budget"){ renderBudgetPage(); pullBudget(); }
 }
@@ -1465,7 +1472,7 @@ function renderTools(){
   const tb=[h("button",{class:"pill icon"+(guestOn()?" on":""),id:"guestTop","aria-label":guestOn()?"Guest mode is on. Tap to turn off":"Guests are here",title:"Guests are here",onclick:guestToggle},svg(document.querySelector("#guestBtn svg").innerHTML)),
     h("button",{class:"pill icon",id:"themeTop","aria-label":isDark()?"Switch to light mode":"Switch to dark mode",title:isDark()?"Light mode":"Dark mode",onclick:()=>setTheme(isDark()?"light":"dark")},svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>')),
     mod("sleep")?holdSleep(h("button",{class:"pill icon nosel","aria-label":"Sleep (photo screensaver). Hold to black out the screen",title:"Sleep (hold to black out)"},svg(document.querySelector("#sleepBtn svg").innerHTML)),openSaver):null].filter(Boolean);
-  if(S.view==="home") tb.unshift(h("button",{class:"pill icon"+(S.editLayout?" on":""),id:"layoutTop","aria-label":"Arrange this page",title:"Arrange this page",onclick:()=>{ S.editLayout=!S.editLayout; applyLayout(); renderTools(); }},svg('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="4" rx="1.5"/><rect x="13" y="11" width="7" height="9" rx="1.5"/><rect x="4" y="14" width="7" height="6" rx="1.5"/>')));
+  if(S.view==="home") tb.unshift(h("button",{class:"pill icon"+(S.editLayout?" on":""),id:"layoutTop","aria-label":"Arrange this page",title:"Arrange this page",onclick:()=>{ S.editLayout=!S.editLayout; applyLayout(); applyNavOrder(); renderTools(); }},svg('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="4" rx="1.5"/><rect x="13" y="11" width="7" height="9" rx="1.5"/><rect x="4" y="14" width="7" height="6" rx="1.5"/>')));
   tb.forEach(b=>fs?gl.insertBefore(b,fs):gl.append(b));
 }
 function goFull(){ try{ const p=document.documentElement.requestFullscreen?.(); p&&p.catch(()=>toast("Full screen isn't available here.")); }catch(e){ toast("Full screen isn't available here."); } }
@@ -2900,17 +2907,42 @@ function applyLayout(){
     cwOf(k).append(ctl);
   });
   const hid=L.hidden.map(k=>h("button",{class:"pill",onclick:()=>showCard(k)},"+ "+(LCARDS.find(c=>c[0]===k)||[,k])[1]));
-  const custom=!!((S.settings.layouts||{})[layoutKey()]);
+  const custom=!!((S.settings.layouts||{})[layoutKey()]||(S.settings.navOrder||{})[layoutKey()]);
   bar.append(...[h("span",{class:"lt"},"Arranging the page for "+(who||"this shared screen")),h("span",{class:"grow"}),
-    custom?h("button",{class:"pill",onclick:()=>confirmSheet("Reset the layout?","The cards go back to the standard order for "+(who||"this shared screen")+".","Reset",()=>saveLayout(null))},"Reset"):null,
-    h("button",{class:"pill primary",onclick:()=>{ S.editLayout=false; applyLayout(); renderTools(); }},"Done"),
+    custom?h("button",{class:"pill",onclick:()=>confirmSheet("Reset the layout?","The cards and the left menu bar go back to the standard order for "+(who||"this shared screen")+".","Reset",()=>{ saveLayout(null); saveNavOrder(null); })},"Reset"):null,
+    h("button",{class:"pill primary",onclick:()=>{ S.editLayout=false; applyLayout(); applyNavOrder(); renderTools(); }},"Done"),
     hid.length?h("div",{class:"acts",style:"flex:1 0 100%"},h("span",{class:"hint",style:"flex:none"},"Hidden, tap to bring back:"),...hid):null,
-    h("span",{class:"hint"},"Each person's layout is saved under their name, so it follows them to any device. To arrange it for someone else, choose their name under Settings, General, “This device is used by”.")].filter(Boolean));
+    h("span",{class:"hint"},"The cards and the left menu bar (use the small arrows on each button) are saved under each person's name, so it follows them to any device. To arrange it for someone else, choose their name under Settings, This screen, “This device is used by”.")].filter(Boolean));
 }
 try{ matchMedia("(max-width:900px)").addEventListener("change",()=>{ applyLayout.sig=""; applyLayout(); }); }catch(e){}
+
+/* ---------- Left menu bar order: arranged per person together with the Main page cards ---------- */
+const NAVDEF=["home","calendar","tasks","meals","lists","budget","photos","house"];
+function navOrder(){ const raw=((S.settings&&S.settings.navOrder)||{})[layoutKey()], seen=new Set();
+  const a=(Array.isArray(raw)?raw:[]).filter(v=>NAVDEF.includes(v)&&!seen.has(v)&&seen.add(v)); NAVDEF.forEach(v=>{ if(!seen.has(v)){ seen.add(v); a.push(v); } }); return a; }
+const navBtn=v=>document.querySelector('.rail .nav[data-view="'+v+'"]');
+const navVisible=v=>{ const b=navBtn(v); return !!(b&&b.offsetParent); };
+function saveNavOrder(o){ const all={...((S.settings&&S.settings.navOrder)||{})}; if(o) all[layoutKey()]=o; else delete all[layoutKey()]; return saveSettings({navOrder:all}); }
+function moveNav(v,dir){ const o=navOrder(), i=o.indexOf(v); let j=i+dir; while(j>=0&&j<o.length&&!navVisible(o[j])) j+=dir; if(i<0||j<0||j>=o.length) return; [o[i],o[j]]=[o[j],o[i]]; saveNavOrder(o); }
+function applyNavOrder(){
+  const rail=document.querySelector(".rail"); if(!rail) return;
+  const o=navOrder(), btns=o.map(navBtn).filter(Boolean); if(!btns.length) return;
+  const cur=[...rail.querySelectorAll(".nav[data-view]")].map(b=>b.dataset.view).join();
+  if(cur!==btns.map(b=>b.dataset.view).join()){ const last=[...rail.querySelectorAll(".nav[data-view]")].pop(), anchor=last.nextSibling; btns.forEach(b=>rail.insertBefore(b,anchor)); }
+  const edit=!!S.editLayout&&S.view==="home", narrow=matchMedia("(max-width:900px)").matches, vis=o.filter(navVisible);
+  const sig=JSON.stringify([edit,narrow,vis]); if(applyNavOrder.sig===sig) return; applyNavOrder.sig=sig;
+  rail.querySelectorAll(".nctl").forEach(e=>e.remove());
+  if(!edit) return;
+  const mk=(label,icon,fn,dis)=>{ const b=h("span",{role:"button",tabindex:dis?"-1":"0","aria-label":label,title:label,"aria-disabled":dis?"true":"false",class:dis?"off":""},svg(icon));
+    const go=e=>{ e.preventDefault(); e.stopPropagation(); if(!dis) fn(); }; b.addEventListener("click",go); b.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" ") go(e); }); return b; };
+  vis.forEach((v,i)=>{ const b=navBtn(v);
+    b.append(h("span",{class:"nctl"},
+      mk(narrow?"Move left":"Move up",narrow?IC.left:IC.up,()=>moveNav(v,-1),i===0),
+      mk(narrow?"Move right":"Move down",narrow?IC.right:'<path d="M12 5v13M6 13l6 6 6-6"/>',()=>moveNav(v,1),i===vis.length-1))); });
+}
 function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
-  applyLayout();
+  applyLayout(); applyNavOrder();
   $("#guestBar").hidden=!guestOn(); $("#guestBtn").classList.toggle("on",guestOn()); { const g=$("#guestTop"); if(g){ g.classList.toggle("on",guestOn()); g.setAttribute("aria-label",guestOn()?"Guest mode is on. Tap to turn off":"Guests are here"); } } $("#guestBtn").lastChild.textContent=guestOn()?"Guests here":"Guests";
   ["calendar","tasks","meals","lists","budget","photos","house"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
   show($("#famBtn"),mod("reminders")||mod("countdowns")||mod("notes")||mod("prayer")); show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));

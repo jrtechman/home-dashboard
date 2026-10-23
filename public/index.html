@@ -72,6 +72,8 @@ button{cursor:pointer;border:0;background:none}
 .rail{background:var(--rail);display:flex;flex-direction:column;align-items:stretch;padding-block:14px;padding-left:env(safe-area-inset-left,0px);gap:2px}
 .mono{font-family:var(--display);font-size:28px;color:var(--muted);text-align:center;margin-block:6px 18px}
 .nav{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;font-size:13px;font-weight:500;color:var(--ink)}
+.rail{overflow-y:auto;scrollbar-width:none}.rail::-webkit-scrollbar{display:none}
+@media (min-width:901px) and (max-height:880px){.nav{padding:8px 0}}
 .nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav[aria-current="page"]{background:var(--rail-on)}
 .rail .spacer{flex:1}
@@ -175,6 +177,28 @@ button{cursor:pointer;border:0;background:none}
 .evwx{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted);margin-top:3px}.evwx.wet{color:#2f6fb3}
 .avbtn{flex:none;width:44px;min-width:44px;height:44px;padding:0;justify-content:center;font-size:22px;background:var(--card)}
 .emogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px}.emo{min-height:52px;border-radius:16px;background:var(--chip);font-size:28px;line-height:1}.emo.on{outline:3px solid var(--accent)}
+.tgrow{display:flex;gap:6px;align-items:center;margin-top:8px}
+.tgwrap .tgrow input{flex:0 1 150px;width:150px;min-width:0;height:36px;min-height:0;padding:0 12px;font-size:14px;border-radius:12px}
+.tgadd{flex:none;min-height:32px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);background:transparent}
+.tgadd:hover,.tgadd:active{background:var(--chip)}
+.budpage{flex:1;min-height:0;overflow-y:auto;padding:4px 18px 90px;-webkit-overflow-scrolling:touch}
+.bhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px}.bhead a.pill{color:inherit;text-decoration:none}.bhead h2{margin:0;font-size:26px}.bhead .grow{flex:1}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px;align-items:start}
+.bcard{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.bcard.wide{grid-column:1/-1}.bcard h3{margin:0;font-size:17px}
+.btiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.btile{background:var(--chip);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.btile b{font-size:22px;font-variant-numeric:tabular-nums}.btile span{font-size:13px;color:var(--muted);font-weight:600}
+.btile.bad b{color:var(--danger)}.btile.good b{color:var(--ok)}
+.bline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:15px;padding:7px 0;border-bottom:1px solid var(--line)}
+.bline:last-child{border-bottom:0}.bline .bl{min-width:0;display:flex;flex-direction:column}.bline small{color:var(--muted);font-size:12px;font-weight:500}
+.bline .amt{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}.amt.neg{color:var(--danger)}.amt.pos{color:var(--ok)}
+.bgroup{display:flex;flex-direction:column;gap:12px}.bgh{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;font-size:15px;min-height:40px;width:100%;text-align:left;background:transparent;padding:0}
+.bgh span:last-child{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600;font-size:14px}
+.btrend{display:flex;align-items:flex-end;gap:8px;height:150px}.btcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;height:100%;justify-content:flex-end}
+.btbars{display:flex;align-items:flex-end;gap:3px;width:100%;flex:1}.btbars i{flex:1;border-radius:6px 6px 2px 2px;background:var(--ok);min-height:2px}.btbars i.sp{background:#5FA9AC}
+.btcol small{font-size:11px;color:var(--muted);font-weight:600}
+.bcfg{display:flex;flex-direction:column;gap:2px}.bcfg label{display:flex;align-items:center;gap:12px;min-height:44px;font-weight:600}.bcfg input{width:22px;height:22px;flex:none}
 .pcatrow{display:flex;gap:6px;align-items:center}.view .pcatrow input{min-width:0}.pcatrow input,.pcatadd input{flex:1;min-width:0;min-height:48px;border:0;border-radius:16px;background:var(--chip);padding:0 16px;font-size:16px}.pcatrow .pill.icon{flex:none;width:40px;min-height:40px;height:40px}
 .dnlist{display:flex;flex-direction:column;gap:8px;margin-top:6px}.dnrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:var(--glass)}.dnrow.tap{cursor:pointer}.dnwho{flex:none;display:flex;gap:4px;min-width:28px;justify-content:center}.dnt{flex:1;min-width:0}.dnrow .dinner-title{font-size:20px;line-height:1.2;overflow-wrap:anywhere}
 .pcard{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:20px;background:var(--chip)}.pcard.done{opacity:.8}.pcard .pct{font-weight:600;font-size:17px;line-height:1.3;overflow-wrap:anywhere}.pcard .acts{margin-top:4px;flex-wrap:wrap}.pcard .pill:not(.primary){background:var(--card)}.pcard .pill:disabled{opacity:.7}.pcu{font-size:15px;line-height:1.35;overflow-wrap:anywhere}
@@ -456,7 +480,7 @@ body.arranging #fab{display:none!important}
   .menu-btn{display:flex}
   .rail{gap:0}
   .fsbtn{display:none}
-  .nav[data-view=photos],.nav[data-view=house],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn,#famBtn,#guestBtn{display:none}
+  .nav[data-view=photos],.nav[data-view=house],.nav[data-view=budget],#sleepBtn,#settingsBtn,#budgetBtn,#linksBtn,#camBtn,#histBtn,#famBtn,#guestBtn{display:none}
   :root{padding-bottom:0}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr auto;height:auto;min-height:100%}
   .main{min-width:0;max-width:100vw}
@@ -484,7 +508,7 @@ body.arranging #fab{display:none!important}
   .frame{min-height:300px}
   .board{min-height:70vh;padding-inline:16px}
   .col{flex-basis:78vw}
-  .meals,.lists,.photos{padding-inline:16px;overflow:visible}
+  .meals,.lists,.photos,.budpage{padding-inline:16px;overflow:visible}
   .cols2{grid-template-columns:1fr}
   .fab{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 }
@@ -560,6 +584,7 @@ body.arranging #fab{display:none!important}
     <button class="nav" data-view="tasks"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Tasks</button>
     <button class="nav" data-view="meals"><svg viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 005 0V3M7 11v10M17 21V3c-2.5 1-3.5 4-3.5 7.5V13H17"/></svg>Meals</button>
     <button class="nav" data-view="lists"><svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/></svg>Lists</button>
+    <button class="nav" data-view="budget"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></svg>Budget</button>
     <button class="nav" data-view="photos"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8.5"/></svg>Photos</button>
     <button class="nav" data-view="house"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</button>
     <button class="nav menu-btn" id="menuBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
@@ -602,6 +627,7 @@ body.arranging #fab{display:none!important}
     <section class="view" data-name="tasks"><div class="board" id="taskBoard"></div></section>
     <section class="view" data-name="meals"><div class="meals" id="meals"></div></section>
     <section class="view" data-name="lists"><div class="lists" id="lists"></div></section>
+    <section class="view" data-name="budget" hidden><div class="budpage" id="budPage"></div></section>
     <section class="view" data-name="photos"><div class="photos" id="photos"></div></section>
     <section class="view" data-name="house" hidden><div class="settingspage" id="housePage"></div></section>
     <section class="view" data-name="changelog" hidden><div class="settingspage" id="changelogPage"></div></section>
@@ -956,12 +982,12 @@ function camsSheet(editing){
     h("div",{class:"acts"},editing?h("button",{class:"pill",onclick:()=>S.view==="house"?closeSheet():camsSheet(false)},"Cancel"):h("button",{class:"pill",onclick:()=>camsSheet(true)},"Edit"),h("span",{class:"grow"}),editing?h("button",{class:"pill primary",onclick:save},"Save"):h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
 $("#camBtn").addEventListener("click",()=>camsSheet(false));
-$("#budgetBtn").addEventListener("click",budgetSheet);
+$("#budgetBtn").addEventListener("click",()=>setView("budget"));
 $("#linksBtn").addEventListener("click",()=>linksSheet(false));
 async function pullBudget(){
   if(!FEAT.budget) return;
   try{ S.budget=await api("/api/budget"); }catch(e){ S.budget={error:e.message||"Couldn't reach YNAB."}; }
-  renderBudget(); renderMeals(); renderLists();
+  renderBudget(); renderBudgetPage(); renderMeals(); renderLists();
 }
 function showLogin(){ const L=$("#login"); if(L.hidden){ L.hidden=false; checkFace(); setTimeout(()=>{ if($("#faceBtn").hidden) $("#passIn").focus(); },30); } }
 function hideLogin(){ $("#login").hidden=true; }
@@ -1123,8 +1149,73 @@ function renderBudget(){
   chosen.forEach(c=>list.append(budgetRow(c)));
   if(!chosen.length) list.append(h("p",{class:"hint"},"Tap to choose which categories show here."));
   if(chosen.some(c=>c.balance<0)) list.append(h("div",{class:"meta"},`${chosen.filter(c=>c.balance<0).length} overspent`));
-  B.onclick=()=>budgetSheet();
+  B.onclick=()=>setView("budget");
   B.append(list);
+}
+
+/* ---------- Budget tab: a larger look at YNAB, with sections you can turn on and off ---------- */
+const BP_SECTIONS=[["summary","This month at a glance",true],["alerts","Overspent categories",true],["categories","Categories by group",true],["accounts","Accounts",true],["upcoming","Upcoming bills (next 30 days)",true],["recent","Recent transactions",true],["trend","Six-month trend",false],["goals","Goals",false]];
+const BPU={groups:{},more:false};
+const bpCfg=()=>S.settings.budgetPage||{};
+const bpOn=k=>{ const c=bpCfg().sections; if(c&&c[k]!==undefined) return !!c[k]; const d=BP_SECTIONS.find(x=>x[0]===k); return d?d[2]:false; };
+const bpDay=k=>{ try{ return shortDay(k); }catch(e){ return k; } };
+const bpAmt=n=>h("span",{class:"amt "+(n<0?"neg":n>0?"pos":"")},(n>0?"+":n<0?"−":"")+money(Math.abs(n)));
+function bpShown(){ const b=S.budget; if(!b||!b.all) return []; const c=bpCfg(); const hide=new Set(c.hideGroups||[]);
+  let rows=b.all.filter(x=>!hide.has(x.group||"Other")); if(c.catMode==="chosen"){ const set=new Set(budgetChosen().map(x=>bnorm(x.name))); rows=rows.filter(x=>set.has(bnorm(x.name))); } return rows; }
+function budgetConfigSheet(){
+  const b=S.budget, c=bpCfg(), secs={...(c.sections||{})}, hide=new Set(c.hideGroups||[]);
+  const groups=[...new Set(((b&&b.all)||[]).map(x=>x.group||"Other"))];
+  const save=()=>saveSettings({budgetPage:{sections:secs,hideGroups:[...hide],catMode:cm.value}});
+  const box=(label,on,fn)=>{ const i=h("input",{type:"checkbox"}); i.checked=on; i.addEventListener("change",()=>fn(i.checked)); return h("label",null,i,h("span",null,label)); };
+  const cm=h("select",{id:"bpCm"},[["all","All categories"],["chosen","Only the ones chosen for the Main card"]].map(([v,l])=>h("option",{value:v},l))); cm.value=c.catMode==="chosen"?"chosen":"all"; cm.addEventListener("change",save);
+  openSheet([h("h2",null,"Budget page"),h("p",{class:"hint",style:"margin:0"},"Choose what shows on the Budget page. Changes save right away and apply to every screen."),
+    h("h3",{style:"margin:6px 0 0"},"Sections"),h("div",{class:"bcfg"},BP_SECTIONS.map(([k,l])=>box(l,bpOn(k),v=>{ secs[k]=v; save(); }))),
+    h("h3",{style:"margin:6px 0 0"},"Categories"),field("Show",cm),
+    groups.length?h("div",{class:"bcfg"},h("div",{class:"meta",style:"margin:4px 0"},"Category groups to show"),groups.map(g=>box(g,!hide.has(g),v=>{ v?hide.delete(g):hide.add(g); save(); }))):null,
+    h("div",{class:"acts"},h("button",{class:"pill",onclick:budgetSheet},"Choose categories for the Main card"),h("span",{class:"grow"}),h("button",{class:"pill primary",onclick:closeSheet},"Done"))],true);
+}
+function renderBudgetPage(){
+  const P=$("#budPage"); if(!P||S.view!=="budget") return;
+  const keep=P.scrollTop; P.replaceChildren();
+  const b=S.budget;
+  const mon=b&&b.month?new Date(b.month+"T12:00:00").toLocaleDateString([], {month:"long",year:"numeric"}):"";
+  P.append(h("div",{class:"bhead"},h("h2",null,"Budget"),mon?h("span",{class:"meta"},mon):null,h("span",{class:"grow"}),
+    b&&!b.error?h("button",{class:"pill",onclick:budgetConfigSheet},"Configure"):null,
+    h("a",{class:"pill",href:"https://app.ynab.com/",target:"_blank",rel:"noopener"},"Open YNAB")));
+  if(!FEAT.budget){ P.append(h("p",{class:"hint"},"YNAB isn't connected yet. Add YNAB_TOKEN in Vercel, then redeploy.")); return; }
+  if(!b){ P.append(h("p",{class:"hint"},"Loading…")); return; }
+  if(b.error){ P.append(h("p",{class:"hint"},b.error)); return; }
+  const g=h("div",{class:"bgrid"}); P.append(g);
+  const card=(title,wide,...kids)=>h("div",{class:"bcard"+(wide?" wide":"")},title?h("h3",null,title):null,...kids);
+  const sm=b.summary;
+  if(bpOn("summary")&&sm) g.append(card("This month",true,h("div",{class:"btiles"},
+    h("div",{class:"btile "+(sm.toBeBudgeted<0?"bad":sm.toBeBudgeted>0?"good":"")},h("b",null,money(sm.toBeBudgeted)),h("span",null,"Ready to assign")),
+    h("div",{class:"btile"},h("b",null,money(sm.income)),h("span",null,"Income")),
+    h("div",{class:"btile"},h("b",null,money(sm.assigned)),h("span",null,"Assigned")),
+    h("div",{class:"btile"},h("b",null,money(sm.spent)),h("span",null,"Spent")),
+    sm.ageOfMoney!=null?h("div",{class:"btile"},h("b",null,sm.ageOfMoney+" days"),h("span",null,"Age of money")):null)));
+  const rows=bpShown();
+  if(bpOn("alerts")){ const over=(b.all||[]).filter(c=>c.balance<0);
+    g.append(card("Overspent",false,over.length?h("div",null,over.map(c=>h("div",{class:"bline"},h("span",{class:"bl"},c.name,h("small",null,c.group)),h("span",{class:"amt neg"},"−"+money(-c.balance))))):h("p",{class:"hint",style:"margin:0"},"Nothing is overspent this month."))); }
+  if(bpOn("accounts")&&b.accounts){ const on=b.accounts.filter(a=>a.onBudget), off=b.accounts.filter(a=>!a.onBudget), tot=a=>a.reduce((t,x)=>t+x.balance,0);
+    const list=arr=>h("div",null,arr.map(a=>h("div",{class:"bline"},h("span",{class:"bl"},a.name,h("small",null,String(a.type||"").replace(/([A-Z])/g," $1").toLowerCase())),bpAmt(a.balance))));
+    g.append(card("Accounts",false,on.length?h("div",{class:"bline",style:"font-weight:700"},h("span",null,"On budget"),bpAmt(tot(on))):null,list(on),off.length?h("div",{class:"bline",style:"font-weight:700"},h("span",null,"Tracking"),bpAmt(tot(off))):null,list(off))); }
+  if(bpOn("upcoming")&&b.upcoming) g.append(card("Upcoming bills",false,b.upcoming.length?h("div",null,b.upcoming.map(t=>h("div",{class:"bline"},h("span",{class:"bl"},t.payee||t.category||"Scheduled",h("small",null,bpDay(t.date)+(t.repeat&&t.repeat!=="never"?" · "+t.repeat:""))),bpAmt(t.amount)))):h("p",{class:"hint",style:"margin:0"},"Nothing scheduled in the next 30 days.")));
+  if(bpOn("recent")&&b.recent){ const n=BPU.more?40:12;
+    g.append(card("Recent transactions",false,b.recent.length?h("div",null,b.recent.slice(0,n).map(t=>h("div",{class:"bline"},h("span",{class:"bl"},t.payee||"(no payee)",h("small",null,[bpDay(t.date),t.category].filter(Boolean).join(" · "))),bpAmt(t.amount)))):h("p",{class:"hint",style:"margin:0"},"No transactions in the last 30 days."),
+      b.recent.length>12?h("button",{class:"pill",onclick:()=>{ BPU.more=!BPU.more; renderBudgetPage(); }},BPU.more?"Show fewer":"Show more"):null)); }
+  if(bpOn("trend")&&b.months&&b.months.length){ const mx=Math.max(1,...b.months.map(m=>Math.max(m.income,m.spent)));
+    g.append(card("Income and spending",false,h("div",{class:"btrend"},b.months.map(m=>h("div",{class:"btcol"},h("div",{class:"btbars"},h("i",{style:`height:${Math.round(m.income/mx*100)}%`,title:"Income "+money(m.income)}),h("i",{class:"sp",style:`height:${Math.round(m.spent/mx*100)}%`,title:"Spent "+money(m.spent)})),h("small",null,new Date(m.month+"T12:00:00").toLocaleDateString([], {month:"short"}))))),
+      h("div",{class:"meta"},"Green is income, teal is spending."))); }
+  if(bpOn("goals")){ const gl=(b.all||[]).filter(c=>c.goal&&c.goal.pct!=null);
+    g.append(card("Goals",false,gl.length?h("div",{class:"bud"},gl.map(c=>h("div",{class:"brow"},h("div",{class:"bh"},h("span",null,c.name),h("span",{class:"amt"},c.goal.pct+"%")),h("div",{class:"bar"},h("i",{style:`width:${Math.min(100,c.goal.pct)}%`})),c.goal.under>0?h("div",{class:"sub"},"Needs "+money(c.goal.under)+" more this month"):h("div",{class:"sub"},"On track")))):h("p",{class:"hint",style:"margin:0"},"No goals are set on your categories in YNAB."))); }
+  if(bpOn("categories")){ const by={}; rows.forEach(c=>{ (by[c.group||"Other"]??=[]).push(c); });
+    const names=Object.keys(by);
+    g.append(card("Categories",true,names.length?h("div",{class:"bgrid",style:"gap:18px 24px"},names.map(n=>{ const arr=by[n], left=arr.reduce((t,x)=>t+x.balance,0), open=BPU.groups[n]!==false;
+      return h("div",{class:"bgroup"},h("button",{class:"bgh","aria-expanded":open?"true":"false",onclick:()=>{ BPU.groups[n]=!open; renderBudgetPage(); }},h("span",null,(open?"▾ ":"▸ ")+n),h("span",null,money(left)+" left")),
+        open?h("div",{class:"bud"},arr.map(c=>budgetRow(c))):null); })):h("p",{class:"hint",style:"margin:0"},"No categories to show. Use Configure to change which appear."))); }
+  if(b.fetchedAt) P.append(h("div",{class:"meta",style:"margin-top:12px"},"Updated "+new Date(b.fetchedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})));
+  P.scrollTop=keep;
 }
 
 const members=()=>S.settings.members||[];
@@ -1158,14 +1249,15 @@ function tick(){
 
 /* ---------- views ---------- */
 function setView(v){
-  S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history"||v==="changelog"||v==="house")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"||v==="changelog"); }
+  S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history"||v==="changelog"||v==="house"||v==="budget")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"||v==="changelog"); }
   document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.name!==v);
   document.querySelectorAll(".nav[data-view]").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
-  const mb=$("#menuBtn"); if(mb){ if(v==="photos"||v==="house") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
+  const mb=$("#menuBtn"); if(mb){ if(v==="photos"||v==="house"||v==="budget") mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
   try{ history.replaceState(null,"","#"+v); }catch(e){}
   renderTools(); updateGreet();
   if(v==="home") applyLayout();
   if(v==="house") houseEnter();
+  if(v==="budget"){ renderBudgetPage(); pullBudget(); }
 }
 /* ---------- Home page: cameras, Philips Hue lights, thermostat and other Home Assistant devices ---------- */
 const HOUSE={ents:null,configured:null,err:"",busy:0,timer:0,snap:0};
@@ -2019,7 +2111,7 @@ function menuSheet(){
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
       row(ico("#guestBtn"),guestOn()?"Guest mode: on (tap to turn off)":"Guests are here",guestToggle),
       mod("photos")?row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")):null,
-      mod("budget")?row(ico("#budgetBtn"),"Budget",budgetSheet):null,
+      mod("budget")?row(ico("#budgetBtn"),"Budget",()=>setView("budget")):null,
       mod("history")?row(ico("#histBtn"),"History",histPage):null,
       mod("reminders")?row(ico("#famBtn"),"Reminders",()=>remSheet()):null,
       mod("countdowns")?row(ico("#famBtn"),"Countdowns",()=>cdSheet()):null,
@@ -2181,12 +2273,12 @@ function recipeSheet(r,file,mode,autoUrl){
   const prev=h("img",{class:"hero",alt:"Dish photo"});
   const setPrev=()=>{ if(objUrl){URL.revokeObjectURL(objUrl);objUrl=null;} if(blob){ objUrl=URL.createObjectURL(blob); prev.src=objUrl; prev.hidden=false; } else if(r.photoUrl){ prev.src=r.photoUrl; prev.hidden=false; } else if(remotePhoto){ prev.src=remotePhoto; prev.hidden=false; } else prev.hidden=true; };
   const t=h("input",{id:"rcTitle",placeholder:"Grandma's meatloaf",value:r.title||""});
-  const selTags=new Set(r.tags||[]), tgBox=h("div",{class:"tgpick"}), tgNew=h("input",{id:"rcNewTag",placeholder:"New tag, e.g. Kid favorite",maxlength:"24",autocomplete:"off"});
+  const selTags=new Set(r.tags||[]), tgBox=h("div",{class:"tgpick"}), tgNew=h("input",{id:"rcNewTag",placeholder:"New tag",maxlength:"24",autocomplete:"off"});
   const drawTags=()=>{ tgBox.replaceChildren(...allTags([...selTags]).map(t=>h("button",{type:"button",class:"chip"+(selTags.has(t)?" on":""),"aria-pressed":selTags.has(t)?"true":"false",onclick:()=>{ if(selTags.has(t)) selTags.delete(t); else if(selTags.size<8) selTags.add(t); else toast("Up to 8 tags per dish."); drawTags(); }},t))); };
   const addTag=()=>{ const v=tgNew.value.trim().replace(/\s+/g," "); if(!v) return; const ex=allTags().find(x=>x.toLowerCase()===v.toLowerCase()); const name=ex||v;
     if(!ex){ const cur=(S.settings.mealTags||[]); saveSettings({mealTags:[...cur,name]}); } if(selTags.size<8) selTags.add(name); tgNew.value=""; drawTags(); };
   tgNew.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addTag(); } });
-  const tg=h("div",{class:"tgwrap"},tgBox,h("div",{class:"row",style:"margin-top:8px"},tgNew,h("button",{type:"button",class:"pill",onclick:addTag},"Add tag"))); drawTags();
+  const tg=h("div",{class:"tgwrap"},tgBox,h("div",{class:"tgrow"},tgNew,h("button",{type:"button",class:"tgadd",onclick:addTag},"Add"))); drawTags();
   const mn=h("input",{id:"rcMin",type:"number",min:"0",inputmode:"numeric",placeholder:"45",value:r.minutes||""});
   const ing=h("textarea",{id:"rcIng",placeholder:"One per line, e.g.\n2 lb ground beef\n1 onion"}); ing.value=(r.ingredients||[]).join("\n");
   const st=h("textarea",{id:"rcSteps",placeholder:"One step per line"}); st.value=(r.steps||[]).join("\n");
@@ -2424,6 +2516,7 @@ $("#fab").addEventListener("click",()=>{
     h("button",{class:"chip",onclick:()=>eventSheet({date:keyOf(addDays(new Date(),S.view==="calendar"?S.weekOffset*7:0))})},"Event"),
     h("button",{class:"chip",onclick:()=>todoSheet(meName())},"Task"),
     h("button",{class:"chip",onclick:()=>{closeSheet();setView("lists");setTimeout(()=>$("#shopIn")?.focus(),30);}},"Grocery item"),
+    mod("prayer")?h("button",{class:"chip",onclick:()=>{ prayerSheet(); setTimeout(()=>{ const t=$("#pyT"); if(t) t.focus(); },120); }},"Prayer request"):null,
     mod("notes")?h("button",{class:"chip",onclick:()=>{ notesSheet(); setTimeout(()=>{ const t=$("#ntT"); if(t) t.focus(); },120); }},"Sticky note"):null,
     h("button",{class:"chip",onclick:()=>recipeSheet(null,null,"link")},"Recipe from a link"))]);
 });
@@ -2819,16 +2912,16 @@ function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
   applyLayout();
   $("#guestBar").hidden=!guestOn(); $("#guestBtn").classList.toggle("on",guestOn()); { const g=$("#guestTop"); if(g){ g.classList.toggle("on",guestOn()); g.setAttribute("aria-label",guestOn()?"Guest mode is on. Tap to turn off":"Guests are here"); } } $("#guestBtn").lastChild.textContent=guestOn()?"Guests here":"Guests";
-  ["calendar","tasks","meals","lists","photos","house"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
+  ["calendar","tasks","meals","lists","budget","photos","house"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
   show($("#famBtn"),mod("reminders")||mod("countdowns")||mod("notes")||mod("prayer")); show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));
   show($("#homeWx"),mod("weather")); show($("#homeVerse"),mod("verse")); show($("#homeDinner"),mod("dinner")); show($("#homeTasksCard"),mod("tasks_card")); show($("#frame"),mod("photoframe"));
   const home=document.querySelector(".home"); if(home) home.classList.toggle("noframe",!mod("photoframe"));
-  if(["calendar","tasks","meals","lists","photos","house"].includes(S.view)&&!mod(S.view)) setView("home");
+  if(["calendar","tasks","meals","lists","budget","photos","house"].includes(S.view)&&!mod(S.view)) setView("home");
   if(mod("weather")&&S.settings.place&&!S.weather&&!S.wxBusy&&Date.now()-(S.wxAt||0)>60000){ S.wxBusy=true; pullWeather().finally(()=>{S.wxBusy=false;}); }
   if(mod("verse")&&!S.verse&&!S.verseBusy&&Date.now()-(S.verseAt||0)>60000){ S.verseBusy=true; pullVerse().finally(()=>{S.verseBusy=false;}); }
 }
 function moreSection(){
-  const items=[mod("budget")?["Budget",budgetSheet,"#budgetBtn"]:null,mod("history")?["History",histPage,"#histBtn"]:null].filter(Boolean);
+  const items=[mod("budget")?["Budget",()=>setView("budget"),"#budgetBtn"]:null,mod("history")?["History",histPage,"#histBtn"]:null].filter(Boolean);
   if(!items.length) return h("div");
   const ico=sel=>{ const e=document.querySelector(sel+" svg"); return svg(e?e.innerHTML:""); };
   return h("div",null,h("h3",null,"Budget and history"),h("div",{style:"display:flex;flex-wrap:wrap;gap:8px"},items.map(([l,fn,sel])=>h("button",{class:"pill",onclick:fn},ico(sel),l))));
@@ -2910,7 +3003,7 @@ function adminSection(){
 }
 function renderAll(){
   $("#mono").textContent=(S.settings.household||"H").trim()[0]?.toUpperCase()||"H";
-  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderFam(); renderPrayer(); renderNotes(); renderHistory(); renderHouse(); applyModules();
+  renderHome(); renderCal(); renderTasks(); renderMeals(); renderLists(); renderPhotos(); renderBudget(); renderBudgetPage(); renderFam(); renderPrayer(); renderNotes(); renderHistory(); renderHouse(); applyModules();
 }
 function toB64(blob){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(",")[1]); fr.onerror=rej; fr.readAsDataURL(blob); }); }
 

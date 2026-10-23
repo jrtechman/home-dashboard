@@ -1,6 +1,32 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Budget tab, prayer requests from +, smaller tag box",
+    "items": [
+      {
+        "tag": "New",
+        "text": "A Budget tab in the left bar (on phones: Menu, Budget) gives a larger look at YNAB: this month at a glance (ready to assign, income, assigned, spent, age of money), overspent categories, categories by group, accounts, upcoming bills, recent transactions, a six-month income and spending trend, and goals."
+      },
+      {
+        "tag": "New",
+        "text": "Tap Configure on the Budget tab to choose which sections show, show all categories or only the ones picked for the Main card, and hide whole category groups. It applies to every screen. Tapping the budget card on Main now opens the Budget tab."
+      },
+      {
+        "tag": "New",
+        "text": "The + menu has a \"Prayer request\" choice that opens the prayer list with the request box ready."
+      },
+      {
+        "tag": "Improved",
+        "text": "The new-tag box in the dish editor is smaller and its Add button is quieter."
+      },
+      {
+        "tag": "Changed",
+        "text": "The left bar spacing is a little tighter on shorter tablet screens so every button still fits."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Add a sticky note from the + menu",
     "items": [
       {

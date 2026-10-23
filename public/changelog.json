@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-22",
+    "title": "Compact header on phones",
+    "items": [
+      {
+        "tag": "Changed",
+        "text": "On phones the top of the screen is about half as tall: the date and time sit on two tight lines with the buttons beside them, and the greeting is hidden to save room. Tablets and computers are unchanged."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-22",
     "title": "Settings reorganized",
     "items": [
       {

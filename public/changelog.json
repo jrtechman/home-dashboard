@@ -10,6 +10,10 @@
       {
         "tag": "New",
         "text": "Timed events in the next 7 days now show the forecast for the hour they start: icon, temperature, and the chance of rain when it is 20% or more. It uses your weather location. Turn it off in Settings > Household > Calendar."
+      },
+      {
+        "tag": "Improved",
+        "text": "The avatar picker opens your keyboard so you can use its emoji key (the full Apple emoji set on iPhone, iPad and Mac). The first emoji you type is used straight away. The quick picks stay below it."
       }
     ]
   },

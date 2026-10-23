@@ -2360,11 +2360,17 @@ const AV_EMOJI=["😀","😎","🤓","🥳","😇","🤠","👩","👨","🧑","
 function emojiPicker(cur,onPick){
   const pick=v=>{ closeSheet(); onPick(v); };
   const grid=h("div",{class:"emogrid"},AV_EMOJI.map(e=>h("button",{type:"button",class:"emo"+(e===cur?" on":""),"aria-label":e,onclick:()=>pick(e)},e)));
-  const own=h("input",{id:"emoOwn",placeholder:"Type or paste any emoji",maxlength:8,style:"display:none"});
-  own.addEventListener("keydown",e=>{ if(e.key==="Enter"){ const g=Array.from(own.value.trim())[0]; if(g) pick(g); } });
-  const ownBtn=h("button",{class:"pill",onclick:()=>{ own.style.display=""; own.focus(); ownBtn.style.display="none"; }},"Type your own");
-  openSheet([h("h2",null,"Choose an avatar"),grid,h("div",{style:"display:flex;flex-direction:column;gap:8px"},ownBtn,own),
+  /* Web pages can't open the system emoji picker directly, but a focused text box brings up the device keyboard, whose emoji key (iPhone/iPad: smiley or globe; Mac: Fn or Ctrl+Cmd+Space) opens the full Apple emoji set. The first emoji typed is used right away. */
+  const own=h("input",{id:"emoOwn",placeholder:"Tap, then use the 😀 key",maxlength:16,autocomplete:"off",autocapitalize:"off",spellcheck:false,"aria-label":"Type or pick an emoji",style:"font-size:20px"});
+  const grab=()=>{
+    const v=own.value, seg=(window.Intl&&Intl.Segmenter)?Array.from(new Intl.Segmenter(undefined,{granularity:"grapheme"}).segment(v),x=>x.segment):Array.from(v);
+    const g=seg.find(x=>/\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(x));
+    if(g) pick(g);
+  };
+  own.addEventListener("input",grab); own.addEventListener("change",grab);
+  openSheet([h("h2",null,"Choose an avatar"),h("div",{style:"display:flex;flex-direction:column;gap:8px"},own,h("p",{class:"hint",style:"margin:0"},"Use your keyboard's emoji key to browse every emoji, or pick a quick one below.")),grid,
     h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>pick("")},"Use their initial"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"))]);
+  setTimeout(()=>{ try{ own.focus(); }catch(x){} },250);
 }
 function settingsBack(){ setView(S.prevView&&S.prevView!=="settings"&&S.prevView!=="history"&&S.prevView!=="changelog"?S.prevView:"home"); }
 function settingsPage(){

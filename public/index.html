@@ -2023,7 +2023,7 @@ function menuSheet(){
       mod("history")?row(ico("#histBtn"),"History",histPage):null,
       mod("reminders")?row(ico("#famBtn"),"Reminders",()=>remSheet()):null,
       mod("countdowns")?row(ico("#famBtn"),"Countdowns",()=>cdSheet()):null,
-      mod("notes")?row(ico("#famBtn"),"Family notes",notesSheet):null,
+      mod("notes")?row(ico("#famBtn"),"Sticky notes",notesSheet):null,
       mod("prayer")?row(ico("#famBtn"),"Prayer list",prayerSheet):null,
       mod("house")?row(ico('.nav[data-view="house"]'),"Home (cameras, lights, thermostat)",()=>setView("house")):null,
       mod("links")?row(ico("#linksBtn"),"Helpful links",()=>linksSheet(false)):null,
@@ -2535,7 +2535,7 @@ function famSheet(){
   const row=(label,fn)=>h("button",{class:"mrow",onclick:()=>{ closeSheet(); fn(); }},label);
   openSheet([h("h2",null,"Family"),h("div",{style:"display:flex;flex-direction:column;gap:8px"},
     mod("reminders")?row("Reminders",()=>remSheet()):null,mod("countdowns")?row("Countdowns",()=>cdSheet()):null,
-    mod("notes")?row("Family notes",notesSheet):null,mod("prayer")?row("Prayer list",prayerSheet):null),
+    mod("notes")?row("Sticky notes",notesSheet):null,mod("prayer")?row("Prayer list",prayerSheet):null),
     h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))]);
 }
 function remSheet(editing){
@@ -2649,7 +2649,7 @@ function notesSheet(){
   const col=h("select",{id:"ntC"},NOTE_COLORS.map(([v,l])=>h("option",{value:v},l)));
   const post=async(text,ink)=>{ await addDoc("notes",{text:text.slice(0,600),...(ink&&ink.length?{ink}:{}),color:col.value,by:meName(),createdAt:Date.now(),x:Math.round((52+Math.random()*30)*10)/10,y:Math.round((6+Math.random()*40)*10)/10}); notesSheet(); };
   const add=async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } await post(text,null); };
-  openSheet([h("h2",null,"Family notes"),h("p",{class:"hint",style:"margin:0"},"New notes are stuck on the Home page. Drag one there to move it; tap it to edit or remove."),grid,field("New note",tx),field("Color",col),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Post note"),h("button",{class:"pill",onclick:()=>inkSheet([],col.value,ink=>{ if(ink.length) post(tx.value.trim(),ink); else notesSheet(); })},"Write with your finger"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+  openSheet([h("h2",null,"Sticky notes"),h("p",{class:"hint",style:"margin:0"},"New notes are stuck on the Main page. Drag one there to move it; tap it to edit or remove."),grid,field("New note",tx),field("Color",col),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Post note"),h("button",{class:"pill",onclick:()=>inkSheet([],col.value,ink=>{ if(ink.length) post(tx.value.trim(),ink); else notesSheet(); })},"Write with your finger"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
 function prayerSheet(){
   const open=prOpen().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)), done=S.prayers.filter(p=>p.answered).sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0));
@@ -2706,7 +2706,7 @@ $("#famBtn").addEventListener("click",famSheet);
 const MODULES=[
   ["Main page",[["weather","Weather and what to wear"],["verse","Verse of the day"],["dinner","Tonight's dinner card"],["tasks_card","Open tasks card"],["budget_card","Budget card"]]],
   ["Tabs",[["calendar","Calendar"],["tasks","Tasks"],["meals","Meals"],["lists","Lists"],["photos","Photos"],["house","Home page (cameras, lights, thermostat, Spotify)"]]],
-  ["Family",[["reminders","Recurring reminders"],["countdowns","Countdowns"],["notes","Family notes"],["prayer","Prayer list"]]],
+  ["Family",[["reminders","Recurring reminders"],["countdowns","Countdowns"],["notes","Sticky notes"],["prayer","Prayer list"]]],
   ["Menu and extras",[["budget","Budget screen"],["history","History"],["cameras","Cameras"],["spotify","Spotify (Home page)"],["links","Helpful links"],["sleep","Photo screensaver button"],["askhelp","Ask for help button (Meals)"]]],
 ];
 const GUEST_DEFAULT=["budget_card","budget","reminders","countdowns","notes","prayer","cameras","history","house"];

@@ -14,6 +14,10 @@
       {
         "tag": "Improved",
         "text": "The avatar picker opens your keyboard so you can use its emoji key (the full Apple emoji set on iPhone, iPad and Mac). The first emoji you type is used straight away. The quick picks stay below it."
+      },
+      {
+        "tag": "Changed",
+        "text": "\"Family notes\" is now called \"Sticky notes\" in the menu, the notes window and the feature switches."
       }
     ]
   },
@@ -191,7 +195,7 @@
     "items": [
       {
         "tag": "New",
-        "text": "Sticky notes can now be handwritten. In Family notes tap “Write with your finger” to post a new one, or tap an existing note and choose it to write on that note. There are four pen colors, plus Undo and Clear."
+        "text": "Sticky notes can now be handwritten. In Sticky notes tap “Write with your finger” to post a new one, or tap an existing note and choose it to write on that note. There are four pen colors, plus Undo and Clear."
       },
       {
         "tag": "Improved",

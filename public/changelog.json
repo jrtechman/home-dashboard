@@ -22,6 +22,10 @@
       {
         "tag": "New",
         "text": "Settings, Household, Prayer list categories: add, rename, reorder and remove the categories. Renaming updates the requests that use it."
+      },
+      {
+        "tag": "New",
+        "text": "Prayed can be undone: on the Main card, requests prayed for today stay listed under “Prayed today” (crossed out) and tapping Prayed again undoes it; in the full list the button reads “Prayed ✓ (undo)”."
       }
     ]
   },

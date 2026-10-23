@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Your own task list comes first",
+    "items": [
+      {
+        "tag": "Changed",
+        "text": "On the Tasks page, the list for the person chosen under Settings, This screen, “This device is used by” now shows first (for example Abby's list leads on Abby's phone). Shared screens keep the usual order."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Bottom bar lines up on every phone page",
     "items": [
       {

@@ -1488,6 +1488,7 @@ function renderTasks(){
   if(DRAG) return;
   const b=$("#taskBoard"); b.replaceChildren();
   const people=[...members().map(m=>({name:m.name,color:m.color})),{name:"",label:"Everyone",color:"none"}];
+  const me=meName(), mi=people.findIndex(p=>p.name&&p.name===me); if(mi>0) people.unshift(...people.splice(mi,1)); /* whoever uses this device sees their own list first */
   people.forEach(p=>{
     const all=S.todos.filter(t=>(t.who||"")===p.name).sort(taskOrder);
     const list=all.filter(t=>!isRepeating(t)), reps=all.filter(isRepeating);

@@ -6,6 +6,10 @@
       {
         "tag": "New",
         "text": "In Arrange this page, each button in the left menu bar (bottom bar on phones) now has small arrows. Use them to move Main, Calendar, Tasks, Meals, Lists, Budget, Photos and Home into the order you like. The order is saved under each person's name, like the card layout, and Reset puts both back to standard. Menu always stays last on phones."
+      },
+      {
+        "tag": "Improved",
+        "text": "On tablets and computers the left menu bar is now a vertical grid of slots. In Arrange this page, drag any button into any slot, including an empty one to leave a gap, or use its arrows to move it one slot. Tapping a button while arranging no longer leaves the page. Phones keep the one-row order with arrows."
       }
     ]
   },

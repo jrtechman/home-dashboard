@@ -76,7 +76,16 @@ button{cursor:pointer;border:0;background:none}
 .nctl{position:absolute;top:8px;left:2px;right:2px;display:flex;justify-content:space-between;pointer-events:none;z-index:2}
 .nctl span{pointer-events:auto;width:24px;height:24px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .nctl span.off{opacity:.35}.nav .nctl svg{width:13px;height:13px;margin:0;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.rail{overflow-y:auto;scrollbar-width:none}.rail::-webkit-scrollbar{display:none}
+.rail{overflow-y:auto;scrollbar-width:none}
+@media (min-width:901px){
+  .rail{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto repeat(var(--ns,9),var(--slot,61px)) minmax(0,1fr) auto auto auto;row-gap:2px;align-content:stretch}
+  .rail>*{grid-column:1}
+  .rail>.nav{justify-content:center}
+  .rail>.nav[data-view]{z-index:1;touch-action:none}
+}
+.nslot{grid-column:1;border:2px dashed color-mix(in srgb,var(--ink) 22%,transparent);border-radius:14px;margin:2px 6px;z-index:0}
+.nslot.hot{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:var(--accent)}
+.nav.ndrag{z-index:5;background:var(--card);border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,.25);cursor:grabbing;transition:none}.rail::-webkit-scrollbar{display:none}
 @media (min-width:901px) and (max-height:880px){.nav{padding:8px 0}}
 .nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav[aria-current="page"]{background:var(--rail-on)}
@@ -2907,38 +2916,85 @@ function applyLayout(){
     cwOf(k).append(ctl);
   });
   const hid=L.hidden.map(k=>h("button",{class:"pill",onclick:()=>showCard(k)},"+ "+(LCARDS.find(c=>c[0]===k)||[,k])[1]));
-  const custom=!!((S.settings.layouts||{})[layoutKey()]||(S.settings.navOrder||{})[layoutKey()]);
+  const custom=!!((S.settings.layouts||{})[layoutKey()]||(S.settings.navOrder||{})[layoutKey()]||(S.settings.navSlots||{})[layoutKey()]);
   bar.append(...[h("span",{class:"lt"},"Arranging the page for "+(who||"this shared screen")),h("span",{class:"grow"}),
     custom?h("button",{class:"pill",onclick:()=>confirmSheet("Reset the layout?","The cards and the left menu bar go back to the standard order for "+(who||"this shared screen")+".","Reset",()=>{ saveLayout(null); saveNavOrder(null); })},"Reset"):null,
     h("button",{class:"pill primary",onclick:()=>{ S.editLayout=false; applyLayout(); applyNavOrder(); renderTools(); }},"Done"),
     hid.length?h("div",{class:"acts",style:"flex:1 0 100%"},h("span",{class:"hint",style:"flex:none"},"Hidden, tap to bring back:"),...hid):null,
-    h("span",{class:"hint"},"The cards and the left menu bar (use the small arrows on each button) are saved under each person's name, so it follows them to any device. To arrange it for someone else, choose their name under Settings, This screen, “This device is used by”.")].filter(Boolean));
+    h("span",{class:"hint"},"The cards and the left menu bar are saved under each person's name. Drag a menu button into any slot of the left bar (an empty slot leaves a gap), or use its small arrows, so it follows them to any device. To arrange it for someone else, choose their name under Settings, This screen, “This device is used by”.")].filter(Boolean));
 }
 try{ matchMedia("(max-width:900px)").addEventListener("change",()=>{ applyLayout.sig=""; applyLayout(); }); }catch(e){}
 
-/* ---------- Left menu bar order: arranged per person together with the Main page cards ---------- */
+/* ---------- Left menu bar: arranged per person together with the Main page cards ----------
+   Phones: a row, reordered with arrows. Tablets and computers: a vertical grid of slots; drag a button (or use the arrows) into any slot, including an empty one. */
 const NAVDEF=["home","calendar","tasks","meals","lists","budget","photos","house"];
+const isNarrow=()=>matchMedia("(max-width:900px)").matches;
 function navOrder(){ const raw=((S.settings&&S.settings.navOrder)||{})[layoutKey()], seen=new Set();
   const a=(Array.isArray(raw)?raw:[]).filter(v=>NAVDEF.includes(v)&&!seen.has(v)&&seen.add(v)); NAVDEF.forEach(v=>{ if(!seen.has(v)){ seen.add(v); a.push(v); } }); return a; }
 const navBtn=v=>document.querySelector('.rail .nav[data-view="'+v+'"]');
 const navVisible=v=>{ const b=navBtn(v); return !!(b&&b.offsetParent); };
-function saveNavOrder(o){ const all={...((S.settings&&S.settings.navOrder)||{})}; if(o) all[layoutKey()]=o; else delete all[layoutKey()]; return saveSettings({navOrder:all}); }
+function navCount(){ return Math.max(9,Math.floor((innerHeight-300)/60)); }
+/* slot of every visible button: the saved grid positions (kept unique and in range), else the saved order one after another */
+function navSlotMap(){
+  const n=navCount(), vis=navOrder().filter(navVisible), raw=((S.settings&&S.settings.navSlots)||{})[layoutKey()], map={}, used=new Set();
+  const free=from=>{ for(let k=Math.max(0,from);k<n;k++) if(!used.has(k)) return k; for(let k=n-1;k>=0;k--) if(!used.has(k)) return k; return 0; };
+  if(raw&&typeof raw==="object"){
+    vis.filter(v=>Number.isInteger(raw[v])).sort((x,y)=>raw[x]-raw[y]).forEach(v=>{ const k=free(Math.min(raw[v],n-1)); map[v]=k; used.add(k); });
+    vis.filter(v=>map[v]===undefined).forEach(v=>{ const k=free(0); map[v]=k; used.add(k); });
+  }else vis.forEach((v,i)=>{ map[v]=i; used.add(i); });
+  return map;
+}
+function saveNavOrder(o){ const all={...((S.settings&&S.settings.navOrder)||{})}, sl={...((S.settings&&S.settings.navSlots)||{})}; if(o){ all[layoutKey()]=o; delete sl[layoutKey()]; } else { delete all[layoutKey()]; delete sl[layoutKey()]; } return saveSettings({navOrder:all,navSlots:sl}); }
+function saveNavSlots(map){ const o=navOrder(), vis=Object.keys(map).sort((x,y)=>map[x]-map[y]); const order=[...vis,...o.filter(v=>!vis.includes(v))];
+  const all={...((S.settings&&S.settings.navOrder)||{})}, sl={...((S.settings&&S.settings.navSlots)||{})}; all[layoutKey()]=order; sl[layoutKey()]={...map}; return saveSettings({navOrder:all,navSlots:sl}); }
 function moveNav(v,dir){ const o=navOrder(), i=o.indexOf(v); let j=i+dir; while(j>=0&&j<o.length&&!navVisible(o[j])) j+=dir; if(i<0||j<0||j>=o.length) return; [o[i],o[j]]=[o[j],o[i]]; saveNavOrder(o); }
+function dropNav(v,target){ const map=navSlotMap(), n=navCount(); target=Math.max(0,Math.min(n-1,target)); if(map[v]===target) return;
+  const other=Object.keys(map).find(x=>x!==v&&map[x]===target); if(other) map[other]=map[v]; map[v]=target; saveNavSlots(map); }
+function navDragInit(b,v){
+  if(b._nd) return; b._nd=true;
+  const editing=()=>!!S.editLayout&&S.view==="home";
+  b.addEventListener("click",e=>{ if(e.target.closest&&e.target.closest(".nctl")) return; if(b._noclick||editing()){ e.stopImmediatePropagation(); e.preventDefault(); } },true);
+  b.addEventListener("pointerdown",e=>{
+    if(!editing()||isNarrow()||e.target.closest(".nctl")||(e.button&&e.button!==0)) return;
+    const rail=b.parentNode, sy=e.clientY; let moved=false, hover=null;
+    const slots=()=>[...rail.querySelectorAll(".nslot")];
+    const pick=y=>{ let best=null,bd=1e9; slots().forEach(sl=>{ const r=sl.getBoundingClientRect(), d=Math.abs(y-(r.top+r.height/2)); if(d<bd){ bd=d; best=sl; } }); return best; };
+    try{ b.setPointerCapture(e.pointerId); }catch(x){}
+    const mv=ev=>{ const dy=ev.clientY-sy; if(!moved&&Math.abs(dy)<6) return; moved=true; b.classList.add("ndrag"); b.style.transform="translateY("+dy+"px)";
+      const t=pick(ev.clientY); if(t!==hover){ if(hover) hover.classList.remove("hot"); hover=t; if(hover) hover.classList.add("hot"); } };
+    const up=ev=>{ b.removeEventListener("pointermove",mv); b.removeEventListener("pointerup",up); b.removeEventListener("pointercancel",up);
+      try{ b.releasePointerCapture(e.pointerId); }catch(x){}
+      b.classList.remove("ndrag"); b.style.transform=""; if(hover) hover.classList.remove("hot");
+      if(moved){ b._noclick=true; setTimeout(()=>{ b._noclick=false; },350); if(ev.type==="pointerup"&&hover) dropNav(v,Number(hover.dataset.slot)); } };
+    b.addEventListener("pointermove",mv); b.addEventListener("pointerup",up); b.addEventListener("pointercancel",up);
+  });
+}
 function applyNavOrder(){
   const rail=document.querySelector(".rail"); if(!rail) return;
   const o=navOrder(), btns=o.map(navBtn).filter(Boolean); if(!btns.length) return;
   const cur=[...rail.querySelectorAll(".nav[data-view]")].map(b=>b.dataset.view).join();
-  if(cur!==btns.map(b=>b.dataset.view).join()){ const last=[...rail.querySelectorAll(".nav[data-view]")].pop(), anchor=last.nextSibling; btns.forEach(b=>rail.insertBefore(b,anchor)); }
-  const edit=!!S.editLayout&&S.view==="home", narrow=matchMedia("(max-width:900px)").matches, vis=o.filter(navVisible);
-  const sig=JSON.stringify([edit,narrow,vis]); if(applyNavOrder.sig===sig) return; applyNavOrder.sig=sig;
-  rail.querySelectorAll(".nctl").forEach(e=>e.remove());
+  const narrow=isNarrow(), edit=!!S.editLayout&&S.view==="home", vis=o.filter(navVisible);
+  const n=navCount(), map=narrow?{}:navSlotMap();
+  /* the DOM order follows the grid (or the saved order on phones) so keyboard order matches */
+  const want=narrow?btns.map(b=>b.dataset.view):[...Object.keys(map).sort((x,y)=>map[x]-map[y]),...o.filter(v=>!(v in map))];
+  if(cur!==want.join()){ const last=[...rail.querySelectorAll(".nav[data-view]")].pop(), anchor=last.nextSibling; want.map(navBtn).filter(Boolean).forEach(b=>rail.insertBefore(b,anchor)); }
+  /* grid rows (wide screens only): logo, the slots, a stretch row, then Family, Links, Settings */
+  const rows=[["#mono",1],["#famBtn",n+3],["#linksBtn",n+4],["#settingsBtn",n+5]];
+  if(narrow){ rail.style.removeProperty("--ns"); rail.style.removeProperty("--slot"); rail.querySelectorAll(".nav[data-view],.spacer,#mono,#famBtn,#linksBtn,#settingsBtn").forEach(e=>{ e.style.gridRow=""; }); }
+  else{ rail.style.setProperty("--ns",n); rail.style.setProperty("--slot",Math.max(56,Math.min(70,Math.floor((innerHeight-300-2*n)/n)))+"px");
+    rows.forEach(([sel,r])=>{ const e=rail.querySelector(sel); if(e) e.style.gridRow=String(r); }); const sp=rail.querySelector(".spacer"); if(sp) sp.style.gridRow=String(n+2);
+    NAVDEF.forEach(v=>{ const b=navBtn(v); if(b) b.style.gridRow=(v in map)?String(map[v]+2):""; }); }
+  const sig=JSON.stringify([edit,narrow,n,narrow?vis:map]); if(applyNavOrder.sig===sig) return; applyNavOrder.sig=sig;
+  rail.querySelectorAll(".nctl,.nslot").forEach(e=>e.remove());
   if(!edit) return;
   const mk=(label,icon,fn,dis)=>{ const b=h("span",{role:"button",tabindex:dis?"-1":"0","aria-label":label,title:label,"aria-disabled":dis?"true":"false",class:dis?"off":""},svg(icon));
     const go=e=>{ e.preventDefault(); e.stopPropagation(); if(!dis) fn(); }; b.addEventListener("click",go); b.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" ") go(e); }); return b; };
-  vis.forEach((v,i)=>{ const b=navBtn(v);
+  if(!narrow) for(let k=0;k<n;k++) rail.append(h("div",{class:"nslot","data-slot":String(k),style:"grid-row:"+(k+2)}));
+  vis.forEach((v,i)=>{ const b=navBtn(v); navDragInit(b,v);
+    const first=narrow?i===0:map[v]===0, last=narrow?i===vis.length-1:map[v]===n-1;
     b.append(h("span",{class:"nctl"},
-      mk(narrow?"Move left":"Move up",narrow?IC.left:IC.up,()=>moveNav(v,-1),i===0),
-      mk(narrow?"Move right":"Move down",narrow?IC.right:'<path d="M12 5v13M6 13l6 6 6-6"/>',()=>moveNav(v,1),i===vis.length-1))); });
+      mk(narrow?"Move left":"Move up",narrow?IC.left:IC.up,()=>narrow?moveNav(v,-1):dropNav(v,map[v]-1),first),
+      mk(narrow?"Move right":"Move down",narrow?IC.right:'<path d="M12 5v13M6 13l6 6 6-6"/>',()=>narrow?moveNav(v,1):dropNav(v,map[v]+1),last))); });
 }
 function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };

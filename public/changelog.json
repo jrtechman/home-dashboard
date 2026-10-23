@@ -6,6 +6,10 @@
       {
         "tag": "Changed",
         "text": "On phones the top of the screen is about half as tall: the date and time sit on two tight lines with the buttons beside them, and the greeting is hidden to save room. Tablets and computers are unchanged."
+      },
+      {
+        "tag": "Fixed",
+        "text": "On the Calendar page the Calendars, previous, Today and next buttons now sit on their own row under the date instead of squeezing the date into a narrow column."
       }
     ]
   },

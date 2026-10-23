@@ -87,6 +87,7 @@ button{cursor:pointer;border:0;background:none}
 .time{font-family:var(--display);font-size:26px;color:var(--ink);font-variant-numeric:tabular-nums}
 .greet{color:var(--muted);font-size:15px}
 .top .tools{margin-left:auto;display:flex;gap:8px;align-items:center}
+.ptools,.gtools{display:contents}
 .vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 #faceBtn{background:var(--card);border:1px solid var(--line)}
 .calback{position:fixed;inset:0;z-index:59;background:rgba(31,42,51,.35)}
@@ -456,8 +457,14 @@ body.arranging #fab{display:none!important}
   .main{padding-left:max(0px,env(safe-area-inset-left,0px))}
   .top{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"date date tools" "time greet tools";align-items:center;column-gap:10px;row-gap:0;padding:8px 16px 6px 16px}
   .date{grid-area:date;font-size:22px;line-height:1.15}.time{grid-area:time;font-size:16px;line-height:1.2}.greet{grid-area:greet;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  @media (max-width:520px){ .greet{display:none} }
-  .top .tools{grid-area:tools;flex-basis:auto;gap:6px;align-self:center}
+  .top{grid-template-areas:"date tools" "time tools" "page page"}
+  .top{grid-template-columns:1fr auto}
+  .date{white-space:nowrap}.time{white-space:nowrap}.greet{display:none}
+  .top .tools{display:contents}
+  .top .gtools{grid-area:tools;display:flex;gap:6px;align-self:start}
+  .top .ptools{grid-area:page;display:flex;gap:6px;align-items:center;margin-top:6px}
+  .top .ptools:empty{display:none}
+  .top .ptools #calBtn{margin-right:0}
   .top .tools .pill{min-height:38px;height:38px}.top .tools .pill.icon{width:38px;height:38px}
   .view{overflow:visible}
   .home,.home.noframe{grid-template-columns:1fr;padding-inline:16px}
@@ -1334,26 +1341,26 @@ function setTheme(p){ try{ localStorage.setItem("hd_theme",p); }catch(e){} apply
 if(darkMQ.addEventListener) darkMQ.addEventListener("change",()=>{ if(themePref()==="auto"){ applyTheme(); renderTools(); } });
 applyTheme();
 function renderTools(){
-  const t=$("#tools"); t.replaceChildren();
+  const t=$("#tools"); t.replaceChildren(); const pg=h("div",{class:"ptools"}), gl=h("div",{class:"gtools"}); t.append(pg,gl);
   if(S.view==="calendar"&&FEAT.calendar){
     const hid=HIDDEN_CALS.filter(n=>calNames().includes(n)||n===LOCAL_CAL).length;
-    t.append(h("button",{class:"pill",id:"calBtn","aria-haspopup":"true",onclick:e=>{ e.stopPropagation(); calMenu(e.currentTarget); }},hid?`Calendars (${calNames().length+1-hid})`:"Calendars",svg('<path d="M6 9l6 6 6-6"/>')));
+    pg.append(h("button",{class:"pill",id:"calBtn","aria-haspopup":"true",onclick:e=>{ e.stopPropagation(); calMenu(e.currentTarget); }},hid?`Calendars (${calNames().length+1-hid})`:"Calendars",svg('<path d="M6 9l6 6 6-6"/>')));
   }
   if(S.view==="calendar"){
     const start=addDays(new Date(),S.weekOffset*7), end=addDays(start,6);
-    t.append(
+    pg.append(
       h("span",{class:"meta"},`${MO[start.getMonth()]} ${start.getDate()} – ${MO[end.getMonth()]} ${end.getDate()}`),
       h("button",{class:"pill icon","aria-label":"Previous week",onclick:()=>{S.weekOffset--;renderCal();renderTools();}},svg(IC.left)),
       h("button",{class:"pill",onclick:()=>{S.weekOffset=0;renderCal();renderTools();}},"Today"),
       h("button",{class:"pill icon","aria-label":"Next week",onclick:()=>{S.weekOffset++;renderCal();renderTools();}},svg(IC.right)));
   }
-  t.append(h("button",{class:"pill icon fsbtn","aria-label":"Full screen",title:"Full screen",onclick:goFull},svg(IC.full)));
-  const fs=t.querySelector('[aria-label="Full screen"]');
+  gl.append(h("button",{class:"pill icon fsbtn","aria-label":"Full screen",title:"Full screen",onclick:goFull},svg(IC.full)));
+  const fs=gl.querySelector('[aria-label="Full screen"]');
   const tb=[h("button",{class:"pill icon"+(guestOn()?" on":""),id:"guestTop","aria-label":guestOn()?"Guest mode is on. Tap to turn off":"Guests are here",title:"Guests are here",onclick:guestToggle},svg(document.querySelector("#guestBtn svg").innerHTML)),
     h("button",{class:"pill icon",id:"themeTop","aria-label":isDark()?"Switch to light mode":"Switch to dark mode",title:isDark()?"Light mode":"Dark mode",onclick:()=>setTheme(isDark()?"light":"dark")},svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>')),
     mod("sleep")?holdSleep(h("button",{class:"pill icon nosel","aria-label":"Sleep (photo screensaver). Hold to black out the screen",title:"Sleep (hold to black out)"},svg(document.querySelector("#sleepBtn svg").innerHTML)),openSaver):null].filter(Boolean);
   if(S.view==="home") tb.unshift(h("button",{class:"pill icon"+(S.editLayout?" on":""),id:"layoutTop","aria-label":"Arrange this page",title:"Arrange this page",onclick:()=>{ S.editLayout=!S.editLayout; applyLayout(); renderTools(); }},svg('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="4" rx="1.5"/><rect x="13" y="11" width="7" height="9" rx="1.5"/><rect x="4" y="14" width="7" height="6" rx="1.5"/>')));
-  tb.forEach(b=>fs?t.insertBefore(b,fs):t.append(b));
+  tb.forEach(b=>fs?gl.insertBefore(b,fs):gl.append(b));
 }
 function goFull(){ try{ const p=document.documentElement.requestFullscreen?.(); p&&p.catch(()=>toast("Full screen isn't available here.")); }catch(e){ toast("Full screen isn't available here."); } }
 

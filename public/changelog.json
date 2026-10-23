@@ -6,6 +6,10 @@
       {
         "tag": "New",
         "text": "The + button now has a \"Sticky note\" choice. It opens the notes window with the new-note box ready to type in. It shows only when Sticky notes is switched on."
+      },
+      {
+        "tag": "Changed",
+        "text": "The + menu no longer lists \"Dish photo\" or \"Photos\". You can still add them from the Meals and Photos pages, where the + button works as before."
       }
     ]
   },

@@ -2426,6 +2426,7 @@ $("#fab").addEventListener("click",()=>{
     h("button",{class:"chip",onclick:()=>{closeSheet();setView("lists");setTimeout(()=>$("#shopIn")?.focus(),30);}},"Grocery item"),
     h("button",{class:"chip",onclick:()=>{closeSheet();snapDish();}},"Dish photo"),
     FEAT.photos?h("button",{class:"chip",onclick:()=>{closeSheet();$("#fileIn").click();}},"Photos"):null,
+    mod("notes")?h("button",{class:"chip",onclick:()=>{ notesSheet(); setTimeout(()=>{ const t=$("#ntT"); if(t) t.focus(); },120); }},"Sticky note"):null,
     h("button",{class:"chip",onclick:()=>recipeSheet(null,null,"link")},"Recipe from a link"))]);
 });
 document.querySelectorAll(".nav[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));

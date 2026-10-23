@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Add a sticky note from the + menu",
+    "items": [
+      {
+        "tag": "New",
+        "text": "The + button now has a \"Sticky note\" choice. It opens the notes window with the new-note box ready to type in. It shows only when Sticky notes is switched on."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Avatars and event forecasts",
     "items": [
       {

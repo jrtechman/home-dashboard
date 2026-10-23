@@ -169,7 +169,8 @@ button{cursor:pointer;border:0;background:none}
 .card{border-radius:var(--r-col);background:var(--tint);padding:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .card h2{font-family:var(--display);font-weight:500;font-size:26px;margin:0 0 12px;text-wrap:balance}
 .card .scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
-.stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.cw{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack .todaycard .scroll{flex:0 1 auto;overflow-y:auto}.todaycard .tapnote{margin-top:8px;font-size:13px;color:var(--muted);font-weight:600}.pray{cursor:pointer}.pray .py{padding:3px 0;font-size:16px}.pray .py small{color:var(--muted);margin-left:6px}
+.stack{display:flex;flex-direction:column;gap:12px;min-height:0}.stack>.cw{flex:none}.stack .card .scroll{flex:none;overflow:visible}.stack .todaycard .scroll{flex:0 1 auto;overflow-y:auto}.todaycard .tapnote{margin-top:8px;font-size:13px;color:var(--muted);font-weight:600}.pray{cursor:pointer}.pray .pyhead{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 0 4px}.pray .pyrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.pray .pyrow:first-of-type{border-top:0}.pray .pyt{flex:1;min-width:0;font-size:16px;line-height:1.3;display:flex;flex-direction:column}.pray .pyt small{color:var(--muted);font-size:13px}.pray .pybtn{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;background:var(--glass);font-weight:600;font-size:14px}.pray .pybtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.pray .pyall{padding:10px 0;font-size:17px;font-weight:600}.pray .pyfoot{margin-top:8px;font-size:13px;color:var(--muted);font-weight:500}
+.pcard{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:20px;background:var(--chip)}.pcard.done{opacity:.8}.pcard .pct{font-weight:600;font-size:17px;line-height:1.3;overflow-wrap:anywhere}.pcard .acts{margin-top:4px;flex-wrap:wrap}.pcard .pill:not(.primary){background:var(--card)}.pcard .pill:disabled{opacity:.7}.pcu{font-size:15px;line-height:1.35;overflow-wrap:anywhere}
 .stack.left{display:flex;flex-direction:column}.stack .todaycard{flex:none;max-height:340px;cursor:pointer}
 .cw{position:relative;display:flex;flex-direction:column;min-height:0;flex:none}.cw>.card{flex:none}
 .cw:has(>.card[hidden]),.cw:has(>.card[style*="display:none"]),.cw:has(>.card[style*="display: none"]){display:none}
@@ -2430,14 +2431,26 @@ function renderFam(){
   }
   B.style.display=bits.length?"":"none";
 }
+/* Prayer list: categories, dated updates, and a daily focus on Main. Item fields (hd:c:prayers): text, who, cat, answered, createdAt, answeredAt, updates:[{t,d}], prayedOn (day key), prayedCount. */
+const PRAY_CATS=["Family","Friends","Church","Community","Missions","Work","Other"];
+const PF={cat:"",answered:false};
+const prDay=ts=>shortDay(keyOf(new Date(ts)));
+const prayedToday=p=>p.prayedOn===today();
+const prOpen=()=>S.prayers.filter(p=>!p.answered);
+const prFocus=()=>prOpen().filter(p=>!prayedToday(p)).sort((a,b)=>String(a.prayedOn||"").localeCompare(String(b.prayedOn||""))||(a.createdAt||0)-(b.createdAt||0));
+const prSub=p=>[p.who,p.cat].filter(Boolean).join(" · ");
+async function markPrayed(p){ await updDoc("prayers",p.id,{prayedOn:today(),prayedCount:(p.prayedCount||0)+1}); }
+function prLast(p){ if(prayedToday(p)) return "Prayed today"; if(p.prayedOn) return "Last prayed "+ago(p.prayedOn); return "Not prayed for yet"; }
 function renderPrayer(){
   const B=$("#homePrayer"); if(!B) return; B.replaceChildren();
   if(!mod("prayer")){ B.style.display="none"; return; }
-  B.style.display=""; const open=S.prayers.filter(p=>!p.answered).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  B.style.display=""; const open=prOpen(), todo=prFocus(), done=open.length-todo.length;
   B.append(h("h2",null,"Prayer list"));
   if(!open.length) B.append(h("div",{class:"empty-day"},"Tap to add a prayer request."));
-  open.slice(0,4).forEach(p=>B.append(h("div",{class:"py"},p.text,p.who?h("small",null,p.who):null)));
-  if(open.length>4) B.append(h("div",{class:"meta"},`+${open.length-4} more`));
+  else if(!todo.length) B.append(h("div",{class:"pyall"},"All prayed for today 🙏"));
+  else B.append(h("div",{class:"pyhead"},"Today's focus"),...todo.slice(0,3).map(p=>h("div",{class:"pyrow"},h("div",{class:"pyt"},h("span",null,p.text),prSub(p)?h("small",null,prSub(p)):null),
+    h("button",{class:"pybtn","aria-label":"Prayed for "+p.text,onclick:e=>{ e.stopPropagation(); markPrayed(p); }},svg(IC.check||'<path d="M5 12l5 5 9-10"/>'),"Prayed"))));
+  if(open.length) B.append(h("div",{class:"pyfoot"},`${done} prayed today · ${open.length} open · tap for the full list`));
   B.onclick=()=>prayerSheet();
 }
 function famSheet(){
@@ -2560,23 +2573,56 @@ function notesSheet(){
   const add=async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } await post(text,null); };
   openSheet([h("h2",null,"Family notes"),h("p",{class:"hint",style:"margin:0"},"New notes are stuck on the Home page. Drag one there to move it; tap it to edit or remove."),grid,field("New note",tx),field("Color",col),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Post note"),h("button",{class:"pill",onclick:()=>inkSheet([],col.value,ink=>{ if(ink.length) post(tx.value.trim(),ink); else notesSheet(); })},"Write with your finger"),h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
 }
-function prayerSheet(showAnswered){
-  const open=S.prayers.filter(p=>!p.answered).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)), done=S.prayers.filter(p=>p.answered).sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0));
+function prayerSheet(){
+  const open=prOpen().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)), done=S.prayers.filter(p=>p.answered).sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0));
+  const cats=[...new Set(open.map(p=>p.cat||"").filter(Boolean))];
+  if(PF.cat&&!cats.includes(PF.cat)) PF.cat="";
+  const shown=PF.cat?open.filter(p=>p.cat===PF.cat):open;
+  const chips=cats.length?h("div",{class:"chips"},[["","All ("+open.length+")"],...cats.map(c=>[c,c+" ("+open.filter(p=>p.cat===c).length+")"])].map(([v,l])=>h("button",{class:"chip","aria-pressed":PF.cat===v?"true":"false",onclick:()=>{ PF.cat=v; prayerSheet(); }},l))):null;
   const list=h("div",{class:"pcs"});
   if(!open.length) list.append(h("p",{class:"hint"},"Nothing on the list yet. Add a person or a request below."));
-  open.forEach(p=>list.append(h("div",{class:"lrow"},h("div",{class:"lk",style:"flex-direction:column;align-items:flex-start;justify-content:center;white-space:normal;padding:10px 18px"},h("span",null,p.text),p.who?h("span",{class:"meta"},p.who):null),
-    h("button",{class:"pill",onclick:async()=>{ await updDoc("prayers",p.id,{answered:true,answeredAt:Date.now()}); prayerSheet(showAnswered); }},"Answered"),
-    h("button",{class:"pill icon","aria-label":"Remove",style:"background:var(--card)",onclick:async()=>{ await delDoc("prayers",p.id); prayerSheet(showAnswered); }},svg(IC.x)))));
+  shown.forEach(p=>{ const ups=(p.updates||[]).slice().sort((a,b)=>(b.d||0)-(a.d||0)), lastU=ups[0];
+    list.append(h("div",{class:"pcard"},
+      h("div",{class:"pct"},p.text),
+      h("div",{class:"meta"},[prSub(p),"Added "+prDay(p.createdAt||Date.now()),prLast(p)].filter(Boolean).join(" · ")),
+      lastU?h("div",{class:"pcu"},h("b",null,"Update "+prDay(lastU.d)+": "),lastU.t,ups.length>1?h("span",{class:"meta"}," (+"+(ups.length-1)+" earlier)"):null):null,
+      h("div",{class:"acts"},
+        h("button",{class:"pill"+(prayedToday(p)?"":" primary"),disabled:prayedToday(p),onclick:async()=>{ await markPrayed(p); prayerSheet(); }},prayedToday(p)?"Prayed ✓":"Prayed"),
+        h("button",{class:"pill",onclick:()=>prayerDetail(p.id,true)},"Update"),
+        h("button",{class:"pill",onclick:()=>prayerDetail(p.id)},"Details"),
+        h("button",{class:"pill",onclick:async()=>{ await updDoc("prayers",p.id,{answered:true,answeredAt:Date.now()}); toast("Marked answered. Open Details to add a praise note."); prayerSheet(); }},"Answered")))); });
   const ans=h("div",{class:"pcs"});
-  if(showAnswered) done.forEach(p=>ans.append(h("div",{class:"lrow"},h("div",{class:"lk",style:"justify-content:space-between;gap:10px;opacity:.75"},h("span",{style:"overflow:hidden;text-overflow:ellipsis"},p.text+(p.who?" ("+p.who+")":"")),h("span",{class:"meta",style:"flex:none"},p.answeredAt?shortDay(keyOf(new Date(p.answeredAt))):"")),
-    h("button",{class:"pill",onclick:async()=>{ await updDoc("prayers",p.id,{answered:false}); prayerSheet(true); }},"Reopen"),
-    h("button",{class:"pill icon","aria-label":"Remove",style:"background:var(--card)",onclick:async()=>{ await delDoc("prayers",p.id); prayerSheet(true); }},svg(IC.x)))));
+  if(PF.answered) done.forEach(p=>{ const ups=(p.updates||[]).slice().sort((a,b)=>(b.d||0)-(a.d||0));
+    ans.append(h("div",{class:"pcard done"},h("div",{class:"pct"},p.text),h("div",{class:"meta"},[prSub(p),"Answered "+(p.answeredAt?prDay(p.answeredAt):"")].filter(Boolean).join(" · ")),ups[0]?h("div",{class:"pcu"},ups[0].t):null,
+      h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>prayerDetail(p.id)},"Details"),h("button",{class:"pill",onclick:async()=>{ await updDoc("prayers",p.id,{answered:false}); prayerSheet(); }},"Reopen")))); });
   const tx=h("input",{id:"pyT",placeholder:"What to pray for"}), who=h("input",{id:"pyW",placeholder:"For (optional)"});
-  const add=async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } await addDoc("prayers",{text:text.slice(0,300),who:who.value.trim().slice(0,60),answered:false,createdAt:Date.now()}); prayerSheet(showAnswered); };
+  const cat=h("select",{id:"pyC"},[h("option",{value:""},"No category"),...PRAY_CATS.map(c=>h("option",{value:c},c))]); cat.value=PF.cat||"";
+  const add=async()=>{ const text=tx.value.trim(); if(!text){ tx.focus(); return; } await addDoc("prayers",{text:text.slice(0,300),who:who.value.trim().slice(0,60),cat:cat.value,answered:false,createdAt:Date.now(),updates:[]}); prayerSheet(); };
   tx.addEventListener("keydown",e=>{ if(e.key==="Enter") add(); });
-  openSheet([h("h2",null,"Prayer list"),list,h("div",{style:"display:flex;flex-direction:column;gap:8px"},field("Request",tx),field("For",who),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Add"))),
-    done.length?h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>prayerSheet(!showAnswered)},showAnswered?"Hide answered":`Show answered (${done.length})`)):null,ans,
+  const prayedN=open.filter(prayedToday).length;
+  openSheet([h("h2",null,"Prayer list"),h("p",{class:"meta",style:"margin:0"},open.length?`${prayedN} of ${open.length} prayed for today`:"No open requests"),chips,list,
+    h("div",{style:"display:flex;flex-direction:column;gap:8px"},h("h3",{style:"margin:6px 0 0"},"Add a request"),field("Request",tx),h("div",{class:"cols2"},field("For",who),field("Category",cat)),h("div",{class:"acts"},h("button",{class:"pill primary",onclick:add},"Add"))),
+    done.length?h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ PF.answered=!PF.answered; prayerSheet(); }},PF.answered?"Hide answered":`Show answered (${done.length})`)):null,ans,
     h("div",{class:"acts"},h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Close"))],true);
+}
+function prayerDetail(id,focusUpdate){
+  const p=S.prayers.find(x=>x.id===id); if(!p) return prayerSheet();
+  const tx=h("input",{id:"pdT",value:p.text||""}), who=h("input",{id:"pdW",value:p.who||"",placeholder:"For (optional)"});
+  const cat=h("select",{id:"pdC"},[h("option",{value:""},"No category"),...PRAY_CATS.map(c=>h("option",{value:c},c))]); cat.value=p.cat||"";
+  const ups=(p.updates||[]).slice().sort((a,b)=>(b.d||0)-(a.d||0));
+  const tl=h("div",{class:"pcs"});
+  ups.forEach(u=>tl.append(h("div",{class:"lrow"},h("div",{class:"pcu",style:"flex:1;min-width:0"},h("b",null,prDay(u.d)+": "),u.t),h("button",{class:"pill icon","aria-label":"Remove update",style:"background:var(--card)",onclick:async()=>{ await updDoc("prayers",p.id,{updates:(p.updates||[]).filter(x=>x!==u&&!(x.d===u.d&&x.t===u.t))}); prayerDetail(id); }},svg(IC.x)))));
+  tl.append(h("div",{class:"meta"},"Added "+prDay(p.createdAt||Date.now())+(p.answered&&p.answeredAt?" · Answered "+prDay(p.answeredAt):"")+(p.prayedCount?` · Prayed for ${p.prayedCount} time${p.prayedCount===1?"":"s"}`:"")));
+  const up=h("input",{id:"pdU",style:"flex:1;min-width:0",placeholder:p.answered?"Add a praise note":"Add an update (what changed, how to pray)"});
+  const addUp=async()=>{ const t=up.value.trim(); if(!t){ up.focus(); return; } await updDoc("prayers",p.id,{updates:[...(p.updates||[]),{t:t.slice(0,300),d:Date.now()}]}); prayerDetail(id,true); };
+  up.addEventListener("keydown",e=>{ if(e.key==="Enter") addUp(); });
+  const save=async()=>{ const text=tx.value.trim(); if(!text) return tx.focus(); await updDoc("prayers",p.id,{text:text.slice(0,300),who:who.value.trim().slice(0,60),cat:cat.value}); toast("Saved"); prayerSheet(); };
+  openSheet([h("h2",null,"Prayer request"),field("Request",tx),h("div",{class:"cols2"},field("For",who),field("Category",cat)),
+    field("Updates",h("div",{style:"display:flex;gap:8px;align-items:stretch"},up,h("button",{class:"pill primary",style:"flex:none",onclick:addUp},"Add"))),tl,
+    h("div",{class:"acts"},h("button",{class:"pill danger",onclick:()=>confirmSheet("Remove this request?",p.text,"Remove",async()=>{ await delDoc("prayers",p.id); prayerSheet(); })},"Remove"),
+      p.answered?h("button",{class:"pill",onclick:async()=>{ await updDoc("prayers",p.id,{answered:false}); prayerDetail(id); }},"Reopen"):h("button",{class:"pill",onclick:async()=>{ await updDoc("prayers",p.id,{answered:true,answeredAt:Date.now()}); prayerDetail(id,true); }},"Mark answered"),
+      h("span",{class:"grow"}),h("button",{class:"pill",onclick:()=>prayerSheet()},"Back"),h("button",{class:"pill primary",onclick:save},"Save"))],true);
+  if(focusUpdate) setTimeout(()=>up.focus(),50);
 }
 $("#famBtn").addEventListener("click",famSheet);
 const MODULES=[

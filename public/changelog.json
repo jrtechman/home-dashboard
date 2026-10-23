@@ -1,6 +1,28 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Prayer list update",
+    "items": [
+      {
+        "tag": "New",
+        "text": "The Main page card now shows Today's focus: up to three requests (the ones prayed for longest ago), each with a Prayed button. Tapping it moves on to the next request, and the card says “All prayed for today” when you are done."
+      },
+      {
+        "tag": "New",
+        "text": "Requests can have a category (Family, Friends, Church, Community, Missions, Work, Other). The full list has filter buttons by category."
+      },
+      {
+        "tag": "New",
+        "text": "Each request shows when it was added and when it was last prayed for, and can have dated updates (what changed, how to pray, praise notes). Open Details to edit a request, add or remove updates, mark it answered or reopen it."
+      },
+      {
+        "tag": "Improved",
+        "text": "Redesigned list: each request is its own card with Prayed, Update, Details and Answered buttons, and a note of how many have been prayed for today."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Your own task list comes first",
     "items": [
       {

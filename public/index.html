@@ -74,7 +74,7 @@ button{cursor:pointer;border:0;background:none}
 .nav{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;font-size:13px;font-weight:500;color:var(--ink)}
 .nav{position:relative}
 .nctl{position:absolute;top:8px;left:2px;right:2px;display:flex;justify-content:space-between;pointer-events:none;z-index:2}
-.nctl span{pointer-events:auto;width:24px;height:24px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.nctl span{pointer-events:auto;width:22px;height:22px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .nctl span.off{opacity:.35}.nav .nctl svg{width:13px;height:13px;margin:0;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .rail{overflow-y:auto;scrollbar-width:none}
 @media (min-width:901px){
@@ -503,7 +503,7 @@ body.arranging #fab{display:none!important}
   .rail{scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}.rail::-webkit-scrollbar{display:none}
   .rail>.menu-btn{order:99;flex:0 0 64px;position:sticky;right:0;z-index:3;background:var(--rail);box-shadow:-8px 0 10px -8px rgba(0,0,0,.22)}
   body.arranging .rail .nav{padding-top:40px}
-  .nctl{top:6px;left:50%;right:auto;transform:translateX(-50%);justify-content:center;gap:4px}
+  .nctl{top:6px;left:50%;right:auto;transform:translateX(-50%);justify-content:center;gap:2px}.nctl span{width:20px;height:20px}
   .main{padding-left:max(0px,env(safe-area-inset-left,0px))}
   .top{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"date date tools" "time greet tools";align-items:center;column-gap:10px;row-gap:0;padding:8px 16px 6px 16px}
   .date{grid-area:date;font-size:22px;line-height:1.15}.time{grid-area:time;font-size:16px;line-height:1.2}.greet{grid-area:greet;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1271,7 +1271,7 @@ function setView(v){
   S.view=v; { const f=$("#fab"); if(f) f.style.display=(v==="settings"||v==="history"||v==="changelog"||v==="house"||v==="budget")?"none":""; const sb=$("#settingsBtn"); if(sb) sb.classList.toggle("cur",v==="settings"||v==="history"||v==="changelog"); }
   document.querySelectorAll(".view").forEach(s=>s.hidden=s.dataset.name!==v);
   document.querySelectorAll(".nav[data-view]").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
-  const mb=$("#menuBtn"); if(mb){ const vb=navBtn(v); if((v==="photos"||v==="house"||v==="budget")&&!(vb&&vb.offsetParent)) mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
+  const mb=$("#menuBtn"); if(mb){ const vb=navBtn(v); if(v!=="home"&&NAVDEF.includes(v)&&!(vb&&vb.offsetParent)) mb.setAttribute("aria-current","page"); else mb.removeAttribute("aria-current"); }
   { const vb=navBtn(v); if(vb&&isNarrow()) try{ vb.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"}); }catch(e){} }
   try{ history.replaceState(null,"","#"+v); }catch(e){}
   renderTools(); updateGreet();
@@ -2131,6 +2131,7 @@ function menuSheet(){
   openSheet([h("h2",null,"Menu"),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
       row(ico("#guestBtn"),guestOn()?"Guest mode: on (tap to turn off)":"Guests are here",guestToggle),
+      ...["calendar","tasks","meals","lists"].filter(v=>mod(v)&&navHid(v)).map(v=>row(ico('.nav[data-view="'+v+'"]'),NAVLAB[v],()=>setView(v))),
       mod("photos")?row(ico('.nav[data-view="photos"]'),"Photos",()=>setView("photos")):null,
       mod("budget")?row(ico("#budgetBtn"),"Budget",()=>setView("budget")):null,
       mod("history")?row(ico("#histBtn"),"History",histPage):null,
@@ -2508,7 +2509,7 @@ function settingsPage(){
   const lead=t=>h("p",{class:"hint slead",style:"margin:0"},t);
   const panes={
     device:h("div",{class:"spane",style:col},lead("Only affects this screen or phone. Changes apply right away."),
-      field("This device is used by",meSel),field("Appearance",themeSel),pushSection(),faceSection(),
+      field("This device is used by",meSel),field("Appearance",themeSel),navTabsSection(),pushSection(),faceSection(),
       h("div",null,h("h3",null,"Actions"),h("div",{class:"acts"},h("button",{class:"pill",onclick:()=>{ S.editLayout=true; setView("home"); }},"Arrange the Main page"),h("button",{class:"pill",onclick:goFull},"Full screen"),h("button",{class:"pill",onclick:async()=>{ try{ await api("/api/login",{method:"DELETE"}); }catch(e){} settingsBack(); showLogin(); }},"Sign out this screen")))),
     household:h("div",{class:"spane",style:col},lead("Shared by every screen. Tap Save when you are done."),field("Household name",hh),
       h("div",null,h("h3",null,"Family"),list,h("div",{class:"acts",style:"margin-top:8px"},h("button",{class:"pill",onclick:()=>{draft.push({name:"",color:COLORS[draft.length%COLORS.length]});draw();setTimeout(()=>list.querySelector(".mem:last-child input")?.focus(),20);}},"+ Add person"))),
@@ -2823,9 +2824,9 @@ $("#famBtn").addEventListener("click",famSheet);
 /* Dog and baby. Collections: dogcare (care schedule: name, due, every, unit, notes, notify, done), doglog (check-offs: kind, date, by, at), babylog (timeline entries: date, title, note).
    Settings: dog {name, emoji, checks[], vet, vetPhone, chip, food, notes}, baby {due, born, name}. Switches: "dog" and "baby". */
 const DOG_CHECKS=["Fed breakfast","Fed dinner","Walked","Medicine"];
-const dogCfg=()=>({name:"",emoji:"🐕",...(S.settings.dog||{})});
+const dogCfg=()=>({name:"Oakley",emoji:"🐕",...(S.settings.dog||{})});
 const dogChecks=()=>{ const c=dogCfg().checks; return Array.isArray(c)&&c.length?c:DOG_CHECKS; };
-const dogName=()=>dogCfg().name||"Dog";
+const dogName=()=>dogCfg().name||"Oakley";
 const dogDone=k=>S.doglog.filter(l=>l.kind===k&&l.date===today()).sort((a,b)=>(b.at||0)-(a.at||0))[0];
 const daysTo=k=>Math.round((parseKey(k)-parseKey(today()))/864e5);
 const fmtAt=ms=>{ const d=new Date(ms); return fmtTime(pad(d.getHours())+":"+pad(d.getMinutes())); };
@@ -3062,7 +3063,7 @@ function showCard(k){ const L=JSON.parse(JSON.stringify(getLayout())); L.hidden=
 function applyLayout(){
   const stacks=document.querySelectorAll(".home .stack"); if(stacks.length<2||!cwOf("homeWx")) return;
   const L=getLayout(), narrow=matchMedia("(max-width:900px)").matches, edit=!!S.editLayout&&S.view==="home", who=meName();
-  const sig=JSON.stringify([L,edit,narrow,who]); if(applyLayout.sig===sig) return; applyLayout.sig=sig;
+  const sig=JSON.stringify([L,edit,narrow,who,navHidList()]); if(applyLayout.sig===sig) return; applyLayout.sig=sig;
   const home=document.querySelector(".home"); home.classList.toggle("editing",edit);
   document.body.classList.toggle("arranging",edit);
   document.querySelectorAll(".cw>.lctl").forEach(e=>e.remove());
@@ -3080,8 +3081,9 @@ function applyLayout(){
       btn("Hide this card",'<path d="M3 3l18 18M10.6 6.2A9.8 9.8 0 0112 6c5 0 8.5 4.2 9.5 6a14 14 0 01-3.2 3.8M6.5 7.5A14 14 0 002.5 12C3.5 13.8 7 18 12 18c1.5 0 2.8-.4 4-.9"/>',()=>hideCard(k)));
     cwOf(k).append(ctl);
   });
-  const hid=L.hidden.map(k=>h("button",{class:"pill",onclick:()=>showCard(k)},"+ "+(LCARDS.find(c=>c[0]===k)||[,k])[1]));
-  const custom=!!((S.settings.layouts||{})[layoutKey()]||(S.settings.navOrder||{})[layoutKey()]||(S.settings.navSlots||{})[layoutKey()]);
+  const hid=[...L.hidden.map(k=>h("button",{class:"pill",onclick:()=>showCard(k)},"+ "+(LCARDS.find(c=>c[0]===k)||[,k])[1])),
+    ...navHidList().filter(v=>mod(v)).map(v=>h("button",{class:"pill",onclick:()=>saveNavHidden(navHidList().filter(x=>x!==v))},"+ "+NAVLAB[v]+" tab"))];
+  const custom=!!((S.settings.layouts||{})[layoutKey()]||(S.settings.navOrder||{})[layoutKey()]||(S.settings.navSlots||{})[layoutKey()]||(S.settings.navHidden||{})[layoutKey()]);
   bar.append(...[h("span",{class:"lt"},"Arranging the page for "+(who||"this shared screen")),h("span",{class:"grow"}),
     custom?h("button",{class:"pill",onclick:()=>confirmSheet("Reset the layout?","The cards and the left menu bar go back to the standard order for "+(who||"this shared screen")+".","Reset",()=>{ saveLayout(null); saveNavOrder(null); })},"Reset"):null,
     h("button",{class:"pill primary",onclick:()=>{ S.editLayout=false; applyLayout(); applyNavOrder(); renderTools(); }},"Done"),
@@ -3098,6 +3100,11 @@ function navOrder(){ const raw=((S.settings&&S.settings.navOrder)||{})[layoutKey
   const a=(Array.isArray(raw)?raw:[]).filter(v=>NAVDEF.includes(v)&&!seen.has(v)&&seen.add(v)); NAVDEF.forEach(v=>{ if(!seen.has(v)){ seen.add(v); a.push(v); } }); return a; }
 const navBtn=v=>document.querySelector('.rail .nav[data-view="'+v+'"]');
 const navVisible=v=>{ const b=navBtn(v); return !!(b&&b.offsetParent); };
+const NAVLAB={calendar:"Calendar",tasks:"Tasks",meals:"Meals",lists:"Lists",budget:"Budget",photos:"Photos",house:"Home"};
+/* Tabs a person has hidden from their own bar (settings.navHidden[person or _shared]). Main can't be hidden. */
+const navHidList=()=>{ const a=((S.settings&&S.settings.navHidden)||{})[layoutKey()]; return Array.isArray(a)?a.filter(v=>v!=="home"&&NAVDEF.includes(v)):[]; };
+const navHid=v=>navHidList().includes(v);
+function saveNavHidden(list){ const all={...((S.settings&&S.settings.navHidden)||{})}; if(list&&list.length) all[layoutKey()]=list; else delete all[layoutKey()]; return saveSettings({navHidden:all}); }
 function navCount(){ return Math.max(9,Math.floor((innerHeight-300)/60)); }
 /* slot of every visible button: the saved grid positions (kept unique and in range), else the saved order one after another */
 function navSlotMap(){
@@ -3109,7 +3116,7 @@ function navSlotMap(){
   }else vis.forEach((v,i)=>{ map[v]=i; used.add(i); });
   return map;
 }
-function saveNavOrder(o){ const all={...((S.settings&&S.settings.navOrder)||{})}, sl={...((S.settings&&S.settings.navSlots)||{})}; if(o){ all[layoutKey()]=o; delete sl[layoutKey()]; } else { delete all[layoutKey()]; delete sl[layoutKey()]; } return saveSettings({navOrder:all,navSlots:sl}); }
+function saveNavOrder(o){ const all={...((S.settings&&S.settings.navOrder)||{})}, sl={...((S.settings&&S.settings.navSlots)||{})}, hd={...((S.settings&&S.settings.navHidden)||{})}; if(o){ all[layoutKey()]=o; delete sl[layoutKey()]; } else { delete all[layoutKey()]; delete sl[layoutKey()]; delete hd[layoutKey()]; } return saveSettings({navOrder:all,navSlots:sl,navHidden:hd}); }
 function saveNavSlots(map){ const o=navOrder(), vis=Object.keys(map).sort((x,y)=>map[x]-map[y]); const order=[...vis,...o.filter(v=>!vis.includes(v))];
   const all={...((S.settings&&S.settings.navOrder)||{})}, sl={...((S.settings&&S.settings.navSlots)||{})}; all[layoutKey()]=order; sl[layoutKey()]={...map}; return saveSettings({navOrder:all,navSlots:sl}); }
 function moveNav(v,dir){ const o=navOrder(), i=o.indexOf(v); let j=i+dir; while(j>=0&&j<o.length&&!navVisible(o[j])) j+=dir; if(i<0||j<0||j>=o.length) return; [o[i],o[j]]=[o[j],o[i]]; saveNavOrder(o); }
@@ -3149,29 +3156,39 @@ function applyNavOrder(){
   else{ rail.style.setProperty("--ns",n); rail.style.setProperty("--slot",Math.max(56,Math.min(70,Math.floor((innerHeight-300-2*n)/n)))+"px");
     rows.forEach(([sel,r])=>{ const e=rail.querySelector(sel); if(e) e.style.gridRow=String(r); }); const sp=rail.querySelector(".spacer"); if(sp) sp.style.gridRow=String(n+2);
     NAVDEF.forEach(v=>{ const b=navBtn(v); if(b) b.style.gridRow=(v in map)?String(map[v]+2):""; }); }
-  const sig=JSON.stringify([edit,narrow,n,narrow?vis:map]); if(applyNavOrder.sig===sig) return; applyNavOrder.sig=sig;
+  const sig=JSON.stringify([edit,narrow,n,narrow?vis:map,vis]); if(applyNavOrder.sig===sig) return; applyNavOrder.sig=sig;
   rail.querySelectorAll(".nctl,.nslot").forEach(e=>e.remove());
   if(!edit) return;
-  const mk=(label,icon,fn,dis)=>{ const b=h("span",{role:"button",tabindex:dis?"-1":"0","aria-label":label,title:label,"aria-disabled":dis?"true":"false",class:dis?"off":""},svg(icon));
+  const mk=(label,icon,fn,dis)=>{ const b=h("span",{role:"button",tabindex:dis?"-1":"0","aria-label":label,title:label,"aria-disabled":dis?"true":"false",class:dis?"off":""},svg(icon==="M0"?'<path d="M6 6l12 12M18 6L6 18"/>':icon));
     const go=e=>{ e.preventDefault(); e.stopPropagation(); if(!dis) fn(); }; b.addEventListener("click",go); b.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" ") go(e); }); return b; };
   if(!narrow) for(let k=0;k<n;k++) rail.append(h("div",{class:"nslot","data-slot":String(k),style:"grid-row:"+(k+2)}));
   vis.forEach((v,i)=>{ const b=navBtn(v); navDragInit(b,v);
     const first=narrow?i===0:map[v]===0, last=narrow?i===vis.length-1:map[v]===n-1;
     b.append(h("span",{class:"nctl"},
       mk(narrow?"Move left":"Move up",narrow?IC.left:IC.up,()=>narrow?moveNav(v,-1):dropNav(v,map[v]-1),first),
+      v==="home"?null:mk("Hide this tab","M0",()=>saveNavHidden([...navHidList(),v])),
       mk(narrow?"Move right":"Move down",narrow?IC.right:'<path d="M12 5v13M6 13l6 6 6-6"/>',()=>narrow?moveNav(v,1):dropNav(v,map[v]+1),last))); });
 }
 function applyModules(){
   const show=(el,on)=>{ if(el) el.style.display=on?"":"none"; };
+  ["calendar","tasks","meals","lists","budget","photos","house"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v)&&!navHid(v))));
   applyLayout(); applyNavOrder();
   $("#guestBar").hidden=!guestOn(); $("#guestBtn").classList.toggle("on",guestOn()); { const g=$("#guestTop"); if(g){ g.classList.toggle("on",guestOn()); g.setAttribute("aria-label",guestOn()?"Guest mode is on. Tap to turn off":"Guests are here"); } } $("#guestBtn").lastChild.textContent=guestOn()?"Guests here":"Guests";
-  ["calendar","tasks","meals","lists","budget","photos","house"].forEach(v=>document.querySelectorAll('.nav[data-view="'+v+'"]').forEach(b=>show(b,mod(v))));
   show($("#famBtn"),mod("reminders")||mod("countdowns")||mod("notes")||mod("prayer")||mod("dog")||mod("baby")); show($("#budgetBtn"),mod("budget")); show($("#histBtn"),mod("history")); show($("#camBtn"),mod("cameras")); show($("#linksBtn"),mod("links")); show($("#sleepBtn"),mod("sleep"));
   show($("#homeWx"),mod("weather")); show($("#homeVerse"),mod("verse")); show($("#homeDinner"),mod("dinner")); show($("#homeTasksCard"),mod("tasks_card")); show($("#frame"),mod("photoframe"));
   const home=document.querySelector(".home"); if(home) home.classList.toggle("noframe",!mod("photoframe"));
   if(["calendar","tasks","meals","lists","budget","photos","house"].includes(S.view)&&!mod(S.view)) setView("home");
   if(mod("weather")&&S.settings.place&&!S.weather&&!S.wxBusy&&Date.now()-(S.wxAt||0)>60000){ S.wxBusy=true; pullWeather().finally(()=>{S.wxBusy=false;}); }
   if(mod("verse")&&!S.verse&&!S.verseBusy&&Date.now()-(S.verseAt||0)>60000){ S.verseBusy=true; pullVerse().finally(()=>{S.verseBusy=false;}); }
+}
+function navTabsSection(){
+  const who=meName(), box=h("div",null,h("h3",null,"Menu bar tabs")), body=h("div",{style:"display:flex;flex-direction:column;gap:8px"}); box.append(body);
+  body.append(h("p",{class:"hint",style:"margin:0"},"Choose which tabs show in the left menu bar (the bottom bar on phones) for "+(who||"this shared screen")+". A hidden tab stays in the phone Menu. Main is always shown. To turn a feature off for everyone, use the Features tab."));
+  const hidden=new Set(navHidList());
+  NAVDEF.filter(v=>v!=="home").forEach(v=>{ const c=h("input",{type:"checkbox"}); c.checked=!hidden.has(v)&&mod(v); c.disabled=!mod(v);
+    c.addEventListener("change",()=>{ const cur=new Set(navHidList()); if(c.checked) cur.delete(v); else cur.add(v); saveNavHidden([...cur]); });
+    body.append(h("label",{style:"display:flex;gap:10px;align-items:center;font-weight:600;min-height:40px"+(mod(v)?"":";opacity:.55")},c,NAVLAB[v]+(mod(v)?"":" (turned off in Features)"))); });
+  return box;
 }
 function moreSection(){
   const items=[mod("budget")?["Budget",()=>setView("budget"),"#budgetBtn"]:null,mod("history")?["History",histPage,"#histBtn"]:null].filter(Boolean);

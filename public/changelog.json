@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-10-24",
+    "title": "Hide menu bar tabs, dog is Oakley",
+    "items": [
+      {
+        "tag": "New",
+        "text": "You can now hide tabs from your own menu bar (the bottom bar on phones). In Arrange this page, each tab has a small X; hidden tabs appear in the Arrange bar as \"+ Budget tab\" style buttons to bring them back. Settings, This screen, Menu bar tabs has a tick box for each tab too. It is saved per person, and hidden tabs stay in the phone Menu. Reset in the Arrange bar shows everything again. Main is always shown."
+      },
+      {
+        "tag": "Changed",
+        "text": "The Dog card now says Oakley. You can still change the name, emoji and check-off buttons under Edit dog info."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-24",
     "title": "Dog card and baby timeline",
     "items": [
       {

@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-10-24",
+    "title": "Where and Notes on events",
+    "items": [
+      {
+        "tag": "New",
+        "text": "Events you add or edit on the dashboard now have Where and Notes boxes. The place shows under the title on the event card, on Main and on Calendar."
+      },
+      {
+        "tag": "Improved",
+        "text": "When an event is also saved to Apple Calendar, the place goes into its Location and your notes go into its Notes, so they show up on your phone too. Editing them later updates Apple Calendar."
+      }
+    ]
+  },
+  {
     "date": "2026-10-23",
     "title": "Budget: hide YNAB's internal category",
     "items": [

@@ -1557,7 +1557,7 @@ function evCard(e,whenLabel){
   const who=e.who||"Everyone";
   return h("button",{class:"ev c-"+colorOf(e.who),onclick:()=>eventSheet(e)},
     h("div",{class:"when"},whenLabel?h("div",null,whenLabel,h("div",null,fmtTime(e.time))):fmtTime(e.time)),
-    h("div",{class:"what"},e.title,exTag(e),evWxLine(e),h("div",{class:"who"},whoMark(e.who),who)));
+    h("div",{class:"what"},e.title,exTag(e),e.location?h("div",{class:"evwhere"},e.location):null,evWxLine(e),h("div",{class:"who"},whoMark(e.who),who)));
 }
 const tonightEntry=r=>S.dinnerlist.find(d=>d.recipeId===r.id&&!isLunch(d)&&d.date===today())||{recipeId:r.id,date:today()};
 const isLunch=d=>d&&d.meal==="lunch";
@@ -2181,14 +2181,16 @@ function eventSheet(e){
   const d=h("input",{id:"evDate",type:"date",value:e.date||today()});
   const tm=h("input",{id:"evTime",type:"time",value:e.time||""});
   const w=whoSelect("evWho",e.who);
+  const wh=h("input",{id:"evWhere",placeholder:"Address or place (optional)",maxlength:"300",value:e.location||"",autocomplete:"off"});
+  const nt=h("textarea",{id:"evNotes",rows:"3",maxlength:"2000",placeholder:"Anything to remember (optional)"}); nt.value=e.notes||"";
   let ap=null;
   if(FEAT.apple&&(S.appleCals||[]).length){
     ap=h("select",{id:"evApple"},[h("option",{value:""},"Don't add"),...S.appleCals.map(n=>h("option",{value:n},n))]);
     ap.value=editing?(e.appleCal||""):(S.appleDefault||"");
   }
-  const save=async()=>{ const title=t.value.trim(); if(!title){ t.focus(); return toast("Give the event a name."); } const data={title,date:d.value||today(),time:tm.value||"",who:w.value}; if(ap) data.appleCal=ap.value; closeSheet(); const j=editing?await updDoc("events",e.id,data):await addDoc("events",{...data,createdAt:Date.now()}); if(!(j&&j.appleError)) toast(editing?"Event updated":(data.appleCal?"Event added to Apple Calendar":"Event added")); };
+  const save=async()=>{ const title=t.value.trim(); if(!title){ t.focus(); return toast("Give the event a name."); } const data={title,date:d.value||today(),time:tm.value||"",who:w.value,location:wh.value.trim(),notes:nt.value.trim()}; if(ap) data.appleCal=ap.value; closeSheet(); const j=editing?await updDoc("events",e.id,data):await addDoc("events",{...data,createdAt:Date.now()}); if(!(j&&j.appleError)) toast(editing?"Event updated":(data.appleCal?"Event added to Apple Calendar":"Event added")); };
   t.addEventListener("keydown",ev=>{ if(ev.key==="Enter") save(); });
-  openSheet([h("h2",null,editing?"Edit event":"New event"),field("What",t),h("div",{class:"row"},field("Day",d),field("Time (leave blank for all day)",tm)),field("Who",w),ap?field("Also save to Apple Calendar",ap):null,
+  openSheet([h("h2",null,editing?"Edit event":"New event"),field("What",t),h("div",{class:"row"},field("Day",d),field("Time (leave blank for all day)",tm)),field("Who",w),field("Where",wh),field("Notes",nt),ap?field("Also save to Apple Calendar",ap):null,
     h("div",{class:"acts"},editing?h("button",{class:"pill danger",onclick:()=>confirmSheet("Delete this event?",e.title,"Delete",()=>delDoc("events",e.id))},"Delete"):null,h("span",{class:"grow"}),h("button",{class:"pill",onclick:closeSheet},"Cancel"),h("button",{class:"pill primary",onclick:save},editing?"Save":"Add event"))]);
 }
 /* recurring tasks */

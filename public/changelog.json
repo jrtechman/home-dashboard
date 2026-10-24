@@ -1,6 +1,32 @@
 [
   {
     "date": "2026-10-24",
+    "title": "Dog card and baby timeline",
+    "items": [
+      {
+        "tag": "New",
+        "text": "A Dog card on Main with one-tap daily check-offs (Fed breakfast, Fed dinner, Walked, Medicine). Each shows who tapped it and when, and tapping again undoes it. Rename or add buttons under Edit dog info."
+      },
+      {
+        "tag": "New",
+        "text": "Dog care schedule: heartworm, flea and tick, nail trim, grooming, vaccines, vet visits or anything else, each with a next-due day and an optional repeat. Items due within a week show on the card with a Done button, which moves the next due day forward. Turn on the bell to get a notification the morning it is due (Settings, Notifications, Dog care due)."
+      },
+      {
+        "tag": "New",
+        "text": "Dog info (vet and phone, microchip, food, notes) so a sitter can find it, plus a count of check-offs over the last 7 days."
+      },
+      {
+        "tag": "New",
+        "text": "A Baby card on Main with a countdown, the week of pregnancy, and a fun size comparison. Tap it for a timeline of milestones: trimesters, halfway and full term are filled in from the due date, and you can add your own entries (first kick, scans, nursery done). Once you enter the birth date it becomes the baby's age with milestones like 1 month and 6 months."
+      },
+      {
+        "tag": "Changed",
+        "text": "Both cards can be moved or hidden with Arrange this page, and switched off under Settings, Features. The Baby card is hidden in guest mode by default. Family and the phone Menu now list Dog and Baby timeline."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-24",
     "title": "Where and Notes on events",
     "items": [
       {

@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-10-23",
+    "title": "Budget: hide YNAB's internal category",
+    "items": [
+      {
+        "tag": "Fixed",
+        "text": "YNAB's hidden \"Internal Master Category\" no longer shows up in the Budget tab or in the category pickers, so the lists match what you see in YNAB itself."
+      }
+    ]
+  },
+  {
+    "date": "2026-10-23",
     "title": "Scrollable bottom tabs on phones",
     "items": [
       {
